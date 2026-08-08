@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>TEDUH Competitor Tracker</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --track:#cde2fb; --good:#006300; --flat:#898781;
+  --shadow:0 1px 2px rgba(11,11,11,.04),0 4px 16px rgba(11,11,11,.05);
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19;
+  --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --track:#184f95; --good:#0ca30c; --flat:#898781;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--ink);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 20px 72px}
+header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+h1{font-size:22px;font-weight:650;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink-2);font-size:13px;margin-top:5px}
+.sub b{color:var(--ink);font-weight:600}
+h2{font-size:15px;font-weight:640;margin:0 0 3px;letter-spacing:-.005em}
+.note{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px;box-shadow:var(--shadow)}
+button{font:inherit;color:inherit;cursor:pointer}
+.ghost{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12.5px;color:var(--ink-2)}
+.ghost:hover{background:var(--plane)}
+.ghost[aria-pressed="true"]{background:var(--s1);border-color:var(--s1);color:#fff}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:18px}
+.bar .lab{font-size:12px;color:var(--muted);margin-right:2px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{background:var(--surface);border:0;padding:6px 13px;font-size:12.5px;color:var(--ink-2)}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--s1);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .l{font-size:12.5px;color:var(--ink-2)}
+.kpi .v{font-size:30px;font-weight:640;letter-spacing:-.02em;margin-top:5px;line-height:1.1}
+.kpi .d{font-size:12.5px;color:var(--muted);margin-top:3px}
+.kpi .d.up{color:var(--good);font-weight:600}
+.hero .v{font-size:52px}
+svg{display:block;overflow:visible}
+.gl{stroke:var(--grid);stroke-width:1}
+.ax{stroke:var(--axis);stroke-width:1}
+.tk{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.vlab{fill:var(--ink);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.clab{fill:var(--ink-2);font-size:12px}
+.hit{fill:transparent;cursor:pointer}
+.mark{transition:opacity .12s}
+.mark:hover{opacity:.82}
+.sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:8px}
+.smc{padding:11px 12px 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+.smc .t{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smc .m{font-size:11.5px;color:var(--muted);margin-top:1px;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{color:var(--ink-2);font-weight:600;font-size:11.5px;position:sticky;top:0;background:var(--surface);z-index:1}
+th.l,td.l{text-align:left}
+th.g{border-left:1px solid var(--grid)}
+td.g{border-left:1px solid var(--grid)}
+tbody tr:hover td{background:var(--plane)}
+.new{background:rgba(42,120,214,.07)}
+tr.grp td{background:var(--plane);font-weight:640;font-size:11.5px;color:var(--ink-2);letter-spacing:.03em;text-transform:uppercase;position:sticky;left:0}
+html[data-theme="dark"] .new{background:rgba(57,135,229,.13)}
+.scroll{overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:10px}
+.tip{position:fixed;pointer-events:none;opacity:0;transition:opacity .1s;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 11px;box-shadow:0 6px 24px rgba(0,0,0,.16);font-size:12px;z-index:50;max-width:260px}
+.tip .tv{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}
+.tip .tn{color:var(--ink-2);margin-top:1px}
+.tip .tr{display:flex;align-items:center;gap:7px;margin-top:5px}
+.tip .key{width:14px;height:2px;border-radius:1px;flex:none}
+.lg{display:flex;gap:16px;flex-wrap:wrap;margin:2px 0 14px;font-size:12px;color:var(--ink-2)}
+.lg span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;flex:none}
+.foot{color:var(--muted);font-size:12px;margin-top:26px;line-height:1.7}
+.foot a{color:var(--s1)}
+.hide{display:none}
+@media(max-width:560px){.wrap{padding:18px 13px 56px}.kpi .v{font-size:26px}.hero .v{font-size:40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>TEDUH Competitor Tracker</h1>
+    <div class="sub">Sales data as at <b id="asat"></b> · refreshed daily from the TEDUH portal</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="ghost" id="theme">Dark</button>
+    <button class="ghost" id="print">Print</button>
+  </div>
+</header>
+
+<div class="bar">
+  <span class="lab">Portfolio</span>
+  <span class="seg" id="ftrack"></span>
+  <span class="lab" style="margin-left:10px">Trend range</span>
+  <span class="seg" id="frange">
+    <button data-r="30">30d</button><button data-r="90">90d</button><button data-r="0" aria-pressed="true">All</button>
+  </span>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="card">
+  <h2>New sales since previous snapshot</h2>
+  <p class="note" id="mvnote"></p>
+  <div id="movers"></div>
+  <button class="ghost" data-tbl="movers" style="margin-top:12px">Show as table</button>
+  <div id="movers-t" class="hide" style="margin-top:12px"></div>
+</div>
+
+<div class="card">
+  <h2>Sell-through</h2>
+  <p class="note">Share of total units sold to date. The lighter track is the unsold remainder.</p>
+  <div id="sellthru"></div>
+</div>
+
+<div class="card">
+  <h2>Cumulative units sold over time</h2>
+  <p class="note">One panel per project, each on its own scale — the shape is the story, the numbers are on the panel. A sharp dip to zero is a gap in the imported history, not a real reversal.</p>
+  <div class="sm" id="trends"></div>
+</div>
+
+<div class="card">
+  <h2>Sold and unsold by unit type</h2>
+  <p class="note">Latest snapshot. Projects listing several blocks of the same type are combined.</p>
+  <div class="lg"><span><i class="sw" style="background:var(--s1)"></i>Sold</span><span><i class="sw" style="background:var(--track)"></i>Unsold</span></div>
+  <div id="bytype"></div>
+</div>
+
+<div class="card">
+  <h2>Weekly tracker</h2>
+  <p class="note" id="tblnote"></p>
+  <div class="scroll" id="table"></div>
+</div>
+
+<div class="card" style="margin-top:4px">
+  <h2>Download</h2>
+  <p class="note">The same numbers as the Excel trackers you already use, regenerated on every refresh.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="ghost" style="text-decoration:none" href="downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx" download>Seputeh Hills tracker (.xlsx)</a>
+    <a class="ghost" style="text-decoration:none" href="downloads/Tduh_Developer_Project_Sales_Status.xlsx" download>Developer sales status (.xlsx)</a>
+    <a class="ghost" style="text-decoration:none" href="data/teduh_daily.csv" download>Raw daily data (.csv)</a>
+  </div>
+</div>
+
+<div class="foot" id="foot"></div>
+</div>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script id="data" type="application/json">{"generated": "08 Aug 2026, 3:17 PM MYT", "latestDate": "2026-08-08", "prevDate": "2026-08-07", "dates": ["2026-04-23", "2026-04-30", "2026-05-07", "2026-05-14", "2026-05-21", "2026-05-28", "2026-06-11", "2026-06-19", "2026-06-25", "2026-07-02", "2026-07-10", "2026-07-16", "2026-07-17", "2026-07-24", "2026-07-31", "2026-08-07", "2026-08-08"], "projects": [{"tracker": "seputeh", "trackerLabel": "Seputeh Hills", "no": 1, "name": "The Eden", "code": "32-16", "developer": "BRDB Developments Sdn Bhd", "launched": "2025-07-01", "units": 146, "remarks": "Big unit (5,533 to Penthouse 19,031sqft)", "series": [{"d": "2026-07-10", "v": 30}, {"d": "2026-07-17", "v": 34}, {"d": "2026-07-31", "v": 40}, {"d": "2026-08-07", "v": 41}, {"d": "2026-08-08", "v": 42}], "sold": 42, "newSales": 1, "pct": 0.2876712328767123, "types": [{"type": "Rumah Pangsa/Kondo", "units": 146, "sold": 42}]}, {"tracker": "seputeh", "trackerLabel": "Seputeh Hills", "no": 2, "name": "Imperial Residences- Pavilion DH", "code": "30216-1", "developer": "Pavilion Group (Jendela Mayang S/B)", "launched": "2025-10-01", "units": 154, "remarks": "Big unit (3,380 to 4,090sqft  & Penthouse 7,459sqft).", "series": [{"d": "2026-07-10", "v": 32}, {"d": "2026-07-17", "v": 33}, {"d": "2026-07-31", "v": 33}, {"d": "2026-08-07", "v": 33}, {"d": "2026-08-08", "v": 33}], "sold": 33, "newSales": 0, "pct": 0.21428571428571427, "types": [{"type": "Pangsapuri Servis", "units": 154, "sold": 33}]}, {"tracker": "seputeh", "trackerLabel": "Seputeh Hills", "no": 3, "name": "Royal Suites- Pavilion DH (small unit)", "code": "30216-2", "developer": "Pavilion Group (Jendela Mayang S/B)", "launched": "2026-01-01", "units": 490, "remarks": "Small unit (452 to 1,679 sq ft)", "series": [{"d": "2026-07-10", "v": 29}, {"d": "2026-07-17", "v": 31}, {"d": "2026-07-31", "v": 37}, {"d": "2026-08-07", "v": 42}, {"d": "2026-08-08", "v": 44}], "sold": 44, "newSales": 2, "pct": 0.08979591836734693, "types": [{"type": "Pangsapuri Servis", "units": 490, "sold": 44}]}, {"tracker": "seputeh", "trackerLabel": "Seputeh Hills", "no": 4, "name": "The Batai", "code": "31078-1", "developer": "Tan & Tan Dev Berhad (Arabayu Sepakat S/B)", "launched": "2025-12-01", "units": 48, "remarks": "4-storey Villa (4,854 to 5,157 sq ft); left 3 bumi units", "series": [{"d": "2026-07-10", "v": 45}, {"d": "2026-07-17", "v": 45}, {"d": "2026-07-31", "v": 45}, {"d": "2026-08-07", "v": 45}, {"d": "2026-08-08", "v": 45}], "sold": 45, "newSales": 0, "pct": 0.9375, "types": [{"type": "Rumah Berpagar & Berpengawal", "units": 48, "sold": 45}]}, {"tracker": "seputeh", "trackerLabel": "Seputeh Hills", "no": 5, "name": "Aosis Mont Kiara", "code": "31274-1", "developer": "JKG Land Berhad (Modern Plus Sdn Bhd)", "launched": "2026-04-01", "units": 244, "remarks": "Big unit (1,648 to 3,856 sq ft)", "series": [{"d": "2026-07-10", "v": 0}, {"d": "2026-07-17", "v": 0}, {"d": "2026-07-31", "v": 1}, {"d": "2026-08-07", "v": 1}, {"d": "2026-08-08", "v": 1}], "sold": 1, "newSales": 0, "pct": 0.004098360655737705, "types": [{"type": "Rumah Pangsa/Kondo", "units": 244, "sold": 1}]}, {"tracker": "seputeh", "trackerLabel": "Seputeh Hills", "no": 6, "name": "ParkCity Residences", "code": "2463-23", "developer": "Perdana ParkCity S/B", "launched": "2026-07-26", "units": 433, "remarks": "Big unit (2,842 to 10,613 sq ft)", "series": [{"d": "2026-07-17", "v": 32}, {"d": "2026-07-31", "v": 214}, {"d": "2026-08-07", "v": 262}, {"d": "2026-08-08", "v": 271}], "sold": 271, "newSales": 9, "pct": 0.625866050808314, "types": [{"type": "Rumah Pangsa/Kondo", "units": 433, "sold": 271}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 1, "name": "M AURORA", "code": "13262-2", "developer": "MAJORLAND DEVELOPMENT SDN BHD", "launched": "", "units": 1544, "remarks": "", "series": [{"d": "2026-04-23", "v": 85}, {"d": "2026-04-30", "v": 109}, {"d": "2026-05-07", "v": 123}, {"d": "2026-05-14", "v": 138}, {"d": "2026-05-21", "v": 170}, {"d": "2026-05-28", "v": 213}, {"d": "2026-06-11", "v": 220}, {"d": "2026-06-19", "v": 231}, {"d": "2026-06-25", "v": 241}, {"d": "2026-07-02", "v": 247}, {"d": "2026-07-16", "v": 269}, {"d": "2026-07-24", "v": 285}, {"d": "2026-07-31", "v": 306}, {"d": "2026-08-07", "v": 319}, {"d": "2026-08-08", "v": 321}], "sold": 321, "newSales": 2, "pct": 0.20790155440414507, "types": [{"type": "Pangsapuri Suite", "units": 1544, "sold": 321}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 2, "name": "ARTE STAR  MILANO", "code": "30590-2", "developer": "SURIAMEGA DEVELOPMENT", "launched": "", "units": 996, "remarks": "", "series": [{"d": "2026-04-23", "v": 46}, {"d": "2026-04-30", "v": 52}, {"d": "2026-05-07", "v": 54}, {"d": "2026-05-14", "v": 58}, {"d": "2026-05-21", "v": 61}, {"d": "2026-05-28", "v": 67}, {"d": "2026-06-11", "v": 73}, {"d": "2026-06-19", "v": 74}, {"d": "2026-06-25", "v": 78}, {"d": "2026-07-02", "v": 81}, {"d": "2026-07-16", "v": 94}, {"d": "2026-07-24", "v": 102}, {"d": "2026-07-31", "v": 106}, {"d": "2026-08-07", "v": 112}, {"d": "2026-08-08", "v": 113}], "sold": 113, "newSales": 1, "pct": 0.11345381526104417, "types": [{"type": "Soho", "units": 996, "sold": 113}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 3, "name": "M ASPIRA", "code": "5911-33", "developer": "MAH SING GROUP BERHAD", "launched": "", "units": 1618, "remarks": "", "series": [{"d": "2026-04-23", "v": 792}, {"d": "2026-04-30", "v": 808}, {"d": "2026-05-07", "v": 818}, {"d": "2026-05-14", "v": 837}, {"d": "2026-05-21", "v": 854}, {"d": "2026-05-28", "v": 878}, {"d": "2026-06-11", "v": 885}, {"d": "2026-06-19", "v": 892}, {"d": "2026-06-25", "v": 907}, {"d": "2026-07-02", "v": 922}, {"d": "2026-07-16", "v": 951}, {"d": "2026-07-24", "v": 965}, {"d": "2026-07-31", "v": 976}, {"d": "2026-08-07", "v": 985}, {"d": "2026-08-08", "v": 986}], "sold": 986, "newSales": 1, "pct": 0.6093943139678616, "types": [{"type": "Pangsapuri Servis", "units": 1618, "sold": 986}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 4, "name": "RESIDENSI DESA TIMUR A DESA", "code": "30363-2", "developer": "FITRAH RESOURCES SDN BHD", "launched": "", "units": 1218, "remarks": "", "series": [{"d": "2026-04-23", "v": 1091}, {"d": "2026-04-30", "v": 0}, {"d": "2026-05-07", "v": 1093}, {"d": "2026-05-14", "v": 1095}, {"d": "2026-05-21", "v": 1096}, {"d": "2026-05-28", "v": 1102}, {"d": "2026-06-11", "v": 1106}, {"d": "2026-06-19", "v": 1107}, {"d": "2026-06-25", "v": 1109}, {"d": "2026-07-02", "v": 1111}, {"d": "2026-07-16", "v": 1116}, {"d": "2026-07-24", "v": 1117}, {"d": "2026-07-31", "v": 1117}, {"d": "2026-08-07", "v": 1119}, {"d": "2026-08-08", "v": 1119}], "sold": 1119, "newSales": 0, "pct": 0.9187192118226601, "types": [{"type": "Pangsapuri Suite", "units": 1218, "sold": 1119}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 5, "name": "RADIUM ARENA RESIDENSI RADIUM", "code": "30821-1", "developer": "RADIUM GLOBAL SDN BHD", "launched": "", "units": 988, "remarks": "", "series": [{"d": "2026-04-23", "v": 446}, {"d": "2026-04-30", "v": 0}, {"d": "2026-05-07", "v": 447}, {"d": "2026-05-14", "v": 457}, {"d": "2026-05-21", "v": 458}, {"d": "2026-05-28", "v": 460}, {"d": "2026-06-11", "v": 462}, {"d": "2026-06-19", "v": 462}, {"d": "2026-06-25", "v": 463}, {"d": "2026-07-02", "v": 464}, {"d": "2026-07-16", "v": 472}, {"d": "2026-07-24", "v": 475}, {"d": "2026-07-31", "v": 485}, {"d": "2026-08-07", "v": 491}, {"d": "2026-08-08", "v": 491}], "sold": 491, "newSales": 0, "pct": 0.49696356275303644, "types": [{"type": "Pangsapuri Suite", "units": 988, "sold": 491}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 6, "name": "RESIDENSI AMBIEN", "code": "30366-1", "developer": "FAITHVIEW RESOURCES SDN BHD", "launched": "", "units": 482, "remarks": "", "series": [{"d": "2026-04-23", "v": 452}, {"d": "2026-04-30", "v": 454}, {"d": "2026-05-07", "v": 456}, {"d": "2026-05-14", "v": 457}, {"d": "2026-05-21", "v": 459}, {"d": "2026-05-28", "v": 462}, {"d": "2026-06-11", "v": 463}, {"d": "2026-06-19", "v": 463}, {"d": "2026-06-25", "v": 464}, {"d": "2026-07-02", "v": 464}, {"d": "2026-07-16", "v": 465}, {"d": "2026-07-24", "v": 465}, {"d": "2026-07-31", "v": 465}, {"d": "2026-08-07", "v": 465}, {"d": "2026-08-08", "v": 466}], "sold": 466, "newSales": 1, "pct": 0.966804979253112, "types": [{"type": "Pangsapuri Servis", "units": 482, "sold": 466}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 7, "name": "RESIDENSI HANA", "code": "13074-4", "developer": "NATURAL DOMAIN SDN BHD", "launched": "", "units": 299, "remarks": "", "series": [{"d": "2026-04-23", "v": 234}, {"d": "2026-04-30", "v": 0}, {"d": "2026-05-07", "v": 235}, {"d": "2026-05-14", "v": 236}, {"d": "2026-05-21", "v": 236}, {"d": "2026-05-28", "v": 236}, {"d": "2026-06-11", "v": 236}, {"d": "2026-06-19", "v": 236}, {"d": "2026-06-25", "v": 236}, {"d": "2026-07-02", "v": 236}, {"d": "2026-07-16", "v": 234}, {"d": "2026-07-24", "v": 234}, {"d": "2026-07-31", "v": 234}, {"d": "2026-08-07", "v": 235}, {"d": "2026-08-08", "v": 235}], "sold": 235, "newSales": 0, "pct": 0.7859531772575251, "types": [{"type": "Pangsapuri Servis", "units": 299, "sold": 235}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 8, "name": "RESIDENSI SUNWAY COCHRANE", "code": "8824-5", "developer": "SUNWAY COCHRANE SDN BHD", "launched": "", "units": 1296, "remarks": "", "series": [{"d": "2026-04-23", "v": 379}, {"d": "2026-04-30", "v": 0}, {"d": "2026-05-07", "v": 381}, {"d": "2026-05-14", "v": 385}, {"d": "2026-05-21", "v": 389}, {"d": "2026-05-28", "v": 401}, {"d": "2026-06-11", "v": 412}, {"d": "2026-06-19", "v": 421}, {"d": "2026-06-25", "v": 433}, {"d": "2026-07-02", "v": 460}, {"d": "2026-07-16", "v": 544}, {"d": "2026-07-24", "v": 573}, {"d": "2026-07-31", "v": 591}, {"d": "2026-08-07", "v": 608}, {"d": "2026-08-08", "v": 609}], "sold": 609, "newSales": 1, "pct": 0.4699074074074074, "types": [{"type": "Pangsapuri Servis", "units": 1296, "sold": 609}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 9, "name": "RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2)", "code": "20253-3", "developer": "PEMBINAAN SERTA HEBAT SDN.BHD", "launched": "", "units": 1500, "remarks": "", "series": [{"d": "2026-04-23", "v": 0}, {"d": "2026-04-30", "v": 0}, {"d": "2026-05-07", "v": 0}, {"d": "2026-05-14", "v": 0}, {"d": "2026-05-21", "v": 0}, {"d": "2026-05-28", "v": 1086}, {"d": "2026-06-11", "v": 1096}, {"d": "2026-06-19", "v": 1100}, {"d": "2026-06-25", "v": 1110}, {"d": "2026-07-02", "v": 1115}, {"d": "2026-07-16", "v": 1126}, {"d": "2026-07-24", "v": 1129}, {"d": "2026-07-31", "v": 1135}, {"d": "2026-08-07", "v": 1139}, {"d": "2026-08-08", "v": 1140}], "sold": 1140, "newSales": 1, "pct": 0.76, "types": [{"type": "Rumah Pangsa/Kondo", "units": 1500, "sold": 1140}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 10, "name": "RESIDENSI VERIDIAN", "code": "30876-1", "developer": "PERUMAHAN MASTERON SDN BHD", "launched": "", "units": 551, "remarks": "", "series": [{"d": "2026-04-23", "v": 0}, {"d": "2026-04-30", "v": 0}, {"d": "2026-05-07", "v": 0}, {"d": "2026-05-14", "v": 0}, {"d": "2026-05-21", "v": 76}, {"d": "2026-05-28", "v": 76}, {"d": "2026-06-11", "v": 79}, {"d": "2026-06-19", "v": 82}, {"d": "2026-06-25", "v": 86}, {"d": "2026-07-02", "v": 96}, {"d": "2026-07-16", "v": 118}, {"d": "2026-07-24", "v": 121}, {"d": "2026-07-31", "v": 121}, {"d": "2026-08-07", "v": 124}, {"d": "2026-08-08", "v": 124}], "sold": 124, "newSales": 0, "pct": 0.2250453720508167, "types": [{"type": "Rumah Pangsa/Kondo", "units": 551, "sold": 124}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 11, "name": "RESIDENSI AURUM", "code": "30250-2", "developer": "AMBER HOMES SRI PETALING SDN BHD", "launched": "", "units": 661, "remarks": "", "series": [{"d": "2026-04-23", "v": 0}, {"d": "2026-06-25", "v": 659}, {"d": "2026-07-02", "v": 659}, {"d": "2026-07-16", "v": 659}, {"d": "2026-07-24", "v": 659}, {"d": "2026-07-31", "v": 659}, {"d": "2026-08-07", "v": 659}, {"d": "2026-08-08", "v": 659}], "sold": 659, "newSales": 0, "pct": 0.9969742813918305, "types": [{"type": "Rumah Pangsa/Kondo", "units": 661, "sold": 659}]}, {"tracker": "status13", "trackerLabel": "Developer Sales Status", "no": 12, "name": "THE SHANG RESIDENCE", "code": "", "developer": "SHANG HEIGHT REALTY SDN. BHD.", "launched": "", "units": 449, "remarks": "", "series": [], "sold": null, "newSales": null, "pct": null, "types": []}]}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const $ = s => document.querySelector(s);
+const nf = n => (n === null || n === undefined) ? '–' : n.toLocaleString('en-US');
+const pf = n => (n === null || n === undefined) ? '–' : (n * 100).toFixed(1) + '%';
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt !== undefined) e.textContent = txt; return e; };
+const fdate = s => { if (!s) return ''; const d = new Date(s + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); };
+const SVGNS = 'http://www.w3.org/2000/svg';
+function sv(t, a) { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); return e; }
+
+let state = { tracker: 'all', range: 0 };
+
+/* ---------- tooltip ---------- */
+const tip = $('#tip');
+function showTip(ev, rows, title) {
+  tip.textContent = '';
+  if (title) tip.appendChild(el('div', 'tn', title));
+  rows.forEach(r => {
+    const line = el('div', 'tr');
+    if (r.color) { const k = el('span', 'key'); k.style.background = r.color; k.style.height = '2px'; line.appendChild(k); }
+    const v = el('span', 'tv', r.value); line.appendChild(v);
+    if (r.label) { const l = el('span', 'tn'); l.textContent = r.label; l.style.marginTop = '0'; line.appendChild(l); }
+    tip.appendChild(line);
+  });
+  tip.style.opacity = '1';
+  const pad = 14, w = 250;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth) x = ev.clientX - w - pad;
+  if (y + 120 > innerHeight) y = ev.clientY - 120;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+const hideTip = () => { tip.style.opacity = '0'; };
+addEventListener('scroll', hideTip, true);
+
+/* ---------- data helpers ---------- */
+const visible = () => DATA.projects.filter(p => state.tracker === 'all' || p.tracker === state.tracker);
+function clipped(p) {
+  if (!state.range) return p.series;
+  const cut = new Date(DATA.latestDate + 'T00:00:00');
+  cut.setDate(cut.getDate() - state.range);
+  const k = cut.toISOString().slice(0, 10);
+  const s = p.series.filter(d => d.d >= k);
+  return s.length > 1 ? s : p.series.slice(-2);
+}
+
+/* ---------- KPIs ---------- */
+function kpis() {
+  const box = $('#kpis'); box.textContent = '';
+  const ps = visible();
+  const sold = ps.reduce((a, p) => a + (p.sold || 0), 0);
+  const units = ps.reduce((a, p) => a + (p.units || 0), 0);
+  const nw = ps.reduce((a, p) => a + (p.newSales || 0), 0);
+  const movers = ps.filter(p => (p.newSales || 0) > 0).length;
+  const top = ps.slice().sort((a, b) => (b.newSales || 0) - (a.newSales || 0))[0];
+  const add = (label, value, delta, hero) => {
+    const c = el('div', 'kpi' + (hero ? ' hero' : ''));
+    c.appendChild(el('div', 'l', label));
+    c.appendChild(el('div', 'v', value));
+    if (delta) { const d = el('div', 'd' + (delta.up ? ' up' : ''), delta.text); c.appendChild(d); }
+    box.appendChild(c);
+  };
+  add('New sales this period', nf(nw), { text: movers + ' of ' + ps.length + ' projects moved', up: nw > 0 }, true);
+  add('Total units sold', nf(sold), { text: 'across ' + nf(units) + ' units tracked' });
+  add('Portfolio sell-through', units ? pf(sold / units) : '–', { text: 'weighted by unit count' });
+  add('Fastest mover', top && top.newSales ? top.name : '–',
+      { text: top && top.newSales ? '+' + top.newSales + ' units' : 'no movement', up: !!(top && top.newSales) });
+}
+
+/* ---------- movers: horizontal bars, one series ---------- */
+function movers() {
+  const host = $('#movers'); host.textContent = '';
+  $('#mvnote').textContent = DATA.prevDate
+    ? fdate(DATA.prevDate) + ' → ' + fdate(DATA.latestDate) + '. Projects with no movement are omitted from the chart but kept in the table.'
+    : 'Not enough history yet — a second snapshot is needed to show change.';
+  const ps = visible().filter(p => p.newSales !== null && p.newSales !== 0)
+                      .sort((a, b) => b.newSales - a.newSales);
+  if (!ps.length) { host.appendChild(el('p', 'note', 'No sales movement in this period.')); mtable(); return; }
+  const LW = 230, RW = 56, BH = 20, GAP = 12, H = ps.length * (BH + GAP) + 8;
+  const W = Math.min(1180, host.clientWidth || 900), PW = Math.max(160, W - LW - RW);
+  const max = Math.max(...ps.map(p => p.newSales));
+  const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${H}`, role: 'img' });
+  ps.forEach((p, i) => {
+    const y = i * (BH + GAP) + 4;
+    const w = Math.max(2, (p.newSales / max) * PW);
+    const t = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' });
+    t.textContent = p.name.length > 34 ? p.name.slice(0, 33) + '…' : p.name;
+    svg.appendChild(t);
+    const r = sv('rect', { x: LW, y, width: w, height: BH, rx: 4, fill: 'var(--s1)', class: 'mark' });
+    svg.appendChild(r);
+    const v = sv('text', { x: LW + w + 8, y: y + BH / 2 + 4, class: 'vlab' });
+    v.textContent = '+' + p.newSales;
+    svg.appendChild(v);
+    const hit = sv('rect', { x: 0, y: y - GAP / 2, width: W, height: BH + GAP, class: 'hit' });
+    hit.addEventListener('pointermove', e => showTip(e,
+      [{ value: '+' + p.newSales + ' units', label: 'this period', color: 'var(--s1)' },
+       { value: nf(p.sold) + ' / ' + nf(p.units), label: 'sold to date (' + pf(p.pct) + ')' }], p.name));
+    hit.addEventListener('pointerleave', hideTip);
+    svg.appendChild(hit);
+  });
+  host.appendChild(svg);
+  mtable();
+}
+function mtable() {
+  const h = $('#movers-t'); h.textContent = '';
+  const tb = el('table');
+  const hd = el('tr');
+  ['Project', 'Code', 'New sales', 'Total sold', 'Units', '%'].forEach((c, i) => {
+    const th = el('th', i === 0 || i === 1 ? 'l' : '', c); hd.appendChild(th);
+  });
+  tb.appendChild(el('thead')).appendChild(hd);
+  const bd = el('tbody');
+  visible().sort((a, b) => (b.newSales || 0) - (a.newSales || 0)).forEach(p => {
+    const tr = el('tr');
+    [[p.name, 'l'], [p.code, 'l'], [p.newSales === null ? '–' : (p.newSales > 0 ? '+' : '') + p.newSales, ''],
+     [nf(p.sold), ''], [nf(p.units), ''], [pf(p.pct), '']].forEach(([v, c]) => tr.appendChild(el('td', c, v)));
+    bd.appendChild(tr);
+  });
+  tb.appendChild(bd);
+  const wrap = el('div', 'scroll'); wrap.appendChild(tb); h.appendChild(wrap);
+}
+
+/* ---------- sell-through meters ---------- */
+function sellthru() {
+  const host = $('#sellthru'); host.textContent = '';
+  const ps = visible().filter(p => p.pct !== null).sort((a, b) => b.pct - a.pct);
+  if (!ps.length) return;
+  const LW = 230, RW = 66, BH = 16, GAP = 13, H = ps.length * (BH + GAP) + 6;
+  const W = Math.min(1180, host.clientWidth || 900), PW = Math.max(160, W - LW - RW);
+  const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${H}`, role: 'img' });
+  ps.forEach((p, i) => {
+    const y = i * (BH + GAP) + 3;
+    const t = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' });
+    t.textContent = p.name.length > 34 ? p.name.slice(0, 33) + '…' : p.name;
+    svg.appendChild(t);
+    svg.appendChild(sv('rect', { x: LW, y, width: PW, height: BH, rx: 4, fill: 'var(--track)' }));
+    const w = Math.max(2, p.pct * PW);
+    svg.appendChild(sv('rect', { x: LW, y, width: w, height: BH, rx: 4, fill: 'var(--s1)', class: 'mark' }));
+    const v = sv('text', { x: LW + PW + 8, y: y + BH / 2 + 4, class: 'vlab' });
+    v.textContent = pf(p.pct);
+    svg.appendChild(v);
+    const hit = sv('rect', { x: 0, y: y - GAP / 2, width: W, height: BH + GAP, class: 'hit' });
+    hit.addEventListener('pointermove', e => showTip(e,
+      [{ value: pf(p.pct), label: 'sold', color: 'var(--s1)' },
+       { value: nf(p.sold) + ' of ' + nf(p.units), label: 'units' },
+       { value: nf(p.units - p.sold), label: 'still unsold' }], p.name));
+    hit.addEventListener('pointerleave', hideTip);
+    svg.appendChild(hit);
+  });
+  host.appendChild(svg);
+}
+
+/* ---------- small-multiple trend panels ---------- */
+function trends() {
+  const host = $('#trends'); host.textContent = '';
+  visible().forEach(p => {
+    const pts = clipped(p);
+    const card = el('div', 'smc');
+    card.appendChild(el('div', 't', p.name)).title = p.name;
+    const last = pts.length ? pts[pts.length - 1].v : null;
+    const first = pts.length ? pts[0].v : null;
+    const chg = (last !== null && first !== null) ? last - first : null;
+    card.appendChild(el('div', 'm', nf(last) + ' sold' + (chg !== null ? '  ·  ' + (chg >= 0 ? '+' : '') + chg + ' in range' : '')));
+    const W = 200, H = 54, PL = 2, PR = 8, PT = 8, PB = 6;
+    const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', role: 'img' });
+    svg.style.marginTop = '6px';
+    if (pts.length < 2) { card.appendChild(svg); host.appendChild(card); return; }
+    const vs = pts.map(d => d.v), lo = Math.min(...vs), hi = Math.max(...vs);
+    const span = (hi - lo) || 1;
+    const X = i => PL + (i / (pts.length - 1)) * (W - PL - PR);
+    const Y = v => PT + (1 - (v - lo) / span) * (H - PT - PB);
+    svg.appendChild(sv('line', { x1: PL, y1: H - PB, x2: W - PR, y2: H - PB, class: 'gl' }));
+    const d = pts.map((pt, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(pt.v).toFixed(1)).join(' ');
+    svg.appendChild(sv('path', { d: d + ` L ${X(pts.length - 1).toFixed(1)} ${H - PB} L ${PL} ${H - PB} Z`,
+                                 fill: 'var(--s1)', opacity: '.10' }));
+    svg.appendChild(sv('path', { d, fill: 'none', stroke: 'var(--s1)', 'stroke-width': 2,
+                                 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    svg.appendChild(sv('circle', { cx: X(pts.length - 1), cy: Y(last), r: 4,
+                                   fill: 'var(--s1)', stroke: 'var(--surface)', 'stroke-width': 2 }));
+    const band = (W - PL - PR) / pts.length;
+    pts.forEach((pt, i) => {
+      const hit = sv('rect', { x: X(i) - band / 2, y: 0, width: band, height: H, class: 'hit' });
+      hit.addEventListener('pointermove', e => showTip(e,
+        [{ value: nf(pt.v) + ' sold', label: fdate(pt.d), color: 'var(--s1)' }], p.name));
+      hit.addEventListener('pointerleave', hideTip);
+      svg.appendChild(hit);
+    });
+    card.appendChild(svg);
+    host.appendChild(card);
+  });
+}
+
+/* ---------- sold / unsold by unit type ---------- */
+function bytype() {
+  const host = $('#bytype'); host.textContent = '';
+  const ps = visible().filter(p => p.types && p.types.length);
+  if (!ps.length) {
+    host.appendChild(el('p', 'note', 'Unit-type data appears after the first scheduled run.'));
+    return;
+  }
+  const rows = [];
+  ps.forEach(p => p.types.forEach(t => rows.push({ p, t })));
+  const LW = 230, RW = 96, BH = 18, GAP = 12, H = rows.length * (BH + GAP) + 6;
+  const W = Math.min(1180, host.clientWidth || 900), PW = Math.max(160, W - LW - RW);
+  const maxU = Math.max(...rows.map(r => r.t.units));
+  const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${H}`, role: 'img' });
+  rows.forEach((r, i) => {
+    const y = i * (BH + GAP) + 3;
+    const label = r.p.types.length > 1 ? r.p.name + ' · ' + r.t.type : r.p.name;
+    const t = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' });
+    t.textContent = label.length > 36 ? label.slice(0, 35) + '…' : label;
+    svg.appendChild(t);
+    const full = (r.t.units / maxU) * PW;
+    const sold = r.t.units ? (r.t.sold / r.t.units) * full : 0;
+    svg.appendChild(sv('rect', { x: LW, y, width: Math.max(2, full), height: BH, rx: 4, fill: 'var(--track)' }));
+    if (sold > 0) {
+      /* 2px surface gap between the sold fill and the unsold remainder */
+      svg.appendChild(sv('rect', { x: LW, y, width: Math.max(2, sold - 2), height: BH, rx: 4,
+                                   fill: 'var(--s1)', class: 'mark' }));
+    }
+    const v = sv('text', { x: LW + full + 8, y: y + BH / 2 + 4, class: 'vlab' });
+    v.textContent = nf(r.t.sold) + ' / ' + nf(r.t.units);
+    svg.appendChild(v);
+    const hit = sv('rect', { x: 0, y: y - GAP / 2, width: W, height: BH + GAP, class: 'hit' });
+    hit.addEventListener('pointermove', e => showTip(e,
+      [{ value: nf(r.t.sold) + ' sold', label: 'of ' + nf(r.t.units) + ' units', color: 'var(--s1)' },
+       { value: nf(r.t.units - r.t.sold) + ' unsold', label: r.t.units ? ((100 - r.t.sold / r.t.units * 100).toFixed(1) + '% remaining') : '' }],
+      r.p.name + ' — ' + r.t.type));
+    hit.addEventListener('pointerleave', hideTip);
+    svg.appendChild(hit);
+  });
+  host.appendChild(svg);
+}
+
+/* ---------- weekly tracker table ---------- */
+function table() {
+  const host = $('#table'); host.textContent = '';
+  const ps = visible();
+  $('#tblnote').textContent = 'Every recorded snapshot, newest first. Scroll sideways for earlier weeks.';
+  /* Newest column first: the number the reader wants is never behind a scroll. */
+  const dates = DATA.dates.slice().reverse();
+  const tb = el('table');
+  const hd = el('tr');
+  ['#', 'Project', 'Code', 'Developer', 'Units'].forEach((c, i) => hd.appendChild(el('th', i < 4 ? 'l' : '', c)));
+  dates.forEach((d, i) => {
+    const th = el('th', 'g' + (i === 0 ? ' new' : ''), fdate(d).replace(/ \d{4}$/, ''));
+    th.colSpan = 2; hd.appendChild(th);
+  });
+  const hd2 = el('tr');
+  for (let i = 0; i < 5; i++) hd2.appendChild(el('th', 'l', ''));
+  dates.forEach((d, i) => {
+    hd2.appendChild(el('th', 'g' + (i === 0 ? ' new' : ''), 'Sold'));
+    hd2.appendChild(el('th', i === 0 ? 'new' : '', '+/–'));
+  });
+  const thead = el('thead'); thead.appendChild(hd); thead.appendChild(hd2); tb.appendChild(thead);
+  const bd = el('tbody');
+  let group = null;
+  ps.forEach(p => {
+    if (state.tracker === 'all' && p.trackerLabel !== group) {
+      group = p.trackerLabel;
+      const gr = el('tr', 'grp');
+      const gc = el('td', 'l', group);
+      gc.colSpan = 5 + dates.length * 2;
+      gr.appendChild(gc); bd.appendChild(gr);
+    }
+    const tr = el('tr');
+    [[String(p.no ?? ''), 'l'], [p.name, 'l'], [p.code || '–', 'l'], [p.developer, 'l'], [nf(p.units), '']]
+      .forEach(([v, c]) => tr.appendChild(el('td', c, v)));
+    const map = {}; p.series.forEach(s => map[s.d] = s.v);
+    /* Deltas compare each snapshot with the one before it in chronological order,
+       then the row is rendered newest-first. */
+    const delta = {};
+    let prev = null;
+    DATA.dates.forEach(d => {
+      const v = map[d];
+      if (v === undefined) return;
+      if (prev !== null) delta[d] = v - prev;
+      prev = v;
+    });
+    dates.forEach((d, i) => {
+      const isNew = i === 0;
+      const v = map[d] === undefined ? null : map[d];
+      tr.appendChild(el('td', 'g' + (isNew ? ' new' : ''), v === null ? '' : nf(v)));
+      const dv = delta[d];
+      tr.appendChild(el('td', isNew ? 'new' : '',
+        dv === undefined ? '' : (dv > 0 ? '+' + dv : String(dv))));
+    });
+    bd.appendChild(tr);
+  });
+  tb.appendChild(bd); host.appendChild(tb);
+}
+
+/* ---------- controls ---------- */
+function controls() {
+  const seg = $('#ftrack'); seg.textContent = '';
+  const groups = [['all', 'All projects']];
+  const seen = new Set();
+  DATA.projects.forEach(p => { if (!seen.has(p.tracker)) { seen.add(p.tracker); groups.push([p.tracker, p.trackerLabel]); } });
+  groups.forEach(([k, label]) => {
+    const b = el('button', '', label);
+    b.setAttribute('aria-pressed', String(state.tracker === k));
+    b.onclick = () => { state.tracker = k; render(); };
+    seg.appendChild(b);
+  });
+  $('#frange').querySelectorAll('button').forEach(b => {
+    b.setAttribute('aria-pressed', String(Number(b.dataset.r) === state.range));
+    b.onclick = () => { state.range = Number(b.dataset.r); render(); };
+  });
+}
+
+$('#theme').onclick = e => {
+  const dark = document.documentElement.dataset.theme === 'dark';
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+  e.target.textContent = dark ? 'Dark' : 'Light';
+};
+$('#print').onclick = () => print();
+document.querySelectorAll('[data-tbl]').forEach(b => {
+  b.onclick = () => {
+    const t = $('#' + b.dataset.tbl + '-t');
+    const open = !t.classList.contains('hide');
+    t.classList.toggle('hide', open);
+    b.textContent = open ? 'Show as table' : 'Hide table';
+  };
+});
+
+function render() { controls(); kpis(); movers(); sellthru(); trends(); bytype(); table(); }
+$('#asat').textContent = fdate(DATA.latestDate);
+$('#foot').textContent = 'Generated ' + DATA.generated +
+  ' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my) · ' +
+  'Unit counts are read from the portal’s own unit list, so they match what the site shows.';
+render();
+addEventListener('resize', () => { movers(); sellthru(); bytype(); });
+</script>
+</body>
+</html>
