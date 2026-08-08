@@ -1,0 +1,62 @@
+name: TEDUH tracker refresh
+
+on:
+  schedule:
+    # 02:00 UTC daily = 10:00 AM Malaysia / Singapore time.
+    # The website updates every day; the Excel trackers gain a column on Fridays only.
+    - cron: "0 2 * * *"
+  workflow_dispatch:        # lets you run it manually from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teduh-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --quiet openpyxl
+
+      - name: Scrape TEDUH
+        id: scrape
+        run: python scripts/scrape_teduh.py
+
+      - name: Build website
+        if: always()
+        run: python scripts/build_dashboard.py
+
+      - name: Build Excel trackers
+        if: always()
+        run: |
+          mkdir -p docs/downloads docs/data
+          python scripts/build_trackers.py projects.csv data/teduh_history.csv docs/downloads
+          cd docs/downloads
+          cp "$(ls -t *Seputeh*.xlsx | head -1)" Seputeh_Hills_Teduh_Weekly_Update.xlsx
+          cp "$(ls -t *Developer*.xlsx | head -1)" Tduh_Developer_Project_Sales_Status.xlsx
+          # keep only the two stable names plus the four most recent dated copies
+          ls -t *Seputeh*.xlsx | tail -n +5 | xargs -r rm --
+          ls -t *Developer*.xlsx | tail -n +5 | xargs -r rm --
+
+      - name: Publish data for download
+        if: always()
+        run: cp data/teduh_daily.csv data/teduh_history.csv data/teduh_by_type.csv docs/data/ || true
+
+      - name: Commit
+        if: always()
+        run: |
+          git config user.name  "teduh-bot"
+          git config user.email "teduh-bot@users.noreply.github.com"
+          git add data docs
+          git diff --staged --quiet || git commit -m "TEDUH refresh $(date -u +%Y-%m-%d)"
+          git pull --rebase --autostash || true
+          git push
