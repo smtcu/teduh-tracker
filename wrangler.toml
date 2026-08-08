@@ -1,0 +1,9 @@
+name = "teduh-tracker"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+[assets]
+directory = "./docs"
+binding = "ASSETS"
+# Run the password check before serving any file.
+run_worker_first = true
