@@ -48,11 +48,13 @@ def build_payload():
 
     wser, dser = series_of(weekly), series_of(daily)
 
-    types = {}
+    types, types_date = {}, ""
     if bytype:
-        latest_t = max(r["week"] for r in bytype)
+        tdates = {r["week"] for r in bytype}
+        wlatest = max((d for s_ in wser.values() for d in s_), default="")
+        types_date = wlatest if wlatest in tdates else max(tdates)
         for r in bytype:
-            if r["week"] != latest_t:
+            if r["week"] != types_date:
                 continue
             types.setdefault(r["code"], []).append(
                 {"type": r["unit_type"], "units": to_int(r["units"]) or 0, "sold": to_int(r["sold"]) or 0}
@@ -108,6 +110,7 @@ def build_payload():
         "dates": days,
         "weeks": weeks,
         "weekLatest": weeks[-1] if weeks else "",
+        "typesDate": types_date,
         "todayDate": days[-1] if days else "",
         "projects": out,
     }
@@ -203,8 +206,10 @@ th.new{background:var(--hl)}
 th.live{background:rgba(235,104,52,.16)}
 html[data-theme="dark"] .live{background:rgba(217,89,38,.18)}
 html[data-theme="dark"] th.live{background:rgba(217,89,38,.26)}
+.live-card{border-left:4px solid var(--orange)}
 .livehd{border-left:2px solid var(--orange)!important}
-td.livehd{border-left:2px solid var(--orange)!important}
+td.live-card{border-left:4px solid var(--orange)}
+.livehd{border-left:2px solid var(--orange)!important}
 tbody tr:hover td:not(.stick){background:var(--sunk)}
 .stick,.stick2,.stick3{position:sticky;background:var(--surface);z-index:2}
 .stick{left:0;width:38px;min-width:38px}
@@ -291,17 +296,19 @@ tr:last-child td{border-bottom:0}
   <div style="margin-top:12px" id="weekly-t"></div>
 </div>
 
-<div class="card">
+<div class="card" id="btcard">
   <h2>Sold and unsold</h2>
-  <p class="note">Latest snapshot, split by unit type. Projects listing several blocks of the same type are combined.</p>
+  <p class="note" id="btnote"></p>
   <div class="lg"><span><i class="sw" style="background:var(--blue)"></i>Sold</span><span><i class="sw" style="background:var(--track)"></i>Unsold</span></div>
   <div id="bytype"></div>
 </div>
 
+<h2 style="margin:26px 0 2px">Whole portfolio</h2>
+<p class="note" id="kpinote"></p>
 <div class="kpis" id="kpis"></div>
 
-<div class="card">
-  <h2>Latest movement</h2>
+<div class="card live-card">
+  <h2>Movement since the last weekly record</h2>
   <p class="note" id="mvnote"></p>
   <div id="movers"></div>
   <button class="ghost" data-tbl="movers" style="margin-top:12px">Show as table</button>
@@ -310,7 +317,7 @@ tr:last-child td{border-bottom:0}
 
 <div class="card">
   <h2>Sell-through</h2>
-  <p class="note">Share of total units sold to date. The pale bar is what is still unsold.</p>
+  <p class="note" id="stnote"></p>
   <div id="sellthru"></div>
 </div>
 
@@ -322,8 +329,10 @@ tr:last-child td{border-bottom:0}
 
 <div class="card">
   <h2>Download</h2>
-  <p class="note">The two weekly trackers match your Excel sheets and are rebuilt every Friday. The daily tracker has a column for every day the site has run.</p>
+  <p class="note">The two PDFs are table-only summaries meant for forwarding. The weekly PDF and the two Excel trackers are rebuilt every Friday; the daily PDF and daily workbook are rebuilt every morning.</p>
   <div class="dl">
+    <a class="ghost" href="downloads/TEDUH_Weekly_Report.pdf" download>Weekly report, 4 weeks (.pdf)</a>
+    <a class="ghost" href="downloads/TEDUH_Daily_Report.pdf" download>Daily report, 5 days (.pdf)</a>
     <a class="ghost" href="downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx" download>Seputeh Hills tracker (.xlsx)</a>
     <a class="ghost" href="downloads/Tduh_Developer_Project_Sales_Status.xlsx" download>Developer sales status (.xlsx)</a>
     <a class="ghost" href="downloads/Teduh_Daily_Tracker.xlsx" download>Daily tracker (.xlsx)</a>
@@ -523,7 +532,7 @@ function pkpis(p, pts) {
   };
   add('Sold this week', last ? sgn(last.v) : '–', last ? 'week of ' + fdate(last.d) : '', true);
   add('Total sold', nf(p.wSold), 'of ' + nf(p.units) + ' units');
-  add('Sell-through', pf(p.wPct), 'at ' + fdate(DATA.weekLatest));
+  add('Sell-through', pf(p.wPct), 'this project alone, at ' + fdate(DATA.weekLatest));
   add('Still unsold', p.wSold === null ? '–' : nf(p.units - p.wSold), 'units remaining');
 }
 
@@ -602,20 +611,23 @@ function weekly() {
 function kpis() {
   const box = $('#kpis'); box.textContent = '';
   const P = vis();
-  const sold = P.reduce((a, p) => a + (p.sold || 0), 0);
+  /* Weekly figures throughout, so nothing here can disagree with the Excel files. */
+  const sold = P.reduce((a, p) => a + (p.wSold || 0), 0);
   const units = P.reduce((a, p) => a + (p.units || 0), 0);
-  const nw = P.reduce((a, p) => a + (p.newSales || 0), 0);
-  const moved = P.filter(p => (p.newSales || 0) > 0).length;
-  const top = P.slice().sort((a, b) => (b.newSales || 0) - (a.newSales || 0))[0];
+  const nw = P.reduce((a, p) => a + (p.wNew || 0), 0);
+  const moved = P.filter(p => (p.wNew || 0) > 0).length;
+  const top = P.slice().sort((a, b) => (b.wNew || 0) - (a.wNew || 0))[0];
+  $('#kpinote').textContent = 'All figures below are the weekly record as at ' + fdate(DATA.weekLatest) + '.';
   const add = (l, v, d, hero) => {
     const c = el('div', 'kpi' + (hero ? ' hero' : ''));
     c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v));
     if (d) c.appendChild(el('div', 'd', d)); box.appendChild(c);
   };
-  add('New sales, latest snapshot', nf(nw), moved + ' of ' + P.length + ' projects moved', true);
-  add('Total units sold', nf(sold), 'across ' + nf(units) + ' units tracked');
-  add('Portfolio sell-through', units ? pf(sold / units) : '–', 'weighted by unit count');
-  add('Fastest mover', top && top.newSales ? trunc(top.name, 18) : '–', top && top.newSales ? '+' + top.newSales + ' units' : 'no movement');
+  add('Sold this week', nf(nw), moved + ' of ' + P.length + ' projects moved', true);
+  add('Total units sold', nf(sold), 'of ' + nf(units) + ' units tracked');
+  add('All ' + P.length + ' projects combined', units ? pf(sold / units) : '–',
+      nf(sold) + ' of ' + nf(units) + ' units sold');
+  add('Fastest mover', top && top.wNew ? trunc(top.name, 18) : '–', top && top.wNew ? '+' + top.wNew + ' units' : 'no movement');
 }
 
 /* ---------- horizontal bar helper ---------- */
@@ -644,16 +656,19 @@ function hbars(host, rows, opts) {
 }
 
 function movers() {
-  $('#mvnote').textContent = DATA.prevDate
-    ? 'Change between ' + fdate(DATA.prevDate) + ' and ' + fdate(DATA.latestDate) + '. Projects that did not move are left out of the chart but kept in the table.'
-    : 'Not enough history yet to show change.';
-  const rows = vis().filter(p => p.newSales).sort((a, b) => b.newSales - a.newSales);
-  const max = rows.length ? rows[0].newSales : 1;
+  /* The only place on the page that uses today's live numbers. */
+  const isLive = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
+  $('#mvnote').textContent = isLive
+    ? 'Today (' + fdate(DATA.todayDate) + ') against the last weekly record (' + fdate(DATA.weekLatest) +
+      '). This is the only section using live daily numbers — everything else on the page is weekly.'
+    : 'Today is the latest weekly record, so there is nothing newer to compare against.';
+  const rows = isLive ? vis().filter(p => p.todayNew).sort((a, b) => b.todayNew - a.todayNew) : [];
+  const max = rows.length ? rows[0].todayNew : 1;
   hbars($('#movers'), rows.map(p => ({
-    label: p.name, frac: p.newSales / max, value: sgn(p.newSales),
-    tip: [{ value: sgn(p.newSales) + ' units', label: 'this snapshot', color: 'var(--blue)' },
-          { value: nf(p.sold) + ' / ' + nf(p.units), label: 'sold to date (' + pf(p.pct) + ')' }],
-  })), { empty: 'No movement in this period.' });
+    label: p.name, frac: p.todayNew / max, value: sgn(p.todayNew),
+    tip: [{ value: sgn(p.todayNew) + ' units', label: 'since ' + fdate(DATA.weekLatest), color: 'var(--blue)' },
+          { value: nf(p.todaySold) + ' / ' + nf(p.units), label: 'sold today (' + pf(p.todaySold / p.units) + ')' }],
+  })), { empty: isLive ? 'Nothing has moved since the last weekly record.' : 'No live data to show today.' });
 
   const h = $('#movers-t'); h.textContent = '';
   const tb = el('table'); const hr = el('tr');
@@ -671,16 +686,25 @@ function movers() {
 }
 
 function sellthru() {
-  const rows = vis().filter(p => p.pct !== null).sort((a, b) => b.pct - a.pct);
+  const rows = vis().filter(p => p.wPct !== null && p.wPct !== undefined).sort((a, b) => b.wPct - a.wPct);
+  $('#stnote').textContent = 'Share of total units sold as at ' + fdate(DATA.weekLatest) +
+    ' — the weekly record. The pale bar is what is still unsold.';
   hbars($('#sellthru'), rows.map(p => ({
-    label: p.name, frac: p.pct, value: pf(p.pct),
-    tip: [{ value: pf(p.pct), label: 'sold', color: 'var(--blue)' },
-          { value: nf(p.sold) + ' of ' + nf(p.units), label: 'units' },
-          { value: nf(p.units - p.sold), label: 'still unsold' }],
+    label: p.name, frac: p.wPct, value: pf(p.wPct),
+    tip: [{ value: pf(p.wPct), label: 'sold', color: 'var(--blue)' },
+          { value: nf(p.wSold) + ' of ' + nf(p.units), label: 'units' },
+          { value: nf(p.units - p.wSold), label: 'still unsold' }],
   })), { track: true, rw: 66 });
 }
 
 function bytype() {
+  /* Unit-type detail is only captured when the scraper runs, so until a Friday run
+     exists it can be a day ahead of the weekly record. Mark it live when it is. */
+  const btLive = DATA.typesDate && DATA.typesDate !== DATA.weekLatest;
+  $('#btcard').classList.toggle('live-card', !!btLive);
+  $('#btnote').textContent = (btLive ? 'Live figures for today, ' : 'Weekly record, ')
+    + fdate(DATA.typesDate) + ' — split by unit type. Projects listing several blocks of the same type are combined.'
+    + (btLive ? ' These will match the weekly numbers again from the next Friday run.' : '');
   const rows = [];
   vis().forEach(p => (p.types || []).forEach(t => rows.push({ p, t })));
   if (!rows.length) { $('#bytype').textContent = ''; $('#bytype').appendChild(el('p', 'note', 'Unit-type data appears after the first scheduled run.')); return; }
@@ -712,7 +736,7 @@ function bytype() {
 function trends() {
   const host = $('#trends'); host.textContent = '';
   vis().forEach(p => {
-    const pts = p.series;
+    const pts = p.weekly;
     const card = el('div', 'smc');
     const t = el('div', 't', p.name); t.title = p.name; card.appendChild(t);
     const last = pts.length ? pts[pts.length - 1].v : null;
