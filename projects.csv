@@ -1,24 +1,38 @@
-tracker,no,project,code,developer,launched,total_units,first_new,remarks,pin
-seputeh,1,The Eden,32-16,BRDB Developments Sdn Bhd,2025-07-01,146,3,"Big unit (5,533 to Penthouse 19,031sqft)",
-seputeh,2,Imperial Residences- Pavilion DH,30216-1,Pavilion Group (Jendela Mayang S/B),2025-10-01,154,1,"Big unit (3,380 to 4,090sqft  & Penthouse 7,459sqft).",
-seputeh,3,Royal Suites- Pavilion DH (small unit),30216-2,Pavilion Group (Jendela Mayang S/B),2026-01-01,490,6,"Small unit (452 to 1,679 sq ft)",
-seputeh,4,The Batai,31078-1,Tan & Tan Dev Berhad (Arabayu Sepakat S/B),2025-12-01,48,0,"4-storey Villa (4,854 to 5,157 sq ft); left 3 bumi units",
-seputeh,5,Aosis Mont Kiara,31274-1,JKG Land Berhad (Modern Plus Sdn Bhd),2026-04-01,244,0,"Big unit (1,648 to 3,856 sq ft)",
-seputeh,6,ParkCity Residences,2463-23,Perdana ParkCity S/B,2026-07-26,433,,"Big unit (2,842 to 10,613 sq ft)",
-status13,1,RESIDENSI WARISAN SALAK SELATAN,31202-1,EC VANTAGE SDN. BHD.,2026-06-18,1310,,Wilayah Persekutuan Kuala Lumpur,yes
-status13,2,M AURORA,13262-2,MAJORLAND DEVELOPMENT SDN BHD,,1544,,,
-status13,3,"ARTE STAR 
-MILANO",30590-2,SURIAMEGA DEVELOPMENT,,996,,,
-status13,4, M ASPIRA,5911-33,MAH SING GROUP BERHAD,,1618,,,
-status13,5,"RESIDENSI DESA TIMUR
-A DESA",30363-2,FITRAH RESOURCES SDN BHD,,1218,,,
-status13,6,"RADIUM ARENA
-RESIDENSI RADIUM",30821-1,RADIUM GLOBAL SDN BHD,,988,,,
-status13,7,RESIDENSI AMBIEN,30366-1,FAITHVIEW RESOURCES SDN BHD,,482,,,
-status13,8,RESIDENSI HANA,13074-4,NATURAL DOMAIN SDN BHD,,299,,,
-status13,9,"RESIDENSI
-SUNWAY COCHRANE",8824-5,SUNWAY COCHRANE SDN BHD,,1296,,,
-status13,10,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),20253-3,PEMBINAAN SERTA HEBAT SDN.BHD,,1500,,,
-status13,11,RESIDENSI VERIDIAN,30876-1,PERUMAHAN MASTERON SDN BHD,,551,,,
-status13,12,RESIDENSI AURUM,30250-2,AMBER HOMES SRI PETALING SDN BHD,,661,,,
-status13,13,THE SHANG RESIDENCE,,SHANG HEIGHT REALTY SDN. BHD.,,449,,,
+tracker,group,no,project,code,developer,launched,total_units,first_new,remarks,pin,unit_types
+seputeh,,1,The Eden,32-16,BRDB Developments Sdn Bhd,2025-07-01,146,3,"Big unit (5,533 to Penthouse 19,031sqft)",,
+seputeh,,2,Imperial Residences- Pavilion DH,30216-1,Pavilion Group (Jendela Mayang S/B),2025-10-01,154,1,"Big unit (3,380 to 4,090sqft  & Penthouse 7,459sqft).",,
+seputeh,,3,Royal Suites- Pavilion DH (small unit),30216-2,Pavilion Group (Jendela Mayang S/B),2026-01-01,490,6,"Small unit (452 to 1,679 sq ft)",,
+seputeh,,4,The Batai,31078-1,Tan & Tan Dev Berhad (Arabayu Sepakat S/B),2025-12-01,48,0,"4-storey Villa (4,854 to 5,157 sq ft); left 3 bumi units",,
+seputeh,,5,Aosis Mont Kiara,31274-1,JKG Land Berhad (Modern Plus Sdn Bhd),2026-04-01,244,0,"Big unit (1,648 to 3,856 sq ft)",,
+seputeh,,6,ParkCity Residences,2463-23,Perdana ParkCity S/B,2026-07-26,433,,"Big unit (2,842 to 10,613 sq ft)",,
+status13,,1,RESIDENSI WARISAN SALAK SELATAN,31202-1,EC VANTAGE SDN. BHD.,2026-06-18,1310,,Wilayah Persekutuan Kuala Lumpur,yes,
+status13,,2,M AURORA,13262-2,MAJORLAND DEVELOPMENT SDN BHD,,1544,,,,
+status13,,3,"ARTE STAR 
+MILANO",30590-2,SURIAMEGA DEVELOPMENT,,996,,,,
+status13,,4, M ASPIRA,5911-33,MAH SING GROUP BERHAD,,1618,,,,
+status13,,5,"RESIDENSI DESA TIMUR
+A DESA",30363-2,FITRAH RESOURCES SDN BHD,,1218,,,,
+status13,,6,"RADIUM ARENA
+RESIDENSI RADIUM",30821-1,RADIUM GLOBAL SDN BHD,,988,,,,
+status13,,7,RESIDENSI AMBIEN,30366-1,FAITHVIEW RESOURCES SDN BHD,,482,,,,
+status13,,8,RESIDENSI HANA,13074-4,NATURAL DOMAIN SDN BHD,,299,,,,
+status13,,9,"RESIDENSI
+SUNWAY COCHRANE",8824-5,SUNWAY COCHRANE SDN BHD,,1296,,,,
+status13,,10,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),20253-3,PEMBINAAN SERTA HEBAT SDN.BHD,,1500,,,,
+status13,,11,RESIDENSI VERIDIAN,30876-1,PERUMAHAN MASTERON SDN BHD,,551,,,,
+status13,,12,RESIDENSI AURUM,30250-2,AMBER HOMES SRI PETALING SDN BHD,,661,,,,
+status13,,13,THE SHANG RESIDENCE,,SHANG HEIGHT REALTY SDN. BHD.,,449,,,,
+johor,Permas Jaya,1,The Straits View Duo,835-14,BRDB,,715,,,,straits-view-duo
+johor,Permas Jaya,2,Permas Heights,30946-1,MB World,,1950,,,,permas-heights
+johor,Permas Jaya,3,HillView Senibong Cove,14523-4,WM Senibong,,416,,,,
+johor,Permas Jaya,4,Parkland by the River,"30635-1,30635-2",Parkland,,2156,,,,"parkland-phase-1,parkland-phase-2"
+johor,JBCC,1,The Asteriaz,31007-1,Exsim,,848,,,,
+johor,JBCC,2,Causewayz Square,"31100-1,31100-2,31100-3,31100-4",Exsim,,3692,,,,
+johor,JBCC,3,The Address,31074-1,Maxim Global,,2743,,,,
+johor,JBCC,4,M Grand Minori,"9600-6,9600-7",Mah Sing,,1733,,,,
+johor,JBCC,5,Skyline One,31031-1,TS Law,,1623,,,,
+johor,JBCC,6,Gen Sphere,30828-3,Majestic Gen,,996,,,,
+johor,JBCC,7,The Eclipse,,Chin Hin,,1116,,,,
+johor,JBCC,8,Amberwood,13531-2,Chin Hin,,824,,,,
+johor,JBCC,9,Sunway Majestic,31034-1,Sunway/Majestic Gen,,1012,,,,
+johor,JBCC,10,Calia,31149-1,PGB,,1274,,,,
