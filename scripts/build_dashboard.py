@@ -314,6 +314,7 @@ tr:last-child td{border-bottom:0}
 .dl{display:flex;gap:10px;flex-wrap:wrap}
 .dl a{text-decoration:none;display:inline-flex;align-items:center}
 .foot{color:var(--muted);font-size:12.5px;margin-top:22px;line-height:1.7;font-weight:500}
+.hide{display:none!important}
 
 @media(max-width:640px){
   .wrap{padding:14px 11px 52px}
