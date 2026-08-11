@@ -81,21 +81,25 @@ def main():
         print("No rows scraped — leaving history untouched.", file=sys.stderr)
         sys.exit(1)
 
-    def append(path, rows, fields, skip_if_date_present=True):
-        """Append rows, but never write the same date twice (re-runs are safe)."""
-        existing = set()
+    def append(path, rows, fields):
+        """Write today's snapshot, replacing anything already recorded for today.
+
+        Re-running the workflow on the same day used to be skipped outright, which
+        meant a project added mid-day never got its first reading until tomorrow.
+        Rewriting today's rows instead makes a re-run always pick up the current
+        project list, while still keeping exactly one snapshot per day.
+        """
+        existing = []
         if os.path.exists(path) and os.path.getsize(path) > 0:
             with open(path, newline="", encoding="utf-8") as f:
-                existing = {r["week"] for r in csv.DictReader(f)}
-        if skip_if_date_present and TODAY in existing:
-            print(f"  {os.path.basename(path)}: {TODAY} already recorded, skipping")
-            return False
-        new = not existing
-        with open(path, "a", newline="", encoding="utf-8") as f:
+                existing = [r for r in csv.DictReader(f) if r.get("week") != TODAY]
+        with open(path, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=fields)
-            if new:
-                w.writeheader()
+            w.writeheader()
+            for r in existing:
+                w.writerow({k: r.get(k, "") for k in fields})
             w.writerows(rows)
+        print(f"  {os.path.basename(path)}: wrote {len(rows)} rows for {TODAY}")
         return True
 
     HIST_FIELDS = ["tracker", "seq", "week", "code", "total_sold", "total_units", "teduh_name", "note"]
