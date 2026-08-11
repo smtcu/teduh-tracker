@@ -13,7 +13,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter as L
 
-TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
+TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
 
 
 def F(**k):
@@ -84,7 +84,7 @@ def main():
             col += 3
 
         for r, p in enumerate(mine, 5):
-            code = (p.get("code") or "").strip()
+            code = (p.get("code") or "").split(",")[0].strip()
             units = int(p["total_units"]) if str(p.get("total_units", "")).strip().isdigit() else 0
             cell(ws, r, 1, int(p["no"]))
             cell(ws, r, 2, (p["project"] or "").replace("\n", " ").strip(), align=LFT)

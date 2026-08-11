@@ -3,7 +3,7 @@
 import csv, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
+LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
 
 
 def read(path):
@@ -45,6 +45,8 @@ def main():
 
     for key, label in LABEL.items():
         mine = [p for p in projects if p["tracker"] == key and (p.get("code") or "").strip()]
+        for p in mine:
+            p["code"] = (p.get("code") or "").split(",")[0].strip()
         if not mine:
             continue
         sold = units = new = 0

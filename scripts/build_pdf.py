@@ -18,7 +18,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (BaseDocTemplate, Frame, PageTemplate, Paragraph,
                                 Spacer, Table, TableStyle, PageBreak)
 
-LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
+LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
 
 BLUE = colors.HexColor("#2a78d6")
 INK = colors.HexColor("#0b0b0b")
@@ -136,8 +136,12 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
         heads = ["NEW", "SOLD", "%"] if show_pct else ["NEW", "SOLD"]
         r2 = ["#", "PROJECT", "DEVELOPER", "LAUNCHED", "UNITS"] + heads * len(cols)
         data = [r1, r2]
+        section = None
         for p in mine:
-            s = series.get(p.get("code", ""), {})
+            if p.get("group") and p["group"] != section:
+                section = p["group"]
+                data.append([section] + [""] * (4 + len(cols) * per_period))
+            s = series.get((p.get("code") or "").split(",")[0].strip(), {})
             u = num(p.get("total_units")) or 0
             launched = p.get("launched") or ""
             row = [p["no"],
@@ -184,12 +188,17 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
         last0 = 5 + (len(cols) - 1) * per_period
         style.append(("BACKGROUND", (last0, 0), (last0 + per_period - 1, -1), HILITE))
         for r in range(2, len(data)):
-            if r % 2 == 1:
+            if isinstance(data[r][1], str) and data[r][1] == "" and data[r][0] in ("Permas Jaya", "JBCC"):
+                style += [("SPAN", (0, r), (-1, r)),
+                          ("BACKGROUND", (0, r), (-1, r), BAND),
+                          ("FONT", (0, r), (-1, r), "Helvetica-Bold", 8.5),
+                          ("ALIGN", (0, r), (-1, r), "LEFT")]
+            elif r % 2 == 1:
                 style.append(("BACKGROUND", (0, r), (4, r), BAND))
         t.setStyle(TableStyle(style))
         story += [t, Spacer(1, 12)]
 
-        if ti == 0:
+        if ti < len(LABEL) - 1:
             story.append(PageBreak())
 
     doc.build(story)

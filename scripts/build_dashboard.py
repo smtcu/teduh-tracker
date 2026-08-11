@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 MYT = timezone(timedelta(hours=8))
 
-TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
+TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
 
 
 def read(path):
@@ -34,6 +34,7 @@ def to_int(v):
 def build_payload():
     projects = read("projects.csv")
     weekly = read("data/teduh_history.csv")
+    utypes = read("data/teduh_unit_types_weekly.csv")
     daily = read("data/teduh_daily.csv") or weekly
     bytype = read("data/teduh_by_type.csv")
 
@@ -45,6 +46,13 @@ def build_payload():
                 continue
             out.setdefault(r["code"] or "", {})[r["week"]] = v
         return out
+
+    # Newest block note per project code, for the pinned Remarks column.
+    notes = {}
+    for r in sorted(weekly + daily, key=lambda x: x.get("week", "")):
+        n = (r.get("block_note") or "").strip()
+        if n:
+            notes[r.get("code", "")] = n
 
     wser, dser = series_of(weekly), series_of(daily)
 
@@ -62,8 +70,9 @@ def build_payload():
 
     out = []
     for p in projects:
-        code = (p.get("code") or "").strip()
-        key = code or f"NOCODE-R{(to_int(p.get('no')) or 0) + 4}"
+        codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
+        code = codes[0] if codes else ""
+        key = code or f"NOCODE-{p.get('project','')}"
         wpts = sorted(wser.get(key, wser.get(code, {})).items())
         dpts = sorted(dser.get(key, dser.get(code, {})).items())
         units = to_int(p.get("total_units")) or 0
@@ -87,7 +96,10 @@ def build_payload():
             "developer": (p.get("developer") or "").strip(),
             "launched": p.get("launched") or "",
             "units": units,
-            "remarks": (p.get("remarks") or "").strip(),
+            "group": (p.get("group") or "").strip(),
+            "codes": codes,
+            "unitKeys": [k.strip() for k in (p.get("unit_types") or "").split(",") if k.strip()],
+            "remarks": (p.get("remarks") or "").strip() or notes.get(code, ""),
             "pin": (p.get("pin") or "").strip().lower() in ("yes", "y", "1", "true"),
             "weekly": [{"d": d, "v": v} for d, v in wpts],
             "series": [{"d": d, "v": v} for d, v in dpts],
@@ -102,6 +114,25 @@ def build_payload():
             "types": sorted(merged.values(), key=lambda x: -x["units"]),
         })
 
+    # Unit-type tables, laid out like the Project Sales Insight pages of the report.
+    import json as _json
+    spec_path = os.path.join(ROOT, "unit_types.json")
+    spec = _json.load(open(spec_path, encoding="utf-8")) if os.path.exists(spec_path) else {}
+    insight = []
+    for pkey, meta in spec.items():
+        rows_ = [r for r in utypes if r.get("project_key") == pkey]
+        if not rows_:
+            continue
+        wks = sorted({r["week"] for r in rows_})
+        got = {(r["week"], r["unit_type"]): to_int(r["sold"]) for r in rows_}
+        insight.append({
+            "key": pkey,
+            "label": meta.get("label", pkey),
+            "types": meta.get("types", []),
+            "weeks": wks,
+            "sold": [[got.get((w, t["key"])) for t in meta.get("types", [])] for w in wks],
+        })
+
     weeks = sorted({d for s in wser.values() for d in s})
     days = sorted({d for s in dser.values() for d in s})
     return {
@@ -114,6 +145,7 @@ def build_payload():
         "typesDate": types_date,
         "todayDate": days[-1] if days else "",
         "projects": out,
+        "insight": insight,
     }
 
 
@@ -209,8 +241,42 @@ html[data-theme="dark"] .live{background:rgba(217,89,38,.18)}
 html[data-theme="dark"] th.live{background:rgba(217,89,38,.26)}
 .live-card{border-left:4px solid var(--orange)}
 .livehd{border-left:2px solid var(--orange)!important}
+.rem{position:sticky;right:0;z-index:3;background:var(--surface);
+  border-left:2px solid var(--rule);max-width:230px;min-width:230px;
+  white-space:normal;line-height:1.32;font-weight:600;font-size:11.8px}
+th.rem{z-index:5;background:var(--sunk)}
+tbody tr:hover td.rem{background:var(--sunk)}
+tr.pinned td.rem{background:var(--pinbg)}
+.ins{margin-top:6px}
+.ins h3{font-size:14.5px;font-weight:750;margin:18px 0 2px;letter-spacing:-.01em}
+.ins .sz{font-weight:600;color:var(--muted);font-size:11px;display:block}
+.ins table{margin-top:8px}
+.ins td.lbl,.ins th.lbl{text-align:left;font-weight:750}
+.ins tr.tot td{background:var(--sunk);font-weight:750}
+.ins tr.sep td{border-top:2px solid var(--rule)}
+.ins tr.newweek td{background:var(--hl)}
+.ins tr.newweek td.lbl{font-weight:750}
+.ins tr.newweek.sep td{border-top:2px solid var(--blue)}
+.ins tr.older td{background:var(--surface)}
 td.live-card{border-left:4px solid var(--orange)}
 .livehd{border-left:2px solid var(--orange)!important}
+.rem{position:sticky;right:0;z-index:3;background:var(--surface);
+  border-left:2px solid var(--rule);max-width:230px;min-width:230px;
+  white-space:normal;line-height:1.32;font-weight:600;font-size:11.8px}
+th.rem{z-index:5;background:var(--sunk)}
+tbody tr:hover td.rem{background:var(--sunk)}
+tr.pinned td.rem{background:var(--pinbg)}
+.ins{margin-top:6px}
+.ins h3{font-size:14.5px;font-weight:750;margin:18px 0 2px;letter-spacing:-.01em}
+.ins .sz{font-weight:600;color:var(--muted);font-size:11px;display:block}
+.ins table{margin-top:8px}
+.ins td.lbl,.ins th.lbl{text-align:left;font-weight:750}
+.ins tr.tot td{background:var(--sunk);font-weight:750}
+.ins tr.sep td{border-top:2px solid var(--rule)}
+.ins tr.newweek td{background:var(--hl)}
+.ins tr.newweek td.lbl{font-weight:750}
+.ins tr.newweek.sep td{border-top:2px solid var(--blue)}
+.ins tr.older td{background:var(--surface)}
 tbody tr:hover td:not(.stick){background:var(--sunk)}
 .stick,.stick2,.stick3{position:sticky;background:var(--surface);z-index:2}
 tr.pinned td{position:sticky;z-index:3;background:var(--pinbg);
@@ -261,6 +327,7 @@ tr:last-child td{border-bottom:0}
   .stick{width:26px;min-width:26px}
   .stick2{left:26px;max-width:98px;min-width:98px;font-size:11.5px}
   .stick3{left:124px;width:46px;min-width:46px;max-width:46px;font-size:11.5px}
+  .rem{max-width:150px;min-width:150px;font-size:11px}
   th{font-size:10.5px;letter-spacing:.01em}
   .sel{display:block} .chips{display:none}
   .scroll.tall{max-height:64vh}
@@ -302,6 +369,12 @@ tr:last-child td{border-bottom:0}
   <div style="margin-top:12px" id="weekly-t"></div>
 </div>
 
+<div class="card hide" id="inscard">
+  <h2>Project sales insight (Permas Jaya)</h2>
+  <p class="note">Sold units by type, newest week first. The underlying unit-by-unit working is in the downloadable unit-type workbook.</p>
+  <div class="ins" id="insight"></div>
+</div>
+
 <div class="card" id="btcard">
   <h2>Sold and unsold</h2>
   <p class="note" id="btnote"></p>
@@ -340,7 +413,9 @@ tr:last-child td{border-bottom:0}
     <a class="ghost" href="downloads/TEDUH_Weekly_Report.pdf" download>Weekly report, 4 weeks (.pdf)</a>
     <a class="ghost" href="downloads/TEDUH_Daily_Report.pdf" download>Daily report, 5 days (.pdf)</a>
     <a class="ghost" href="downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx" download>Seputeh Hills tracker (.xlsx)</a>
-    <a class="ghost" href="downloads/Tduh_Developer_Project_Sales_Status.xlsx" download>Developer sales status (.xlsx)</a>
+    <a class="ghost" href="downloads/Tduh_Developer_Project_Sales_Status.xlsx" download>Klang Valley tracker (.xlsx)</a>
+    <a class="ghost" href="downloads/Johor_Teduh_Weekly_Update.xlsx" download>Johor tracker (.xlsx)</a>
+    <a class="ghost" href="downloads/TEDUH_Unit_Types.xlsx" download>Unit types &amp; unit list (.xlsx)</a>
     <a class="ghost" href="downloads/Teduh_Daily_Tracker.xlsx" download>Daily tracker (.xlsx)</a>
     <a class="ghost" href="data/teduh_daily.csv" download>Raw data (.csv)</a>
   </div>
@@ -433,7 +508,8 @@ function table() {
     const th = el('th', 'wk' + (i === 0 ? ' new' : ''), fdate(w, true));
     th.colSpan = 3; r1.appendChild(th);
   });
-  const thRem = el('th', 'l opt', 'REMARKS'); thRem.rowSpan = 2; r1.appendChild(thRem);
+  /* Remarks is pinned to the right edge, so it stays readable however far you scroll. */
+  const thRem = el('th', 'l rem', 'REMARKS'); thRem.rowSpan = 2; r1.appendChild(thRem);
   const showRemarks = vis().some(p => p.remarks);
   if (!showRemarks) thRem.style.display = 'none';
   if (live) {
@@ -450,7 +526,15 @@ function table() {
   const th = el('thead'); th.appendChild(r1); th.appendChild(r2); tb.appendChild(th);
 
   const bd = el('tbody');
+  let section = null;
   vis().forEach(p => {
+    if (p.group && p.group !== section) {
+      section = p.group;
+      const gr = el('tr');
+      const gc = el('td', 'l grpcell', section);
+      gc.colSpan = 12 + weeks.length * 3;
+      gr.appendChild(gc); bd.appendChild(gr);
+    }
     const tr = el('tr', p.pin ? 'pinned' : '');
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
     tr.appendChild(el('td', 'l stick2 nm', p.name));
@@ -478,7 +562,7 @@ function table() {
       tr.appendChild(el('td', n, v === null ? '' : nf(v)));
       tr.appendChild(el('td', n, (v === null || !p.units) ? '' : pf(v / p.units)));
     });
-    const rem = el('td', 'l opt', p.remarks || '');
+    const rem = el('td', 'l rem', p.remarks || '');
     if (!showRemarks) rem.style.display = 'none';
     tr.appendChild(rem);
     bd.appendChild(tr);
@@ -506,6 +590,78 @@ $('#cols').onclick = () => {
 };
 
 /* ---------- project picker (chips on desktop, dropdown on phones) ---------- */
+function insight() {
+  const card = $('#inscard'), host = $('#insight');
+  host.textContent = '';
+  const blocks = (DATA.insight || []).filter(b => vis().some(p => (p.unitKeys || []).includes(b.key)));
+  card.classList.toggle('hide', blocks.length === 0);
+  if (!blocks.length) return;
+
+  blocks.forEach(b => {
+    const h = el('h3', '', b.label); host.appendChild(h);
+    const total = b.types.reduce((a, t) => a + (t.total || 0), 0);
+    const tb = el('table');
+    const hr = el('tr');
+    hr.appendChild(el('th', 'lbl', 'UNIT TYPE'));
+    b.types.forEach(t => {
+      const th = el('th', '', t.key);
+      const sz = el('span', 'sz', t.size); th.appendChild(sz);
+      hr.appendChild(th);
+    });
+    hr.appendChild(el('th', '', 'TOTAL'));
+    tb.appendChild(el('thead')).appendChild(hr);
+
+    const bd = el('tbody');
+    const totRow = el('tr', 'tot');
+    totRow.appendChild(el('td', 'lbl', 'TOTAL UNITS'));
+    b.types.forEach(t => totRow.appendChild(el('td', '', nf(t.total))));
+    totRow.appendChild(el('td', '', nf(total)));
+    bd.appendChild(totRow);
+
+    const order = b.weeks.slice().reverse();       // newest first
+    const SHOWN = 4;                               // older weeks stay collapsed
+    order.forEach((w, i) => {
+      const idx = b.weeks.indexOf(w);
+      const prevIdx = idx - 1;
+      const row = b.sold[idx] || [];
+      const prev = prevIdx >= 0 ? (b.sold[prevIdx] || []) : null;
+      const sum = row.reduce((a, v) => a + (v || 0), 0);
+      const psum = prev ? prev.reduce((a, v) => a + (v || 0), 0) : null;
+
+      const latest = i === 0;
+      const older = i >= SHOWN;
+      const mk = (label, vals, tot, cls) => {
+        const tr = el('tr', [cls || '', latest ? 'newweek' : '', older ? 'older hide' : ''].join(' ').trim());
+        tr.appendChild(el('td', 'lbl', label));
+        vals.forEach(v => tr.appendChild(el('td', '', v)));
+        tr.appendChild(el('td', '', tot));
+        bd.appendChild(tr);
+      };
+      mk(fdate(w), row.map((v, j) => prev ? sgn((v || 0) - (prev[j] || 0)) : '–'),
+         prev ? sgn(sum - psum) : '–', 'sep');
+      mk('Total sold', row.map(v => nf(v)), nf(sum));
+      mk('Total %', row.map((v, j) => b.types[j].total ? pf((v || 0) / b.types[j].total) : '–'),
+         total ? pf(sum / total) : '–');
+    });
+    tb.appendChild(bd);
+    const wrap = el('div', 'scroll'); wrap.appendChild(tb); host.appendChild(wrap);
+
+    const hidden = order.length - SHOWN;
+    if (hidden > 0) {
+      const btn = el('button', 'ghost', `Show ${hidden} earlier week${hidden > 1 ? 's' : ''}`);
+      btn.style.marginTop = '10px';
+      let open = false;
+      btn.onclick = () => {
+        open = !open;
+        tb.querySelectorAll('tr.older').forEach(tr => tr.classList.toggle('hide', !open));
+        btn.textContent = open ? 'Hide earlier weeks'
+                               : `Show ${hidden} earlier week${hidden > 1 ? 's' : ''}`;
+      };
+      host.appendChild(btn);
+    }
+  });
+}
+
 function picker() {
   const list = vis();
   if (picked >= list.length) picked = 0;
@@ -799,7 +955,7 @@ document.querySelectorAll('[data-tbl]').forEach(b => {
 $('#asat').textContent = fdate(DATA.latestDate);
 $('#foot').textContent = 'Generated ' + DATA.generated +
   ' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my)';
-function render() { trackerBar(); table(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); }
+function render() { trackerBar(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); }
 render();
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { weekly(); movers(); sellthru(); bytype(); }, 160); });
 </script>

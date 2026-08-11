@@ -164,13 +164,84 @@ def build_status13(projects, weeks, lookup, report_date, path):
     ws.freeze_panes = 'F5'; ws.row_dimensions[4].height = 30
     wb.save(path); return path
 
+def build_johor(projects, weeks, lookup, notes, report_date, path):
+    """Johor keeps every week ever recorded, in two sections, with a Remarks column."""
+    wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True
+    ws = wb.active; ws.title = report_date.strftime('%d%m%Y')
+    ws['A2'] = 'Report as at ' + report_date.strftime('%d/%m/%Y'); ws['A2'].font = F(bold=True, color='FF0000')
+    ws['A3'] = 'WEEKLY TEDUH SALES REPORT (JB PROJECTS)'; ws['A3'].font = F(bold=True, size=12)
+    for i, h in enumerate(['NO', 'PROJECT', 'DEVELOPER', 'TOTAL \nUNIT'], 1):
+        cell(ws, 4, i, h, F(bold=True), fill=HDR)
+    col = 5
+    for i, snap in enumerate(weeks):
+        last = (i == len(weeks) - 1)
+        ws.merge_cells(start_row=3, start_column=col, end_row=3, end_column=col + 2)
+        cell(ws, 3, col, datetime.strptime(snap[1], '%Y-%m-%d'), F(bold=True), fmt='DD/MM/YYYY',
+             fill=NEWFILL if last else None)
+        for j, h in enumerate(['NEW SALES', 'TOTAL SOLD', 'TOTAL %']):
+            cell(ws, 4, col + j, h, F(bold=True), fill=NEWFILL if last else HDR)
+        col += 3
+    rem_col = col
+    cell(ws, 4, rem_col, 'NOTES', F(bold=True), fill=HDR)
+
+    rows = [p for p in projects if p['tracker'] == 'johor']
+    r = 5
+    group = None
+    for p in rows:
+        if p.get('group') and p['group'] != group:
+            group = p['group']
+            cell(ws, r, 1, group, F(bold=True), align=LFT, fill=HDR)
+            for c in range(2, rem_col + 1):
+                cell(ws, r, c, None, fill=HDR)
+            r += 1
+        key = (p.get('code') or '').split(',')[0].strip() or f"NOCODE-{p['project']}"
+        units = int(p['total_units']) if str(p.get('total_units', '')).strip().isdigit() else 0
+        cell(ws, r, 1, int(p['no']))
+        cell(ws, r, 2, p['project'], align=LFT)
+        cell(ws, r, 3, p['developer'], align=LFT)
+        cell(ws, r, 4, units, fmt='#,##0')
+        col, prev = 5, None
+        for i, snap in enumerate(weeks):
+            v = lookup.get(('johor', snap, key))
+            fill = NEWFILL if i == len(weeks) - 1 else None
+            n = cell(ws, r, col, fmt='#,##0', fill=fill)
+            t = cell(ws, r, col + 1, fmt='#,##0', fill=fill)
+            pc = cell(ws, r, col + 2, fmt='0.0%', fill=fill)
+            if v is not None:
+                t.value = v
+                if prev:
+                    n.value = f'={L(col + 1)}{r}-{prev}{r}'
+                pc.value = f'={L(col + 1)}{r}/$D${r}'
+                prev = L(col + 1)
+            col += 3
+        cell(ws, r, rem_col, notes.get(key, p.get('remarks', '')), align=LFT)
+        r += 1
+
+    for c, w in [('A', 4), ('B', 26), ('C', 22), ('D', 9)]:
+        ws.column_dimensions[c].width = w
+    for c in range(5, rem_col):
+        ws.column_dimensions[L(c)].width = 9
+    ws.column_dimensions[L(rem_col)].width = 46
+    ws.freeze_panes = 'E5'; ws.row_dimensions[4].height = 30
+    wb.save(path); return path
+
+
 if __name__ == '__main__':
     pcsv, hcsv, outdir = sys.argv[1], sys.argv[2], sys.argv[3]
     rd = datetime.strptime(sys.argv[4], '%Y-%m-%d') if len(sys.argv) > 4 else datetime.now()
     os.makedirs(outdir, exist_ok=True)
     projects, order, lookup = load(pcsv, hcsv)
+    notes = {}
+    for row in csv.DictReader(open(hcsv, encoding='utf-8')):
+        n = (row.get('block_note') or '').strip()
+        if n:
+            notes[row.get('code', '')] = n
     p1 = build_seputeh(projects, order['seputeh'], lookup, rd,
                        os.path.join(outdir, rd.strftime('%Y%m%d') + '_Seputeh Hills_Teduh Weekly Update.xlsx'))
     p2 = build_status13(projects, order['status13'], lookup, rd,
                         os.path.join(outdir, rd.strftime('%d%m%Y') + 'Tduh Developer Project Sales Status 13.xlsx'))
     print(p1); print(p2)
+    if 'johor' in order:
+        p3 = build_johor(projects, order['johor'], lookup, notes, rd,
+                         os.path.join(outdir, rd.strftime('%Y%m%d') + '_Johor_Teduh_Weekly_Update.xlsx'))
+        print(p3)

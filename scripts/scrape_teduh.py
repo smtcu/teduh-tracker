@@ -15,6 +15,8 @@ from urllib.error import URLError, HTTPError
 API = "https://teduh.kpkt.gov.my/api/unit-projek-swasta/{code}"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unit_types as UT
 MYT = timezone(timedelta(hours=8))          # Malaysia / Singapore time
 NOW = datetime.now(MYT)
 TODAY = NOW.strftime("%Y-%m-%d")
@@ -36,9 +38,9 @@ def fetch(code, attempts=4):
 
 
 def tally(payload):
-    """Return (name, total, sold, [(unit_type, total, sold), ...])."""
+    """Return (name, total, sold, [(unit_type, total, sold), ...], [(unit_no, is_sold), ...])."""
     total = sold = 0
-    groups = []
+    groups, units_flat = [], []
     for g in payload.get("unitGroups", []):
         units = g.get("units", [])
         t = len(units)
@@ -46,7 +48,9 @@ def tally(payload):
         total += t
         sold += s
         groups.append((g.get("jenis", ""), t, s))
-    return payload.get("namaPemajuan", ""), total, sold, groups
+        for u in units:
+            units_flat.append((u.get("no", ""), u.get("status") == "sold"))
+    return payload.get("namaPemajuan", ""), total, sold, groups, units_flat
 
 
 def main():
@@ -56,26 +60,74 @@ def main():
     type_path = os.path.join(ROOT, "data", "teduh_by_type.csv")
 
     hist_rows, type_rows, failures = [], [], []
+    unit_rows, byunit_rows = [], []
+
     for p in projects:
-        code = (p.get("code") or "").strip()
-        if not code:                              # project with no TEDUH code yet
+        codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
+        if not codes:
             print(f"SKIP  {p['project']}: no project code")
             continue
-        try:
-            name, total, sold, groups = tally(fetch(code))
-        except Exception as e:
-            failures.append(f"{code} ({p['project']}): {e}")
-            print(f"FAIL  {code}: {e}", file=sys.stderr)
+
+        name = ""
+        total = sold = 0
+        groups = []
+        all_units = []
+        failed = False
+        for code in codes:
+            try:
+                nm, t, s_, g, units = tally(fetch(code))
+            except Exception as e:
+                failures.append(f"{code} ({p['project']}): {e}")
+                print(f"FAIL  {code}: {e}", file=sys.stderr)
+                failed = True
+                continue
+            name = name or nm
+            total += t
+            sold += s_
+            groups += g
+            all_units.append((code, units))
+        if failed and not all_units:
             continue
 
         expected = int(p["total_units"]) if str(p.get("total_units", "")).strip().isdigit() else None
-        flag = "" if expected in (None, total) else f"unit count changed: tracker={expected} teduh={total}"
-        hist_rows.append(dict(tracker=p["tracker"], seq="", week=TODAY, code=code,
-                              total_sold=sold, total_units=total, teduh_name=name, note=flag))
-        for i, (jenis, t, s) in enumerate(groups):
-            type_rows.append(dict(week=TODAY, tracker=p["tracker"], code=code, group_idx=i,
-                                  unit_type=jenis, units=t, sold=s))
-        print(f"OK    {code:<10} {name[:38]:<38} sold {sold}/{total}" + (f"  [{flag}]" if flag else ""))
+        flag = "" if expected in (None, total) else f"unit count on TEDUH is {total}, tracker says {expected}"
+
+        # Block breakdown for the Remarks column, read straight off the unit numbers.
+        by_block = {}
+        for _, units in all_units:
+            for u, is_sold in units:
+                if not is_sold:
+                    continue
+                b = UT.block_of(u)
+                if b:
+                    by_block[b] = by_block.get(b, 0) + 1
+        note = UT.note_for(by_block)
+
+        hist_rows.append(dict(tracker=p["tracker"], seq="", week=TODAY, code=codes[0],
+                              total_sold=sold, total_units=total, teduh_name=name,
+                              note=flag, block_note=note))
+        for i, (jenis, t, s_) in enumerate(groups):
+            type_rows.append(dict(week=TODAY, tracker=p["tracker"], code=codes[0], group_idx=i,
+                                  unit_type=jenis, units=t, sold=s_))
+
+        # Unit-type classification, for the projects that have rules configured.
+        keys = [k.strip() for k in (p.get("unit_types") or "").split(",") if k.strip()]
+        for key, (code, units) in zip(keys, all_units):
+            st, tt, sb, unmatched = UT.tally(key, units)
+            for t_key in st:
+                unit_rows.append(dict(week=TODAY, project_key=key, tracker=p["tracker"],
+                                      project=p["project"], unit_type=t_key,
+                                      sold=st[t_key], seen=tt.get(t_key, 0)))
+            for u, is_sold in units:
+                byunit_rows.append(dict(week=TODAY, project_key=key, unit=u,
+                                        block=UT.block_of(u) or "",
+                                        unit_type=UT.classify(key, u) or "",
+                                        sold=1 if is_sold else 0))
+            if unmatched:
+                print(f"  {key}: {len(unmatched)} units matched no type rule, e.g. {unmatched[:3]}")
+
+        print(f"OK    {'+'.join(codes):<22} {p['project'][:30]:<30} sold {sold}/{total}"
+              + (f"  [{flag}]" if flag else ""))
 
     if not hist_rows:
         print("No rows scraped — leaving history untouched.", file=sys.stderr)
@@ -102,17 +154,25 @@ def main():
         print(f"  {os.path.basename(path)}: wrote {len(rows)} rows for {TODAY}")
         return True
 
-    HIST_FIELDS = ["tracker", "seq", "week", "code", "total_sold", "total_units", "teduh_name", "note"]
+    HIST_FIELDS = ["tracker", "seq", "week", "code", "total_sold", "total_units",
+                   "teduh_name", "note", "block_note"]
     TYPE_FIELDS = ["week", "tracker", "code", "group_idx", "unit_type", "units", "sold"]
+    UNIT_FIELDS = ["week", "project_key", "tracker", "project", "unit_type", "sold", "seen"]
+    BYUNIT_FIELDS = ["week", "project_key", "unit", "block", "unit_type", "sold"]
 
     # Daily series drives the website; it gets a row every run.
     append(daily_path, hist_rows, HIST_FIELDS)
     append(type_path, type_rows, TYPE_FIELDS)
+    if unit_rows:
+        append(os.path.join(ROOT, "data", "teduh_unit_types.csv"), unit_rows, UNIT_FIELDS)
+        append(os.path.join(ROOT, "data", "teduh_units.csv"), byunit_rows, BYUNIT_FIELDS)
 
     # Weekly series drives the Excel trackers; only Fridays go in, so the
     # spreadsheet keeps one column per week exactly as it always has.
     if IS_FRIDAY:
         append(hist_path, hist_rows, HIST_FIELDS)
+        if unit_rows:
+            append(os.path.join(ROOT, "data", "teduh_unit_types_weekly.csv"), unit_rows, UNIT_FIELDS)
         print(f"\nFriday: appended {len(hist_rows)} rows to the weekly tracker history.")
     else:
         print(f"\nNot Friday: daily series updated, weekly tracker history left alone.")
