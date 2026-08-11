@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 MYT = timezone(timedelta(hours=8))
 
-TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Developer Sales Status"}
+TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
 
 
 def read(path):
@@ -88,6 +88,7 @@ def build_payload():
             "launched": p.get("launched") or "",
             "units": units,
             "remarks": (p.get("remarks") or "").strip(),
+            "pin": (p.get("pin") or "").strip().lower() in ("yes", "y", "1", "true"),
             "weekly": [{"d": d, "v": v} for d, v in wpts],
             "series": [{"d": d, "v": v} for d, v in dpts],
             "sold": latest,
@@ -131,7 +132,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   --ink:#0b0b0b; --ink-2:#42413e; --muted:#6f6e69;
   --grid:#d8d7cf; --rule:#c3c2b7; --border:rgba(11,11,11,.16);
   --blue:#2a78d6; --orange:#eb6834; --track:#cde2fb;
-  --hl:rgba(42,120,214,.09);
+  --hl:rgba(42,120,214,.09); --pinbg:#eaf2fd;
   --shadow:0 1px 2px rgba(11,11,11,.05),0 6px 20px rgba(11,11,11,.06);
 }
 html[data-theme="dark"]{
@@ -140,7 +141,7 @@ html[data-theme="dark"]{
   --ink:#fff; --ink-2:#d4d3c9; --muted:#9d9c94;
   --grid:#35352f; --rule:#45453f; --border:rgba(255,255,255,.18);
   --blue:#3987e5; --orange:#d95926; --track:#184f95;
-  --hl:rgba(57,135,229,.16);
+  --hl:rgba(57,135,229,.16); --pinbg:#16304f;
   --shadow:none;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -212,6 +213,11 @@ td.live-card{border-left:4px solid var(--orange)}
 .livehd{border-left:2px solid var(--orange)!important}
 tbody tr:hover td:not(.stick){background:var(--sunk)}
 .stick,.stick2,.stick3{position:sticky;background:var(--surface);z-index:2}
+tr.pinned td{position:sticky;z-index:3;background:var(--pinbg);
+  border-top:2px solid var(--blue);border-bottom:2px solid var(--blue);font-weight:700}
+tr.pinned td.stick,tr.pinned td.stick2,tr.pinned td.stick3{z-index:4;background:var(--pinbg)}
+tbody tr.pinned:hover td{background:var(--pinbg)}
+tr.pinned td.nm::after{content:" \2605";color:var(--blue)}
 .stick{left:0;width:38px;min-width:38px}
 .stick2{left:38px;width:196px;min-width:196px;max-width:196px;white-space:normal;line-height:1.32}
 .stick3{left:234px;width:64px;min-width:64px;max-width:64px;border-right:2px solid var(--rule)}
@@ -387,7 +393,9 @@ const TRACKERS = [];
 ALL.forEach(p => { if (!TRACKERS.some(t => t.key === p.tracker)) TRACKERS.push({ key: p.tracker, label: p.trackerLabel }); });
 let tracker = TRACKERS.length ? TRACKERS[0].key : '';
 let picked = 0;
-const vis = () => ALL.filter(p => p.tracker === tracker);
+/* Pinned projects lead their tracker and stay visible while the table scrolls. */
+const vis = () => ALL.filter(p => p.tracker === tracker)
+                     .sort((a, b) => (b.pin === true) - (a.pin === true));
 
 function trackerBar() {
   const host = $('#ftrack'); host.textContent = '';
@@ -443,7 +451,7 @@ function table() {
 
   const bd = el('tbody');
   vis().forEach(p => {
-    const tr = el('tr');
+    const tr = el('tr', p.pin ? 'pinned' : '');
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
     tr.appendChild(el('td', 'l stick2 nm', p.name));
     tr.appendChild(el('td', 'stick3', nf(p.units)));
@@ -477,6 +485,15 @@ function table() {
   });
   tb.appendChild(bd); host.appendChild(tb);
   host.classList.toggle('compact', compact);
+  /* The header is two rows of variable height, so measure it rather than guess. */
+  requestAnimationFrame(() => {
+    const head = tb.querySelector('thead');
+    const row = tb.querySelector('tr.pinned');
+    if (head && row) {
+      const top = head.getBoundingClientRect().height;
+      row.querySelectorAll('td').forEach(td => { td.style.top = top + 'px'; });
+    }
+  });
 }
 
 /* Narrow screens start compact so the newest week's numbers are visible without scrolling. */

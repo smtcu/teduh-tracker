@@ -18,7 +18,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (BaseDocTemplate, Frame, PageTemplate, Paragraph,
                                 Spacer, Table, TableStyle, PageBreak)
 
-LABEL = {"seputeh": "Seputeh Hills", "status13": "Developer Sales Status"}
+LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
 
 BLUE = colors.HexColor("#2a78d6")
 INK = colors.HexColor("#0b0b0b")
@@ -102,7 +102,8 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
              Spacer(1, 9)]
 
     for ti, (key, label) in enumerate(LABEL.items()):
-        mine = [p for p in projects if p["tracker"] == key]
+        mine = sorted((p for p in projects if p["tracker"] == key),
+                      key=lambda x: (x.get("pin", "").strip().lower() not in ("yes", "y", "1", "true")))
         if not mine:
             continue
         codes = [p["code"] for p in mine if (p.get("code") or "").strip()]

@@ -13,7 +13,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter as L
 
-TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Developer Sales Status"}
+TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley"}
 
 
 def F(**k):
@@ -62,7 +62,8 @@ def main():
     wb.remove(wb.active)
 
     for key, title in TRACKER_SHEET.items():
-        mine = [p for p in projects if p["tracker"] == key]
+        mine = sorted((p for p in projects if p["tracker"] == key),
+                      key=lambda x: (x.get("pin", "").strip().lower() not in ("yes", "y", "1", "true")))
         if not mine:
             continue
         ws = wb.create_sheet(title[:31])

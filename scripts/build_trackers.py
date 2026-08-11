@@ -86,7 +86,8 @@ def build_seputeh(projects, weeks, lookup, report_date, path):
     rem = col
     cell(ws, 4, rem, 'Remarks', F(bold=True), fill=HDR)
 
-    rows = [p for p in projects if p['tracker'] == 'seputeh']
+    rows = sorted((p for p in projects if p['tracker'] == 'seputeh'),
+                  key=lambda x: (x.get('pin', '').strip().lower() not in ('yes', 'y', '1', 'true')))
     for r, p in enumerate(rows, 5):
         cell(ws, r, 1, int(p['no']))
         cell(ws, r, 2, p['project'], align=LFT)
@@ -133,7 +134,8 @@ def build_status13(projects, weeks, lookup, report_date, path):
         col += 3
     end = col
 
-    rows = [p for p in projects if p['tracker'] == 'status13']
+    rows = sorted((p for p in projects if p['tracker'] == 'status13'),
+                  key=lambda x: (x.get('pin', '').strip().lower() not in ('yes', 'y', '1', 'true')))
     for r, p in enumerate(rows, 5):
         key = p['code'] if p['code'] else f'NOCODE-R{r}'
         cell(ws, r, 1, int(p['no']))
