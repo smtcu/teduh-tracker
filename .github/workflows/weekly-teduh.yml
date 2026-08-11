@@ -2,9 +2,14 @@ name: TEDUH tracker refresh
 
 on:
   schedule:
-    # 02:00 UTC daily = 10:00 AM Malaysia / Singapore time.
-    # The website updates every day; the Excel trackers gain a column on Fridays only.
-    - cron: "0 2 * * *"
+    # 00:17 UTC daily = 08:17 AM Malaysia / Singapore time.
+    # Early on purpose: GitHub queues scheduled jobs behind everything else and can
+    # run an hour or more late, so starting at 08:17 means even a bad delay still
+    # lands before the working day. The odd minute avoids the top of the hour,
+    # which is GitHub's busiest and most delayed moment.
+    # The website and the daily workbook refresh every day.
+    # The Excel trackers and the PDF report are rebuilt on Fridays only.
+    - cron: "17 0 * * *"
   workflow_dispatch:        # lets you run it manually from the Actions tab
 
 permissions:
@@ -17,6 +22,14 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    env:
+      # Empty unless you add these under Settings -> Secrets and variables -> Actions.
+      # With them unset, the email step is skipped and everything else runs as normal.
+      MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      MAIL_TO: ${{ secrets.MAIL_TO }}
+      WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+      WHATSAPP_APIKEY: ${{ secrets.WHATSAPP_APIKEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,38 +38,104 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install --quiet openpyxl
+        run: pip install --quiet openpyxl reportlab
+
+      - name: Work out whether today is Friday in Malaysia
+        id: when
+        run: |
+          DOW=$(TZ=Asia/Kuala_Lumpur date +%u)
+          if [ "$DOW" = "5" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "weekly=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "weekly=no" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Day of week (MYT): $DOW"
 
       - name: Scrape TEDUH
-        id: scrape
         run: python scripts/scrape_teduh.py
 
       - name: Build website
         if: always()
         run: python scripts/build_dashboard.py
 
-- name: Build weekly Excel trackers (Fridays only)
+      - name: Build daily workbook and daily PDF
+        if: always()
+        run: |
+          mkdir -p docs/downloads docs/data
+          python scripts/build_daily_xlsx.py projects.csv data/teduh_daily.csv docs/downloads/Teduh_Daily_Tracker.xlsx
+          python scripts/build_pdf.py projects.csv data/teduh_daily.csv docs/downloads/TEDUH_Daily_Report.pdf --daily
+
+      - name: Build weekly Excel trackers (Fridays only)
         if: always() && steps.when.outputs.weekly == 'yes'
         run: |
           python scripts/build_trackers.py projects.csv data/teduh_history.csv docs/downloads
           python - <<'PY'
           import glob, os, shutil
           d = "docs/downloads"
-          # Filenames contain spaces, so this is done in Python rather than shell
-          # globbing, and the fixed-name copy is excluded from the candidates so it
-          # can never be copied onto itself.
-          for pattern, stable in [("*Seputeh*.xlsx", "Seputeh_Hills_Teduh_Weekly_Update.xlsx"),
-                                  ("*Developer*.xlsx", "Tduh_Developer_Project_Sales_Status.xlsx")]:
+          # Done in Python, not shell globbing: the filenames contain spaces, and the
+          # fixed-name copy is excluded so it can never be copied onto itself.
+          pairs = [("*Seputeh*.xlsx", "Seputeh_Hills_Teduh_Weekly_Update.xlsx"),
+                   ("*Developer*.xlsx", "Tduh_Developer_Project_Sales_Status.xlsx")]
+          for pattern, stable in pairs:
               dated = [f for f in glob.glob(os.path.join(d, pattern))
                        if os.path.basename(f) != stable]
               dated.sort(key=os.path.getmtime, reverse=True)
-              if dated:
-                  shutil.copyfile(dated[0], os.path.join(d, stable))
-                  print("latest ->", stable, "from", os.path.basename(dated[0]))
-              for old in dated[4:]:          # keep the four most recent dated copies
+              if not dated:
+                  continue
+              shutil.copyfile(dated[0], os.path.join(d, stable))
+              print("latest ->", stable, "from", os.path.basename(dated[0]))
+              for old in dated[4:]:
                   os.remove(old)
                   print("removed", os.path.basename(old))
           PY
+
+      - name: Build the weekly PDF report (Fridays only)
+        if: always() && steps.when.outputs.weekly == 'yes'
+        run: python scripts/build_pdf.py projects.csv data/teduh_history.csv docs/downloads/TEDUH_Weekly_Report.pdf
+
+      - name: Note when the weekly files were skipped
+        if: always() && steps.when.outputs.weekly != 'yes'
+        run: echo "Not Friday — the weekly Excel trackers were left exactly as they were."
+
+      - name: Compose the week's summary
+        if: always() && steps.when.outputs.weekly == 'yes' && env.MAIL_USERNAME != ''
+        run: |
+          {
+            echo 'SUMMARY<<TEDUH_EOF'
+            python scripts/weekly_summary.py
+            echo TEDUH_EOF
+          } >> "$GITHUB_ENV"
+
+      - name: Email the weekly trackers
+        if: always() && steps.when.outputs.weekly == 'yes' && env.MAIL_USERNAME != ''
+        uses: dawidd6/action-send-mail@v17
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          from: TEDUH Tracker <${{ secrets.MAIL_USERNAME }}>
+          to: ${{ secrets.MAIL_TO }}
+          subject: TEDUH weekly update
+          body: ${{ env.SUMMARY }}
+          attachments: docs/downloads/TEDUH_Weekly_Report.pdf,docs/downloads/TEDUH_Daily_Report.pdf,docs/downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx,docs/downloads/Tduh_Developer_Project_Sales_Status.xlsx,docs/downloads/Teduh_Daily_Tracker.xlsx
+
+      - name: WhatsApp alert
+        if: always() && steps.when.outputs.weekly == 'yes' && env.WHATSAPP_PHONE != ''
+        continue-on-error: true          # a failed nudge must never fail the run
+        run: |
+          MSG=$(python scripts/weekly_summary.py --short)
+          curl -sS --get --max-time 30 \
+            --data-urlencode "phone=$WHATSAPP_PHONE" \
+            --data-urlencode "text=$MSG" \
+            --data-urlencode "apikey=$WHATSAPP_APIKEY" \
+            https://api.callmebot.com/whatsapp.php \
+          && echo "WhatsApp alert sent." || echo "WhatsApp alert failed — ignoring."
+
+      - name: Note when no email was configured
+        if: always() && env.MAIL_USERNAME == ''
+        run: echo "No mail secrets set — skipping the email step."
 
       - name: Publish data for download
         if: always()
