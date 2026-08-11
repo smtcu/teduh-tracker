@@ -9,7 +9,7 @@ on:
     # which is GitHub's busiest and most delayed moment.
     # The website and the daily workbook refresh every day.
     # The Excel trackers and the PDF report are rebuilt on Fridays only.
-    - cron: "17 0 * * *"
+    - cron: "17 23 * * *"
   workflow_dispatch:        # lets you run it manually from the Actions tab
 
 permissions:
