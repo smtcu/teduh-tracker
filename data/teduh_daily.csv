@@ -1,275 +1,335 @@
-tracker,seq,week,code,total_sold,total_units,teduh_name,note
-seputeh,1,2026-07-10,32-16,30,,,seeded from existing tracker
-seputeh,1,2026-07-10,30216-1,32,,,seeded from existing tracker
-seputeh,1,2026-07-10,30216-2,29,,,seeded from existing tracker
-seputeh,1,2026-07-10,31078-1,45,,,seeded from existing tracker
-seputeh,1,2026-07-10,31274-1,0,,,seeded from existing tracker
-seputeh,1,2026-07-10,2463-23,,,,seeded from existing tracker
-seputeh,2,2026-07-17,32-16,34,,,seeded from existing tracker
-seputeh,2,2026-07-17,30216-1,33,,,seeded from existing tracker
-seputeh,2,2026-07-17,30216-2,31,,,seeded from existing tracker
-seputeh,2,2026-07-17,31078-1,45,,,seeded from existing tracker
-seputeh,2,2026-07-17,31274-1,0,,,seeded from existing tracker
-seputeh,2,2026-07-17,2463-23,32,,,seeded from existing tracker
-seputeh,3,2026-07-31,32-16,40,,,seeded from existing tracker
-seputeh,3,2026-07-31,30216-1,33,,,seeded from existing tracker
-seputeh,3,2026-07-31,30216-2,37,,,seeded from existing tracker
-seputeh,3,2026-07-31,31078-1,45,,,seeded from existing tracker
-seputeh,3,2026-07-31,31274-1,1,,,seeded from existing tracker
-seputeh,3,2026-07-31,2463-23,214,,,seeded from existing tracker
-seputeh,4,2026-08-07,32-16,41,,,seeded from existing tracker
-seputeh,4,2026-08-07,30216-1,33,,,seeded from existing tracker
-seputeh,4,2026-08-07,30216-2,42,,,seeded from existing tracker
-seputeh,4,2026-08-07,31078-1,45,,,seeded from existing tracker
-seputeh,4,2026-08-07,31274-1,1,,,seeded from existing tracker
-seputeh,4,2026-08-07,2463-23,262,,,seeded from existing tracker
-seputeh,5,2026-08-08,32-16,42,,,seeded from existing tracker
-seputeh,5,2026-08-08,30216-1,33,,,seeded from existing tracker
-seputeh,5,2026-08-08,30216-2,44,,,seeded from existing tracker
-seputeh,5,2026-08-08,31078-1,45,,,seeded from existing tracker
-seputeh,5,2026-08-08,31274-1,1,,,seeded from existing tracker
-seputeh,5,2026-08-08,2463-23,271,,,seeded from existing tracker
-status13,1,2026-04-23,13262-2,85,,,seeded from existing tracker
-status13,1,2026-04-23,30590-2,46,,,seeded from existing tracker
-status13,1,2026-04-23,5911-33,792,,,seeded from existing tracker
-status13,1,2026-04-23,30363-2,1091,,,seeded from existing tracker
-status13,1,2026-04-23,30821-1,446,,,seeded from existing tracker
-status13,1,2026-04-23,30366-1,452,,,seeded from existing tracker
-status13,1,2026-04-23,13074-4,234,,,seeded from existing tracker
-status13,1,2026-04-23,8824-5,379,,,seeded from existing tracker
-status13,1,2026-04-23,20253-3,0,,,seeded from existing tracker
-status13,1,2026-04-23,30876-1,0,,,seeded from existing tracker
-status13,1,2026-04-23,30250-2,0,,,seeded from existing tracker
-status13,1,2026-04-23,NOCODE-R16,0,,,seeded from existing tracker
-status13,2,2026-04-30,13262-2,109,,,seeded from existing tracker
-status13,2,2026-04-30,30590-2,52,,,seeded from existing tracker
-status13,2,2026-04-30,5911-33,808,,,seeded from existing tracker
-status13,2,2026-04-30,30363-2,0,,,seeded from existing tracker
-status13,2,2026-04-30,30821-1,0,,,seeded from existing tracker
-status13,2,2026-04-30,30366-1,454,,,seeded from existing tracker
-status13,2,2026-04-30,13074-4,0,,,seeded from existing tracker
-status13,2,2026-04-30,8824-5,0,,,seeded from existing tracker
-status13,2,2026-04-30,20253-3,0,,,seeded from existing tracker
-status13,2,2026-04-30,30876-1,0,,,seeded from existing tracker
-status13,2,2026-04-30,30250-2,,,,seeded from existing tracker
-status13,2,2026-04-30,NOCODE-R16,0,,,seeded from existing tracker
-status13,3,2026-05-07,13262-2,123,,,seeded from existing tracker
-status13,3,2026-05-07,30590-2,54,,,seeded from existing tracker
-status13,3,2026-05-07,5911-33,818,,,seeded from existing tracker
-status13,3,2026-05-07,30363-2,1093,,,seeded from existing tracker
-status13,3,2026-05-07,30821-1,447,,,seeded from existing tracker
-status13,3,2026-05-07,30366-1,456,,,seeded from existing tracker
-status13,3,2026-05-07,13074-4,235,,,seeded from existing tracker
-status13,3,2026-05-07,8824-5,381,,,seeded from existing tracker
-status13,3,2026-05-07,20253-3,0,,,seeded from existing tracker
-status13,3,2026-05-07,30876-1,0,,,seeded from existing tracker
-status13,3,2026-05-07,30250-2,,,,seeded from existing tracker
-status13,3,2026-05-07,NOCODE-R16,0,,,seeded from existing tracker
-status13,4,2026-05-14,13262-2,138,,,seeded from existing tracker
-status13,4,2026-05-14,30590-2,58,,,seeded from existing tracker
-status13,4,2026-05-14,5911-33,837,,,seeded from existing tracker
-status13,4,2026-05-14,30363-2,1095,,,seeded from existing tracker
-status13,4,2026-05-14,30821-1,457,,,seeded from existing tracker
-status13,4,2026-05-14,30366-1,457,,,seeded from existing tracker
-status13,4,2026-05-14,13074-4,236,,,seeded from existing tracker
-status13,4,2026-05-14,8824-5,385,,,seeded from existing tracker
-status13,4,2026-05-14,20253-3,0,,,seeded from existing tracker
-status13,4,2026-05-14,30876-1,0,,,seeded from existing tracker
-status13,4,2026-05-14,30250-2,,,,seeded from existing tracker
-status13,4,2026-05-14,NOCODE-R16,0,,,seeded from existing tracker
-status13,5,2026-05-21,13262-2,170,,,seeded from existing tracker
-status13,5,2026-05-21,30590-2,61,,,seeded from existing tracker
-status13,5,2026-05-21,5911-33,854,,,seeded from existing tracker
-status13,5,2026-05-21,30363-2,1096,,,seeded from existing tracker
-status13,5,2026-05-21,30821-1,458,,,seeded from existing tracker
-status13,5,2026-05-21,30366-1,459,,,seeded from existing tracker
-status13,5,2026-05-21,13074-4,236,,,seeded from existing tracker
-status13,5,2026-05-21,8824-5,389,,,seeded from existing tracker
-status13,5,2026-05-21,20253-3,0,,,seeded from existing tracker
-status13,5,2026-05-21,30876-1,76,,,seeded from existing tracker
-status13,5,2026-05-21,30250-2,,,,seeded from existing tracker
-status13,5,2026-05-21,NOCODE-R16,0,,,seeded from existing tracker
-status13,6,2026-05-28,13262-2,191,,,seeded from existing tracker
-status13,6,2026-05-28,30590-2,67,,,seeded from existing tracker
-status13,6,2026-05-28,5911-33,874,,,seeded from existing tracker
-status13,6,2026-05-28,30363-2,1100,,,seeded from existing tracker
-status13,6,2026-05-28,30821-1,460,,,seeded from existing tracker
-status13,6,2026-05-28,30366-1,461,,,seeded from existing tracker
-status13,6,2026-05-28,13074-4,236,,,seeded from existing tracker
-status13,6,2026-05-28,8824-5,397,,,seeded from existing tracker
-status13,6,2026-05-28,20253-3,0,,,seeded from existing tracker
-status13,6,2026-05-28,30876-1,77,,,seeded from existing tracker
-status13,6,2026-05-28,30250-2,,,,seeded from existing tracker
-status13,6,2026-05-28,NOCODE-R16,0,,,seeded from existing tracker
-status13,7,2026-05-28,13262-2,213,,,seeded from existing tracker
-status13,7,2026-05-28,30590-2,67,,,seeded from existing tracker
-status13,7,2026-05-28,5911-33,878,,,seeded from existing tracker
-status13,7,2026-05-28,30363-2,1102,,,seeded from existing tracker
-status13,7,2026-05-28,30821-1,460,,,seeded from existing tracker
-status13,7,2026-05-28,30366-1,462,,,seeded from existing tracker
-status13,7,2026-05-28,13074-4,236,,,seeded from existing tracker
-status13,7,2026-05-28,8824-5,401,,,seeded from existing tracker
-status13,7,2026-05-28,20253-3,1086,,,seeded from existing tracker
-status13,7,2026-05-28,30876-1,76,,,seeded from existing tracker
-status13,7,2026-05-28,30250-2,,,,seeded from existing tracker
-status13,7,2026-05-28,NOCODE-R16,0,,,seeded from existing tracker
-status13,8,2026-06-11,13262-2,220,,,seeded from existing tracker
-status13,8,2026-06-11,30590-2,73,,,seeded from existing tracker
-status13,8,2026-06-11,5911-33,885,,,seeded from existing tracker
-status13,8,2026-06-11,30363-2,1106,,,seeded from existing tracker
-status13,8,2026-06-11,30821-1,462,,,seeded from existing tracker
-status13,8,2026-06-11,30366-1,463,,,seeded from existing tracker
-status13,8,2026-06-11,13074-4,236,,,seeded from existing tracker
-status13,8,2026-06-11,8824-5,412,,,seeded from existing tracker
-status13,8,2026-06-11,20253-3,1096,,,seeded from existing tracker
-status13,8,2026-06-11,30876-1,79,,,seeded from existing tracker
-status13,8,2026-06-11,30250-2,,,,seeded from existing tracker
-status13,8,2026-06-11,NOCODE-R16,0,,,seeded from existing tracker
-status13,9,2026-06-19,13262-2,231,,,seeded from existing tracker
-status13,9,2026-06-19,30590-2,74,,,seeded from existing tracker
-status13,9,2026-06-19,5911-33,892,,,seeded from existing tracker
-status13,9,2026-06-19,30363-2,1107,,,seeded from existing tracker
-status13,9,2026-06-19,30821-1,462,,,seeded from existing tracker
-status13,9,2026-06-19,30366-1,463,,,seeded from existing tracker
-status13,9,2026-06-19,13074-4,236,,,seeded from existing tracker
-status13,9,2026-06-19,8824-5,421,,,seeded from existing tracker
-status13,9,2026-06-19,20253-3,1100,,,seeded from existing tracker
-status13,9,2026-06-19,30876-1,82,,,seeded from existing tracker
-status13,9,2026-06-19,30250-2,,,,seeded from existing tracker
-status13,9,2026-06-19,NOCODE-R16,0,,,seeded from existing tracker
-status13,10,2026-06-25,13262-2,241,,,seeded from existing tracker
-status13,10,2026-06-25,30590-2,78,,,seeded from existing tracker
-status13,10,2026-06-25,5911-33,907,,,seeded from existing tracker
-status13,10,2026-06-25,30363-2,1109,,,seeded from existing tracker
-status13,10,2026-06-25,30821-1,463,,,seeded from existing tracker
-status13,10,2026-06-25,30366-1,464,,,seeded from existing tracker
-status13,10,2026-06-25,13074-4,236,,,seeded from existing tracker
-status13,10,2026-06-25,8824-5,433,,,seeded from existing tracker
-status13,10,2026-06-25,20253-3,1110,,,seeded from existing tracker
-status13,10,2026-06-25,30876-1,86,,,seeded from existing tracker
-status13,10,2026-06-25,30250-2,659,,,seeded from existing tracker
-status13,10,2026-06-25,NOCODE-R16,0,,,seeded from existing tracker
-status13,11,2026-07-02,13262-2,247,,,seeded from existing tracker
-status13,11,2026-07-02,30590-2,81,,,seeded from existing tracker
-status13,11,2026-07-02,5911-33,922,,,seeded from existing tracker
-status13,11,2026-07-02,30363-2,1111,,,seeded from existing tracker
-status13,11,2026-07-02,30821-1,464,,,seeded from existing tracker
-status13,11,2026-07-02,30366-1,464,,,seeded from existing tracker
-status13,11,2026-07-02,13074-4,236,,,seeded from existing tracker
-status13,11,2026-07-02,8824-5,460,,,seeded from existing tracker
-status13,11,2026-07-02,20253-3,1115,,,seeded from existing tracker
-status13,11,2026-07-02,30876-1,96,,,seeded from existing tracker
-status13,11,2026-07-02,30250-2,659,,,seeded from existing tracker
-status13,11,2026-07-02,NOCODE-R16,0,,,seeded from existing tracker
-status13,12,2026-07-16,13262-2,269,,,seeded from existing tracker
-status13,12,2026-07-16,30590-2,94,,,seeded from existing tracker
-status13,12,2026-07-16,5911-33,951,,,seeded from existing tracker
-status13,12,2026-07-16,30363-2,1116,,,seeded from existing tracker
-status13,12,2026-07-16,30821-1,472,,,seeded from existing tracker
-status13,12,2026-07-16,30366-1,465,,,seeded from existing tracker
-status13,12,2026-07-16,13074-4,234,,,seeded from existing tracker
-status13,12,2026-07-16,8824-5,544,,,seeded from existing tracker
-status13,12,2026-07-16,20253-3,1126,,,seeded from existing tracker
-status13,12,2026-07-16,30876-1,118,,,seeded from existing tracker
-status13,12,2026-07-16,30250-2,659,,,seeded from existing tracker
-status13,12,2026-07-16,NOCODE-R16,0,,,seeded from existing tracker
-status13,13,2026-07-24,13262-2,285,,,seeded from existing tracker
-status13,13,2026-07-24,30590-2,102,,,seeded from existing tracker
-status13,13,2026-07-24,5911-33,965,,,seeded from existing tracker
-status13,13,2026-07-24,30363-2,1117,,,seeded from existing tracker
-status13,13,2026-07-24,30821-1,475,,,seeded from existing tracker
-status13,13,2026-07-24,30366-1,465,,,seeded from existing tracker
-status13,13,2026-07-24,13074-4,234,,,seeded from existing tracker
-status13,13,2026-07-24,8824-5,573,,,seeded from existing tracker
-status13,13,2026-07-24,20253-3,1129,,,seeded from existing tracker
-status13,13,2026-07-24,30876-1,121,,,seeded from existing tracker
-status13,13,2026-07-24,30250-2,659,,,seeded from existing tracker
-status13,13,2026-07-24,NOCODE-R16,0,,,seeded from existing tracker
-status13,14,2026-07-31,13262-2,306,,,seeded from existing tracker
-status13,14,2026-07-31,30590-2,106,,,seeded from existing tracker
-status13,14,2026-07-31,5911-33,976,,,seeded from existing tracker
-status13,14,2026-07-31,30363-2,1117,,,seeded from existing tracker
-status13,14,2026-07-31,30821-1,485,,,seeded from existing tracker
-status13,14,2026-07-31,30366-1,465,,,seeded from existing tracker
-status13,14,2026-07-31,13074-4,234,,,seeded from existing tracker
-status13,14,2026-07-31,8824-5,591,,,seeded from existing tracker
-status13,14,2026-07-31,20253-3,1135,,,seeded from existing tracker
-status13,14,2026-07-31,30876-1,121,,,seeded from existing tracker
-status13,14,2026-07-31,30250-2,659,,,seeded from existing tracker
-status13,14,2026-07-31,NOCODE-R16,0,,,seeded from existing tracker
-status13,15,2026-08-07,13262-2,319,,,seeded from existing tracker
-status13,15,2026-08-07,30590-2,112,,,seeded from existing tracker
-status13,15,2026-08-07,5911-33,985,,,seeded from existing tracker
-status13,15,2026-08-07,30363-2,1119,,,seeded from existing tracker
-status13,15,2026-08-07,30821-1,491,,,seeded from existing tracker
-status13,15,2026-08-07,30366-1,465,,,seeded from existing tracker
-status13,15,2026-08-07,13074-4,235,,,seeded from existing tracker
-status13,15,2026-08-07,8824-5,608,,,seeded from existing tracker
-status13,15,2026-08-07,20253-3,1139,,,seeded from existing tracker
-status13,15,2026-08-07,30876-1,124,,,seeded from existing tracker
-status13,15,2026-08-07,30250-2,659,,,seeded from existing tracker
-status13,15,2026-08-07,NOCODE-R16,0,,,seeded from existing tracker
-status13,16,2026-08-08,13262-2,321,,,seeded from existing tracker
-status13,16,2026-08-08,30590-2,113,,,seeded from existing tracker
-status13,16,2026-08-08,5911-33,986,,,seeded from existing tracker
-status13,16,2026-08-08,30363-2,1119,,,seeded from existing tracker
-status13,16,2026-08-08,30821-1,491,,,seeded from existing tracker
-status13,16,2026-08-08,30366-1,466,,,seeded from existing tracker
-status13,16,2026-08-08,13074-4,235,,,seeded from existing tracker
-status13,16,2026-08-08,8824-5,609,,,seeded from existing tracker
-status13,16,2026-08-08,20253-3,1140,,,seeded from existing tracker
-status13,16,2026-08-08,30876-1,124,,,seeded from existing tracker
-status13,16,2026-08-08,30250-2,659,,,seeded from existing tracker
-status13,16,2026-08-08,NOCODE-R16,0,,,seeded from existing tracker
-seputeh,,2026-08-09,32-16,42,146,RESIDENSI EDEN,
-seputeh,,2026-08-09,30216-1,33,154,PAVILION DAMANSARA HEIGHTS PHASE 2,
-seputeh,,2026-08-09,30216-2,44,490,PAVILION DAMANSARA HEIGHTS PHASE 2,
-seputeh,,2026-08-09,31078-1,45,48,VILA BATAI,
-seputeh,,2026-08-09,31274-1,1,244,AOSIS MONT KIARA,
-seputeh,,2026-08-09,2463-23,271,433,PARKCITY RESIDENCES,
-status13,,2026-08-09,13262-2,321,1544,RESIDENSI M AURORA,
-status13,,2026-08-09,30590-2,113,996,ARTE STAR,
-status13,,2026-08-09,5911-33,986,1618,RESIDENSI M ASPIRA,
-status13,,2026-08-09,30363-2,1119,1218,RESIDENSI DESA TIMUR,
-status13,,2026-08-09,30821-1,491,988,RESIDENSI RADIUM,
-status13,,2026-08-09,30366-1,466,482,RESIDENSI AMBIEN,
-status13,,2026-08-09,13074-4,235,299,RESIDENSI HANA,
-status13,,2026-08-09,8824-5,609,1296,RESIDENSI SUNWAY COCHRANE,
-status13,,2026-08-09,20253-3,1140,1500,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),
-status13,,2026-08-09,30876-1,124,551,RESIDENSI VERIDIAN,
-status13,,2026-08-09,30250-2,659,661,RESIDENSI AURUM,
-seputeh,,2026-08-10,32-16,42,146,RESIDENSI EDEN,
-seputeh,,2026-08-10,30216-1,33,154,PAVILION DAMANSARA HEIGHTS PHASE 2,
-seputeh,,2026-08-10,30216-2,44,490,PAVILION DAMANSARA HEIGHTS PHASE 2,
-seputeh,,2026-08-10,31078-1,45,48,VILA BATAI,
-seputeh,,2026-08-10,31274-1,1,244,AOSIS MONT KIARA,
-seputeh,,2026-08-10,2463-23,271,433,PARKCITY RESIDENCES,
-status13,,2026-08-10,13262-2,321,1544,RESIDENSI M AURORA,
-status13,,2026-08-10,30590-2,113,996,ARTE STAR,
-status13,,2026-08-10,5911-33,986,1618,RESIDENSI M ASPIRA,
-status13,,2026-08-10,30363-2,1119,1218,RESIDENSI DESA TIMUR,
-status13,,2026-08-10,30821-1,491,988,RESIDENSI RADIUM,
-status13,,2026-08-10,30366-1,466,482,RESIDENSI AMBIEN,
-status13,,2026-08-10,13074-4,235,299,RESIDENSI HANA,
-status13,,2026-08-10,8824-5,610,1296,RESIDENSI SUNWAY COCHRANE,
-status13,,2026-08-10,20253-3,1140,1500,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),
-status13,,2026-08-10,30876-1,124,551,RESIDENSI VERIDIAN,
-status13,,2026-08-10,30250-2,659,661,RESIDENSI AURUM,
-seputeh,,2026-08-11,32-16,42,146,RESIDENSI EDEN,
-seputeh,,2026-08-11,30216-1,33,154,PAVILION DAMANSARA HEIGHTS PHASE 2,
-seputeh,,2026-08-11,30216-2,45,490,PAVILION DAMANSARA HEIGHTS PHASE 2,
-seputeh,,2026-08-11,31078-1,45,48,VILA BATAI,
-seputeh,,2026-08-11,31274-1,1,244,AOSIS MONT KIARA,
-seputeh,,2026-08-11,2463-23,284,433,PARKCITY RESIDENCES,
-status13,,2026-08-11,31202-1,174,1310,RESIDENSI WARISAN SALAK SELATAN,
-status13,,2026-08-11,13262-2,326,1544,RESIDENSI M AURORA,
-status13,,2026-08-11,30590-2,116,996,ARTE STAR,
-status13,,2026-08-11,5911-33,991,1618,RESIDENSI M ASPIRA,
-status13,,2026-08-11,30363-2,1120,1218,RESIDENSI DESA TIMUR,
-status13,,2026-08-11,30821-1,494,988,RESIDENSI RADIUM,
-status13,,2026-08-11,30366-1,467,482,RESIDENSI AMBIEN,
-status13,,2026-08-11,13074-4,235,299,RESIDENSI HANA,
-status13,,2026-08-11,8824-5,613,1296,RESIDENSI SUNWAY COCHRANE,
-status13,,2026-08-11,20253-3,1142,1500,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),
-status13,,2026-08-11,30876-1,123,551,RESIDENSI VERIDIAN,
-status13,,2026-08-11,30250-2,659,661,RESIDENSI AURUM,
+tracker,seq,week,code,total_sold,total_units,teduh_name,note,block_note
+seputeh,1,2026-07-10,32-16,30,,,seeded from existing tracker,
+seputeh,1,2026-07-10,30216-1,32,,,seeded from existing tracker,
+seputeh,1,2026-07-10,30216-2,29,,,seeded from existing tracker,
+seputeh,1,2026-07-10,31078-1,45,,,seeded from existing tracker,
+seputeh,1,2026-07-10,31274-1,0,,,seeded from existing tracker,
+seputeh,1,2026-07-10,2463-23,,,,seeded from existing tracker,
+seputeh,2,2026-07-17,32-16,34,,,seeded from existing tracker,
+seputeh,2,2026-07-17,30216-1,33,,,seeded from existing tracker,
+seputeh,2,2026-07-17,30216-2,31,,,seeded from existing tracker,
+seputeh,2,2026-07-17,31078-1,45,,,seeded from existing tracker,
+seputeh,2,2026-07-17,31274-1,0,,,seeded from existing tracker,
+seputeh,2,2026-07-17,2463-23,32,,,seeded from existing tracker,
+seputeh,3,2026-07-31,32-16,40,,,seeded from existing tracker,
+seputeh,3,2026-07-31,30216-1,33,,,seeded from existing tracker,
+seputeh,3,2026-07-31,30216-2,37,,,seeded from existing tracker,
+seputeh,3,2026-07-31,31078-1,45,,,seeded from existing tracker,
+seputeh,3,2026-07-31,31274-1,1,,,seeded from existing tracker,
+seputeh,3,2026-07-31,2463-23,214,,,seeded from existing tracker,
+seputeh,4,2026-08-07,32-16,41,,,seeded from existing tracker,
+seputeh,4,2026-08-07,30216-1,33,,,seeded from existing tracker,
+seputeh,4,2026-08-07,30216-2,42,,,seeded from existing tracker,
+seputeh,4,2026-08-07,31078-1,45,,,seeded from existing tracker,
+seputeh,4,2026-08-07,31274-1,1,,,seeded from existing tracker,
+seputeh,4,2026-08-07,2463-23,262,,,seeded from existing tracker,
+seputeh,5,2026-08-08,32-16,42,,,seeded from existing tracker,
+seputeh,5,2026-08-08,30216-1,33,,,seeded from existing tracker,
+seputeh,5,2026-08-08,30216-2,44,,,seeded from existing tracker,
+seputeh,5,2026-08-08,31078-1,45,,,seeded from existing tracker,
+seputeh,5,2026-08-08,31274-1,1,,,seeded from existing tracker,
+seputeh,5,2026-08-08,2463-23,271,,,seeded from existing tracker,
+status13,1,2026-04-23,13262-2,85,,,seeded from existing tracker,
+status13,1,2026-04-23,30590-2,46,,,seeded from existing tracker,
+status13,1,2026-04-23,5911-33,792,,,seeded from existing tracker,
+status13,1,2026-04-23,30363-2,1091,,,seeded from existing tracker,
+status13,1,2026-04-23,30821-1,446,,,seeded from existing tracker,
+status13,1,2026-04-23,30366-1,452,,,seeded from existing tracker,
+status13,1,2026-04-23,13074-4,234,,,seeded from existing tracker,
+status13,1,2026-04-23,8824-5,379,,,seeded from existing tracker,
+status13,1,2026-04-23,20253-3,0,,,seeded from existing tracker,
+status13,1,2026-04-23,30876-1,0,,,seeded from existing tracker,
+status13,1,2026-04-23,30250-2,0,,,seeded from existing tracker,
+status13,1,2026-04-23,NOCODE-R16,0,,,seeded from existing tracker,
+status13,2,2026-04-30,13262-2,109,,,seeded from existing tracker,
+status13,2,2026-04-30,30590-2,52,,,seeded from existing tracker,
+status13,2,2026-04-30,5911-33,808,,,seeded from existing tracker,
+status13,2,2026-04-30,30363-2,0,,,seeded from existing tracker,
+status13,2,2026-04-30,30821-1,0,,,seeded from existing tracker,
+status13,2,2026-04-30,30366-1,454,,,seeded from existing tracker,
+status13,2,2026-04-30,13074-4,0,,,seeded from existing tracker,
+status13,2,2026-04-30,8824-5,0,,,seeded from existing tracker,
+status13,2,2026-04-30,20253-3,0,,,seeded from existing tracker,
+status13,2,2026-04-30,30876-1,0,,,seeded from existing tracker,
+status13,2,2026-04-30,30250-2,,,,seeded from existing tracker,
+status13,2,2026-04-30,NOCODE-R16,0,,,seeded from existing tracker,
+status13,3,2026-05-07,13262-2,123,,,seeded from existing tracker,
+status13,3,2026-05-07,30590-2,54,,,seeded from existing tracker,
+status13,3,2026-05-07,5911-33,818,,,seeded from existing tracker,
+status13,3,2026-05-07,30363-2,1093,,,seeded from existing tracker,
+status13,3,2026-05-07,30821-1,447,,,seeded from existing tracker,
+status13,3,2026-05-07,30366-1,456,,,seeded from existing tracker,
+status13,3,2026-05-07,13074-4,235,,,seeded from existing tracker,
+status13,3,2026-05-07,8824-5,381,,,seeded from existing tracker,
+status13,3,2026-05-07,20253-3,0,,,seeded from existing tracker,
+status13,3,2026-05-07,30876-1,0,,,seeded from existing tracker,
+status13,3,2026-05-07,30250-2,,,,seeded from existing tracker,
+status13,3,2026-05-07,NOCODE-R16,0,,,seeded from existing tracker,
+status13,4,2026-05-14,13262-2,138,,,seeded from existing tracker,
+status13,4,2026-05-14,30590-2,58,,,seeded from existing tracker,
+status13,4,2026-05-14,5911-33,837,,,seeded from existing tracker,
+status13,4,2026-05-14,30363-2,1095,,,seeded from existing tracker,
+status13,4,2026-05-14,30821-1,457,,,seeded from existing tracker,
+status13,4,2026-05-14,30366-1,457,,,seeded from existing tracker,
+status13,4,2026-05-14,13074-4,236,,,seeded from existing tracker,
+status13,4,2026-05-14,8824-5,385,,,seeded from existing tracker,
+status13,4,2026-05-14,20253-3,0,,,seeded from existing tracker,
+status13,4,2026-05-14,30876-1,0,,,seeded from existing tracker,
+status13,4,2026-05-14,30250-2,,,,seeded from existing tracker,
+status13,4,2026-05-14,NOCODE-R16,0,,,seeded from existing tracker,
+status13,5,2026-05-21,13262-2,170,,,seeded from existing tracker,
+status13,5,2026-05-21,30590-2,61,,,seeded from existing tracker,
+status13,5,2026-05-21,5911-33,854,,,seeded from existing tracker,
+status13,5,2026-05-21,30363-2,1096,,,seeded from existing tracker,
+status13,5,2026-05-21,30821-1,458,,,seeded from existing tracker,
+status13,5,2026-05-21,30366-1,459,,,seeded from existing tracker,
+status13,5,2026-05-21,13074-4,236,,,seeded from existing tracker,
+status13,5,2026-05-21,8824-5,389,,,seeded from existing tracker,
+status13,5,2026-05-21,20253-3,0,,,seeded from existing tracker,
+status13,5,2026-05-21,30876-1,76,,,seeded from existing tracker,
+status13,5,2026-05-21,30250-2,,,,seeded from existing tracker,
+status13,5,2026-05-21,NOCODE-R16,0,,,seeded from existing tracker,
+status13,6,2026-05-28,13262-2,191,,,seeded from existing tracker,
+status13,6,2026-05-28,30590-2,67,,,seeded from existing tracker,
+status13,6,2026-05-28,5911-33,874,,,seeded from existing tracker,
+status13,6,2026-05-28,30363-2,1100,,,seeded from existing tracker,
+status13,6,2026-05-28,30821-1,460,,,seeded from existing tracker,
+status13,6,2026-05-28,30366-1,461,,,seeded from existing tracker,
+status13,6,2026-05-28,13074-4,236,,,seeded from existing tracker,
+status13,6,2026-05-28,8824-5,397,,,seeded from existing tracker,
+status13,6,2026-05-28,20253-3,0,,,seeded from existing tracker,
+status13,6,2026-05-28,30876-1,77,,,seeded from existing tracker,
+status13,6,2026-05-28,30250-2,,,,seeded from existing tracker,
+status13,6,2026-05-28,NOCODE-R16,0,,,seeded from existing tracker,
+status13,7,2026-05-28,13262-2,213,,,seeded from existing tracker,
+status13,7,2026-05-28,30590-2,67,,,seeded from existing tracker,
+status13,7,2026-05-28,5911-33,878,,,seeded from existing tracker,
+status13,7,2026-05-28,30363-2,1102,,,seeded from existing tracker,
+status13,7,2026-05-28,30821-1,460,,,seeded from existing tracker,
+status13,7,2026-05-28,30366-1,462,,,seeded from existing tracker,
+status13,7,2026-05-28,13074-4,236,,,seeded from existing tracker,
+status13,7,2026-05-28,8824-5,401,,,seeded from existing tracker,
+status13,7,2026-05-28,20253-3,1086,,,seeded from existing tracker,
+status13,7,2026-05-28,30876-1,76,,,seeded from existing tracker,
+status13,7,2026-05-28,30250-2,,,,seeded from existing tracker,
+status13,7,2026-05-28,NOCODE-R16,0,,,seeded from existing tracker,
+status13,8,2026-06-11,13262-2,220,,,seeded from existing tracker,
+status13,8,2026-06-11,30590-2,73,,,seeded from existing tracker,
+status13,8,2026-06-11,5911-33,885,,,seeded from existing tracker,
+status13,8,2026-06-11,30363-2,1106,,,seeded from existing tracker,
+status13,8,2026-06-11,30821-1,462,,,seeded from existing tracker,
+status13,8,2026-06-11,30366-1,463,,,seeded from existing tracker,
+status13,8,2026-06-11,13074-4,236,,,seeded from existing tracker,
+status13,8,2026-06-11,8824-5,412,,,seeded from existing tracker,
+status13,8,2026-06-11,20253-3,1096,,,seeded from existing tracker,
+status13,8,2026-06-11,30876-1,79,,,seeded from existing tracker,
+status13,8,2026-06-11,30250-2,,,,seeded from existing tracker,
+status13,8,2026-06-11,NOCODE-R16,0,,,seeded from existing tracker,
+status13,9,2026-06-19,13262-2,231,,,seeded from existing tracker,
+status13,9,2026-06-19,30590-2,74,,,seeded from existing tracker,
+status13,9,2026-06-19,5911-33,892,,,seeded from existing tracker,
+status13,9,2026-06-19,30363-2,1107,,,seeded from existing tracker,
+status13,9,2026-06-19,30821-1,462,,,seeded from existing tracker,
+status13,9,2026-06-19,30366-1,463,,,seeded from existing tracker,
+status13,9,2026-06-19,13074-4,236,,,seeded from existing tracker,
+status13,9,2026-06-19,8824-5,421,,,seeded from existing tracker,
+status13,9,2026-06-19,20253-3,1100,,,seeded from existing tracker,
+status13,9,2026-06-19,30876-1,82,,,seeded from existing tracker,
+status13,9,2026-06-19,30250-2,,,,seeded from existing tracker,
+status13,9,2026-06-19,NOCODE-R16,0,,,seeded from existing tracker,
+status13,10,2026-06-25,13262-2,241,,,seeded from existing tracker,
+status13,10,2026-06-25,30590-2,78,,,seeded from existing tracker,
+status13,10,2026-06-25,5911-33,907,,,seeded from existing tracker,
+status13,10,2026-06-25,30363-2,1109,,,seeded from existing tracker,
+status13,10,2026-06-25,30821-1,463,,,seeded from existing tracker,
+status13,10,2026-06-25,30366-1,464,,,seeded from existing tracker,
+status13,10,2026-06-25,13074-4,236,,,seeded from existing tracker,
+status13,10,2026-06-25,8824-5,433,,,seeded from existing tracker,
+status13,10,2026-06-25,20253-3,1110,,,seeded from existing tracker,
+status13,10,2026-06-25,30876-1,86,,,seeded from existing tracker,
+status13,10,2026-06-25,30250-2,659,,,seeded from existing tracker,
+status13,10,2026-06-25,NOCODE-R16,0,,,seeded from existing tracker,
+status13,11,2026-07-02,13262-2,247,,,seeded from existing tracker,
+status13,11,2026-07-02,30590-2,81,,,seeded from existing tracker,
+status13,11,2026-07-02,5911-33,922,,,seeded from existing tracker,
+status13,11,2026-07-02,30363-2,1111,,,seeded from existing tracker,
+status13,11,2026-07-02,30821-1,464,,,seeded from existing tracker,
+status13,11,2026-07-02,30366-1,464,,,seeded from existing tracker,
+status13,11,2026-07-02,13074-4,236,,,seeded from existing tracker,
+status13,11,2026-07-02,8824-5,460,,,seeded from existing tracker,
+status13,11,2026-07-02,20253-3,1115,,,seeded from existing tracker,
+status13,11,2026-07-02,30876-1,96,,,seeded from existing tracker,
+status13,11,2026-07-02,30250-2,659,,,seeded from existing tracker,
+status13,11,2026-07-02,NOCODE-R16,0,,,seeded from existing tracker,
+status13,12,2026-07-16,13262-2,269,,,seeded from existing tracker,
+status13,12,2026-07-16,30590-2,94,,,seeded from existing tracker,
+status13,12,2026-07-16,5911-33,951,,,seeded from existing tracker,
+status13,12,2026-07-16,30363-2,1116,,,seeded from existing tracker,
+status13,12,2026-07-16,30821-1,472,,,seeded from existing tracker,
+status13,12,2026-07-16,30366-1,465,,,seeded from existing tracker,
+status13,12,2026-07-16,13074-4,234,,,seeded from existing tracker,
+status13,12,2026-07-16,8824-5,544,,,seeded from existing tracker,
+status13,12,2026-07-16,20253-3,1126,,,seeded from existing tracker,
+status13,12,2026-07-16,30876-1,118,,,seeded from existing tracker,
+status13,12,2026-07-16,30250-2,659,,,seeded from existing tracker,
+status13,12,2026-07-16,NOCODE-R16,0,,,seeded from existing tracker,
+status13,13,2026-07-24,13262-2,285,,,seeded from existing tracker,
+status13,13,2026-07-24,30590-2,102,,,seeded from existing tracker,
+status13,13,2026-07-24,5911-33,965,,,seeded from existing tracker,
+status13,13,2026-07-24,30363-2,1117,,,seeded from existing tracker,
+status13,13,2026-07-24,30821-1,475,,,seeded from existing tracker,
+status13,13,2026-07-24,30366-1,465,,,seeded from existing tracker,
+status13,13,2026-07-24,13074-4,234,,,seeded from existing tracker,
+status13,13,2026-07-24,8824-5,573,,,seeded from existing tracker,
+status13,13,2026-07-24,20253-3,1129,,,seeded from existing tracker,
+status13,13,2026-07-24,30876-1,121,,,seeded from existing tracker,
+status13,13,2026-07-24,30250-2,659,,,seeded from existing tracker,
+status13,13,2026-07-24,NOCODE-R16,0,,,seeded from existing tracker,
+status13,14,2026-07-31,13262-2,306,,,seeded from existing tracker,
+status13,14,2026-07-31,30590-2,106,,,seeded from existing tracker,
+status13,14,2026-07-31,5911-33,976,,,seeded from existing tracker,
+status13,14,2026-07-31,30363-2,1117,,,seeded from existing tracker,
+status13,14,2026-07-31,30821-1,485,,,seeded from existing tracker,
+status13,14,2026-07-31,30366-1,465,,,seeded from existing tracker,
+status13,14,2026-07-31,13074-4,234,,,seeded from existing tracker,
+status13,14,2026-07-31,8824-5,591,,,seeded from existing tracker,
+status13,14,2026-07-31,20253-3,1135,,,seeded from existing tracker,
+status13,14,2026-07-31,30876-1,121,,,seeded from existing tracker,
+status13,14,2026-07-31,30250-2,659,,,seeded from existing tracker,
+status13,14,2026-07-31,NOCODE-R16,0,,,seeded from existing tracker,
+status13,15,2026-08-07,13262-2,319,,,seeded from existing tracker,
+status13,15,2026-08-07,30590-2,112,,,seeded from existing tracker,
+status13,15,2026-08-07,5911-33,985,,,seeded from existing tracker,
+status13,15,2026-08-07,30363-2,1119,,,seeded from existing tracker,
+status13,15,2026-08-07,30821-1,491,,,seeded from existing tracker,
+status13,15,2026-08-07,30366-1,465,,,seeded from existing tracker,
+status13,15,2026-08-07,13074-4,235,,,seeded from existing tracker,
+status13,15,2026-08-07,8824-5,608,,,seeded from existing tracker,
+status13,15,2026-08-07,20253-3,1139,,,seeded from existing tracker,
+status13,15,2026-08-07,30876-1,124,,,seeded from existing tracker,
+status13,15,2026-08-07,30250-2,659,,,seeded from existing tracker,
+status13,15,2026-08-07,NOCODE-R16,0,,,seeded from existing tracker,
+status13,16,2026-08-08,13262-2,321,,,seeded from existing tracker,
+status13,16,2026-08-08,30590-2,113,,,seeded from existing tracker,
+status13,16,2026-08-08,5911-33,986,,,seeded from existing tracker,
+status13,16,2026-08-08,30363-2,1119,,,seeded from existing tracker,
+status13,16,2026-08-08,30821-1,491,,,seeded from existing tracker,
+status13,16,2026-08-08,30366-1,466,,,seeded from existing tracker,
+status13,16,2026-08-08,13074-4,235,,,seeded from existing tracker,
+status13,16,2026-08-08,8824-5,609,,,seeded from existing tracker,
+status13,16,2026-08-08,20253-3,1140,,,seeded from existing tracker,
+status13,16,2026-08-08,30876-1,124,,,seeded from existing tracker,
+status13,16,2026-08-08,30250-2,659,,,seeded from existing tracker,
+status13,16,2026-08-08,NOCODE-R16,0,,,seeded from existing tracker,
+johor,,2026-06-19,835-14,275,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-06-26,835-14,286,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-07-03,835-14,283,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-07-10,835-14,285,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-07-17,835-14,283,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-07-24,835-14,285,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-07-31,835-14,291,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-08-07,835-14,293,,,seeded from your report,"Latets sales - Block A: 187 units, Block B: 106 units"
+johor,,2026-06-19,30946-1,842,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-06-26,30946-1,843,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-07-03,30946-1,853,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-07-10,30946-1,901,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-07-17,30946-1,905,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-07-24,30946-1,916,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-07-31,30946-1,925,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-08-07,30946-1,935,,,seeded from your report,"Latest sales - Block A: 379 units, Block B: 363 units, Blok C: 86 units,  Block D: 107 units"
+johor,,2026-06-19,14523-4,34,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-06-26,14523-4,38,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-07-03,14523-4,39,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-07-10,14523-4,42,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-07-17,14523-4,45,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-07-24,14523-4,46,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-07-31,14523-4,48,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-08-07,14523-4,47,,,seeded from your report,Open Sale for Block A (416 units) only.
+johor,,2026-06-19,30635-1,1010,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-06-26,30635-1,1012,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-07-03,30635-1,1018,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-07-10,30635-1,1033,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-07-17,30635-1,1037,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-07-24,30635-1,1045,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-07-31,30635-1,1050,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-08-07,30635-1,1051,,,seeded from your report,"Latest sales - Phase 1: 666 units, Phase 2: 385 units"
+johor,,2026-06-19,31007-1,843,,,seeded from your report,-
+johor,,2026-06-26,31007-1,843,,,seeded from your report,-
+johor,,2026-07-03,31007-1,843,,,seeded from your report,-
+johor,,2026-07-10,31007-1,843,,,seeded from your report,-
+johor,,2026-07-17,31007-1,843,,,seeded from your report,-
+johor,,2026-07-24,31007-1,845,,,seeded from your report,-
+johor,,2026-07-31,31007-1,845,,,seeded from your report,-
+johor,,2026-08-07,31007-1,845,,,seeded from your report,-
+johor,,2026-06-19,31100-1,1334,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-06-26,31100-1,1341,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-07-03,31100-1,1348,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-07-10,31100-1,1364,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-07-17,31100-1,1372,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-07-24,31100-1,1391,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-07-31,31100-1,1403,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-08-07,31100-1,1406,,,seeded from your report,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet. Latest Sales - Block A: 439 units, Block B: 513 units, Block D: 454 units"
+johor,,2026-06-19,31074-1,936,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-06-26,31074-1,943,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-07-03,31074-1,949,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-07-10,31074-1,963,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-07-17,31074-1,968,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-07-24,31074-1,976,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-07-31,31074-1,989,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-08-07,31074-1,990,,,seeded from your report,"Latest sale - Block A: 401 units, Block B: 365 units, Block C - 224 units"
+johor,,2026-06-19,9600-6,610,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-06-26,9600-6,616,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-07-03,9600-6,637,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-07-10,9600-6,665,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-07-17,9600-6,676,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-07-24,9600-6,692,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-07-31,9600-6,714,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-08-07,9600-6,724,,,seeded from your report,"Latest sale - Block A: 483 units, Block B: 241 units"
+johor,,2026-06-19,31031-1,1351,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-06-26,31031-1,1354,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-07-03,31031-1,1356,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-07-10,31031-1,1372,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-07-17,31031-1,1376,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-07-24,31031-1,1381,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-07-31,31031-1,1387,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-08-07,31031-1,1389,,,seeded from your report,"Latest sale - Block A: 723 units, Block B: 666 units"
+johor,,2026-06-19,30828-3,873,,,seeded from your report,-
+johor,,2026-06-26,30828-3,877,,,seeded from your report,-
+johor,,2026-07-03,30828-3,881,,,seeded from your report,-
+johor,,2026-07-10,30828-3,887,,,seeded from your report,-
+johor,,2026-07-17,30828-3,888,,,seeded from your report,-
+johor,,2026-07-24,30828-3,890,,,seeded from your report,-
+johor,,2026-07-31,30828-3,898,,,seeded from your report,-
+johor,,2026-08-07,30828-3,898,,,seeded from your report,-
+johor,,2026-06-19,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-06-26,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-07-03,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-07-10,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-07-17,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-07-24,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-07-31,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-08-07,NOCODE-The Eclipse,0,,,seeded from your report,"*No info on Teduh, Not obtained AP."
+johor,,2026-06-19,13531-2,684,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-06-26,13531-2,682,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-07-03,13531-2,685,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-07-10,13531-2,692,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-07-17,13531-2,698,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-07-24,13531-2,700,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-07-31,13531-2,707,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-08-07,13531-2,710,,,seeded from your report,"Latest sale - Block A: 432 units, Block B: 278 units"
+johor,,2026-06-19,31034-1,358,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-06-26,31034-1,365,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-07-03,31034-1,365,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-07-10,31034-1,370,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-07-17,31034-1,370,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-07-24,31034-1,373,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-07-31,31034-1,380,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-08-07,31034-1,382,,,seeded from your report,"Latest sale - Block A: 293 units, Block B: 89 units"
+johor,,2026-06-19,31149-1,249,,,seeded from your report,"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-06-26,31149-1,251,,,seeded from your report,"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-07-03,31149-1,251,,,seeded from your report,"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-07-10,31149-1,266,,,seeded from your report,"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-07-17,31149-1,270,,,seeded from your report,"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-07-24,31149-1,275,,,seeded from your report,"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-07-31,31149-1,281,,,seeded from your report (Calia corrected),"Latest sale - Block A: 207 units, Block B: 77 units"
+johor,,2026-08-07,31149-1,284,,,seeded from your report (Calia corrected),"Latest sale - Block A: 207 units, Block B: 77 units"
