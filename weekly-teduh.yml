@@ -1,16 +1,12 @@
 name: TEDUH tracker refresh
 
 on:
-  schedule:
-    # 00:17 UTC daily = 08:17 AM Malaysia / Singapore time.
-    # Early on purpose: GitHub queues scheduled jobs behind everything else and can
-    # run an hour or more late, so starting at 08:17 means even a bad delay still
-    # lands before the working day. The odd minute avoids the top of the hour,
-    # which is GitHub's busiest and most delayed moment.
-    # The website and the daily workbook refresh every day.
-    # The Excel trackers and the PDF report are rebuilt on Fridays only.
-    - cron: "17 23 * * *"
-  workflow_dispatch:        # lets you run it manually from the Actions tab
+  # No native `schedule:` trigger here on purpose -- a Cloudflare Worker (see
+  # cloudflare-worker/) calls workflow_dispatch on a reliable schedule instead.
+  # GitHub's own `schedule:` trigger is queued and can run an hour+ late, and
+  # running both at once risks two overlapping runs colliding on the same
+  # generated binary files (xlsx/pdf can't auto-merge like text can).
+  workflow_dispatch:        # lets the Cloudflare Worker (or you, manually) run it
 
 permissions:
   contents: write
@@ -64,26 +60,29 @@ jobs:
           mkdir -p docs/downloads docs/data
           python scripts/build_daily_xlsx.py projects.csv data/teduh_daily.csv docs/downloads/Teduh_Daily_Tracker.xlsx
           python scripts/build_pdf.py projects.csv data/teduh_daily.csv docs/downloads/TEDUH_Daily_Report.pdf --daily
+          python scripts/build_unit_workbook.py docs/downloads/TEDUH_Unit_Types.xlsx
 
-- name: Build weekly Excel trackers (Fridays only)
+      - name: Build weekly Excel trackers (Fridays only)
         if: always() && steps.when.outputs.weekly == 'yes'
         run: |
           python scripts/build_trackers.py projects.csv data/teduh_history.csv docs/downloads
           python - <<'PY'
           import glob, os, shutil
           d = "docs/downloads"
-          # Filenames contain spaces, so this is done in Python rather than shell
-          # globbing, and the fixed-name copy is excluded from the candidates so it
-          # can never be copied onto itself.
-          for pattern, stable in [("*Seputeh*.xlsx", "Seputeh_Hills_Teduh_Weekly_Update.xlsx"),
-                                  ("*Developer*.xlsx", "Tduh_Developer_Project_Sales_Status.xlsx")]:
+          # Done in Python, not shell globbing: the filenames contain spaces, and the
+          # fixed-name copy is excluded so it can never be copied onto itself.
+          pairs = [("*Seputeh*.xlsx", "Seputeh_Hills_Teduh_Weekly_Update.xlsx"),
+                   ("*Developer*.xlsx", "Tduh_Developer_Project_Sales_Status.xlsx"),
+                   ("*Johor*.xlsx", "Johor_Teduh_Weekly_Update.xlsx")]
+          for pattern, stable in pairs:
               dated = [f for f in glob.glob(os.path.join(d, pattern))
                        if os.path.basename(f) != stable]
               dated.sort(key=os.path.getmtime, reverse=True)
-              if dated:
-                  shutil.copyfile(dated[0], os.path.join(d, stable))
-                  print("latest ->", stable, "from", os.path.basename(dated[0]))
-              for old in dated[4:]:          # keep the four most recent dated copies
+              if not dated:
+                  continue
+              shutil.copyfile(dated[0], os.path.join(d, stable))
+              print("latest ->", stable, "from", os.path.basename(dated[0]))
+              for old in dated[4:]:
                   os.remove(old)
                   print("removed", os.path.basename(old))
           PY
@@ -118,11 +117,11 @@ jobs:
           to: ${{ secrets.MAIL_TO }}
           subject: TEDUH weekly update
           body: ${{ env.SUMMARY }}
-          attachments: docs/downloads/TEDUH_Weekly_Report.pdf,docs/downloads/TEDUH_Daily_Report.pdf,docs/downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx,docs/downloads/Tduh_Developer_Project_Sales_Status.xlsx,docs/downloads/Teduh_Daily_Tracker.xlsx
+          attachments: docs/downloads/TEDUH_Weekly_Report.pdf,docs/downloads/TEDUH_Daily_Report.pdf,docs/downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx,docs/downloads/Tduh_Developer_Project_Sales_Status.xlsx,docs/downloads/Johor_Teduh_Weekly_Update.xlsx,docs/downloads/TEDUH_Unit_Types.xlsx,docs/downloads/Teduh_Daily_Tracker.xlsx
 
       - name: WhatsApp alert
         if: always() && steps.when.outputs.weekly == 'yes' && env.WHATSAPP_PHONE != ''
-        continue-on-error: true
+        continue-on-error: true          # a failed nudge must never fail the run
         run: |
           MSG=$(python scripts/weekly_summary.py --short)
           curl -sS --get --max-time 30 \
@@ -138,7 +137,7 @@ jobs:
 
       - name: Publish data for download
         if: always()
-        run: cp data/teduh_daily.csv data/teduh_history.csv data/teduh_by_type.csv docs/data/ || true
+        run: cp data/*.csv docs/data/ || true
 
       - name: Commit
         if: always()
