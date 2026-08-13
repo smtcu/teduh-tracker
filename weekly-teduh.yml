@@ -1,12 +1,16 @@
 name: TEDUH tracker refresh
 
 on:
-  # No native `schedule:` trigger here on purpose -- a Cloudflare Worker (see
-  # cloudflare-worker/) calls workflow_dispatch on a reliable schedule instead.
-  # GitHub's own `schedule:` trigger is queued and can run an hour+ late, and
-  # running both at once risks two overlapping runs colliding on the same
-  # generated binary files (xlsx/pdf can't auto-merge like text can).
-  workflow_dispatch:        # lets the Cloudflare Worker (or you, manually) run it
+  schedule:
+    # 23:17 UTC = 07:17 AM Malaysia / Singapore time the following day.
+    # Early on purpose: GitHub queues scheduled jobs behind everything else and can
+    # run an hour or more late, so a 07:17 start still lands before the working day.
+    # The odd minute avoids the top of the hour, which is GitHub's busiest and most
+    # delayed moment -- 07:00 exactly would be the worst slot to pick.
+    # The website and the daily workbook refresh every day.
+    # The Excel trackers and the PDF report are rebuilt on Fridays only.
+    - cron: "17 23 * * *"
+  workflow_dispatch:        # lets you run it manually from the Actions tab
 
 permissions:
   contents: write
