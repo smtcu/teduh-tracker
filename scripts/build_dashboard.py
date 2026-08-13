@@ -247,6 +247,8 @@ html[data-theme="dark"] th.live{background:rgba(217,89,38,.26)}
 th.rem{z-index:5;background:var(--sunk)}
 tbody tr:hover td.rem{background:var(--sunk)}
 tr.pinned td.rem{background:var(--pinbg)}
+tr.noterow{display:none}
+tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins{margin-top:6px}
 .ins h3{font-size:14.5px;font-weight:750;margin:18px 0 2px;letter-spacing:-.01em}
 .ins .sz{font-weight:600;color:var(--muted);font-size:11px;display:block}
@@ -266,6 +268,8 @@ td.live-card{border-left:4px solid var(--orange)}
 th.rem{z-index:5;background:var(--sunk)}
 tbody tr:hover td.rem{background:var(--sunk)}
 tr.pinned td.rem{background:var(--pinbg)}
+tr.noterow{display:none}
+tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins{margin-top:6px}
 .ins h3{font-size:14.5px;font-weight:750;margin:18px 0 2px;letter-spacing:-.01em}
 .ins .sz{font-weight:600;color:var(--muted);font-size:11px;display:block}
@@ -328,7 +332,19 @@ tr:last-child td{border-bottom:0}
   .stick{width:26px;min-width:26px}
   .stick2{left:26px;max-width:98px;min-width:98px;font-size:11.5px}
   .stick3{left:124px;width:46px;min-width:46px;max-width:46px;font-size:11.5px}
-  .rem{max-width:150px;min-width:150px;font-size:11px}
+  /* On phones the Remarks column is replaced by a full-width line under each
+     project, and the # column is dropped -- together they were leaving 12px of
+     338px for the actual figures. */
+  .rem{display:none}
+  .stick{display:none}
+  .stick2{left:0;max-width:112px;min-width:112px}
+  .stick3{left:112px}
+  tr.noterow{display:table-row}
+  tr.noterow td{background:var(--sunk);border-right:0;padding:0}
+  tr.noterow .notebox{position:sticky;left:0;width:calc(100vw - 46px);
+    white-space:normal;line-height:1.35;font-size:11.5px;font-weight:600;
+    color:var(--ink-2);padding:7px 10px;box-sizing:border-box}
+  tr.noterow .notebox b{font-weight:750;color:var(--muted);letter-spacing:.04em;font-size:10px}
   th{font-size:10.5px;letter-spacing:.01em}
   .sel{display:block} .chips{display:none}
   .scroll.tall{max-height:64vh}
@@ -567,6 +583,21 @@ function table() {
     if (!showRemarks) rem.style.display = 'none';
     tr.appendChild(rem);
     bd.appendChild(tr);
+
+    /* Phone-only twin of the Remarks cell: a full-width line that stays put
+       while the week columns scroll sideways. Hidden on desktop by CSS. */
+    const noteText = (p.remarks || '').trim();
+    if (noteText && noteText !== '-') {
+      const nr = el('tr', 'noterow' + (p.pin ? ' pinnedNote' : ''));
+      const nc = el('td', 'l');
+      nc.colSpan = 12 + weeks.length * 3;
+      const box = el('div', 'notebox');
+      box.appendChild(el('b', '', 'Note '));
+      box.appendChild(document.createTextNode(noteText));
+      nc.appendChild(box);
+      nr.appendChild(nc);
+      bd.appendChild(nr);
+    }
   });
   tb.appendChild(bd); host.appendChild(tb);
   host.classList.toggle('compact', compact);
