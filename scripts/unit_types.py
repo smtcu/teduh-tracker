@@ -31,10 +31,38 @@ def split(unit):
         return None
 
 
+OTHER = "Other"
+
+
 def block_of(unit):
-    """The block/tower prefix, used for the Remarks note."""
-    p = split(unit)
-    return p[0] if p else None
+    """The block/tower prefix, used for the Remarks note.
+
+    Deliberately more forgiving than split(): TEDUH numbers units like
+    "A-08-03A", where the unit segment is not a plain number. Those are still
+    block A, so the prefix is taken as everything before the first dash rather
+    than requiring the floor and unit segments to parse. Returns None only when
+    there is no dash at all and therefore no prefix to read.
+    """
+    s = str(unit).strip().upper()
+    if "-" not in s:
+        return None
+    head = s.split("-", 1)[0].strip()
+    return head or None
+
+
+def block_counts(units):
+    """units: iterable of (unit_number, is_sold) -> {block: sold count}.
+
+    Every sold unit is counted exactly once; anything with no readable prefix
+    lands under OTHER so the note always adds up to the total sold.
+    """
+    counts = {}
+    for unit, is_sold in units:
+        if not is_sold:
+            continue
+        b = block_of(unit) or OTHER
+        counts[b] = counts.get(b, 0) + 1
+    return counts
 
 
 def classify(project_key, unit):
@@ -76,9 +104,8 @@ def tally(project_key, units):
             if is_sold:
                 sold_by_type[t] = sold_by_type.get(t, 0) + 1
         if is_sold:
-            b = block_of(unit)
-            if b:
-                sold_by_block[b] = sold_by_block.get(b, 0) + 1
+            b = block_of(unit) or OTHER
+            sold_by_block[b] = sold_by_block.get(b, 0) + 1
     return sold_by_type, total_by_type, sold_by_block, unmatched
 
 
@@ -86,5 +113,8 @@ def note_for(sold_by_block, prefix="Latest sales"):
     """'Latest sales - Block A: 187, Block B: 104'"""
     if not sold_by_block:
         return ""
-    parts = [f"Block {b}: {n}" for b, n in sorted(sold_by_block.items())]
+    named = sorted((b, n) for b, n in sold_by_block.items() if b != OTHER)
+    parts = [f"Block {b}: {n}" for b, n in named]
+    if sold_by_block.get(OTHER):
+        parts.append(f"{OTHER}: {sold_by_block[OTHER]}")
     return f"{prefix} - " + ", ".join(parts)
