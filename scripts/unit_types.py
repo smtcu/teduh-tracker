@@ -37,16 +37,20 @@ OTHER = "Other"
 def block_of(unit):
     """The block/tower prefix, used for the Remarks note.
 
-    Deliberately more forgiving than split(): TEDUH numbers units like
-    "A-08-03A", where the unit segment is not a plain number. Those are still
-    block A, so the prefix is taken as everything before the first dash rather
-    than requiring the floor and unit segments to parse. Returns None only when
-    there is no dash at all and therefore no prefix to read.
+    More forgiving than split() in one way and just as strict in another.
+
+    Forgiving: TEDUH numbers units like "A-08-03A", where the unit segment is
+    not a plain number. That is still block A, so the segments after the prefix
+    no longer have to parse as integers.
+
+    Strict: the number must have three segments. Single-tower projects are
+    numbered FLOOR-UNIT ("9-1", "10-3A"), where the prefix is a floor, not a
+    block. Those projects have no blocks to report, so they return None.
     """
-    s = str(unit).strip().upper()
-    if "-" not in s:
+    parts = str(unit).strip().upper().split("-")
+    if len(parts) < 3:
         return None
-    head = s.split("-", 1)[0].strip()
+    head = parts[0].strip()
     return head or None
 
 
@@ -114,6 +118,8 @@ def note_for(sold_by_block, prefix="Latest sales"):
     if not sold_by_block:
         return ""
     named = sorted((b, n) for b, n in sold_by_block.items() if b != OTHER)
+    if not named:
+        return ""          # single-tower project: no blocks, so nothing to break down
     parts = [f"Block {b}: {n}" for b, n in named]
     if sold_by_block.get(OTHER):
         parts.append(f"{OTHER}: {sold_by_block[OTHER]}")
