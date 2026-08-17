@@ -462,16 +462,16 @@ seputeh,,2026-08-17,32-16,43,146,RESIDENSI EDEN,,"Latest sales - Block A: 2, Blo
 seputeh,,2026-08-17,30216-1,33,154,PAVILION DAMANSARA HEIGHTS PHASE 2,,"Latest sales - Block RA/N: 31, Block RA/S: 2"
 seputeh,,2026-08-17,30216-2,45,490,PAVILION DAMANSARA HEIGHTS PHASE 2,,"Latest sales - Block RC/N: 11, Block RC/S: 34"
 seputeh,,2026-08-17,31078-1,45,48,VILA BATAI,,
-seputeh,,2026-08-17,31274-1,1,244,AOSIS MONT KIARA,,Latest sales - Block 15: 1
+seputeh,,2026-08-17,31274-1,1,244,AOSIS MONT KIARA,,
 seputeh,,2026-08-17,2463-23,312,433,PARKCITY RESIDENCES,,
 status13,,2026-08-17,31202-1,177,1310,RESIDENSI WARISAN SALAK SELATAN,,"Latest sales - Block A: 96, Block B: 81"
 status13,,2026-08-17,13262-2,335,1544,RESIDENSI M AURORA,,"Latest sales - Block A: 40, Block B: 295"
 status13,,2026-08-17,30590-2,120,996,ARTE STAR,,Latest sales - Block B: 120
 status13,,2026-08-17,5911-33,998,1618,RESIDENSI M ASPIRA,,"Latest sales - Block A: 460, Block B: 538"
-status13,,2026-08-17,30363-2,1125,1218,RESIDENSI DESA TIMUR,,"Latest sales - Block A: 181, Block B: 581, Block B39: 1, Block C: 362"
+status13,,2026-08-17,30363-2,1125,1218,RESIDENSI DESA TIMUR,,"Latest sales - Block A: 181, Block B: 581, Block C: 362"
 status13,,2026-08-17,30821-1,502,988,RESIDENSI RADIUM,,"Latest sales - Block A: 248, Block B: 254"
 status13,,2026-08-17,30366-1,467,482,RESIDENSI AMBIEN,,Latest sales - Block A: 467
-status13,,2026-08-17,13074-4,236,299,RESIDENSI HANA,,"Latest sales - Block 10: 11, Block 11: 10, Block 12: 13, Block 13: 11, Block 13A: 8, Block 15: 12, Block 16: 10, Block 17: 13, Block 18: 13, Block 19: 13, Block 20: 9, Block 21: 13, Block 22: 11, Block 23: 12, Block 23A: 9, Block 25: 13, Block 26: 10, Block 27: 13, Block 28: 12, Block 29: 10, Block 30: 2, Block 9: 8"
+status13,,2026-08-17,13074-4,236,299,RESIDENSI HANA,,
 status13,,2026-08-17,8824-5,621,1296,RESIDENSI SUNWAY COCHRANE,,"Latest sales - Block A: 167, Block B: 454"
 status13,,2026-08-17,20253-3,1145,1500,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),,"Latest sales - Block W: 591, Block X: 554"
 status13,,2026-08-17,30876-1,126,551,RESIDENSI VERIDIAN,,Latest sales - Block A: 126
@@ -481,12 +481,12 @@ johor,,2026-08-17,835-14,298,715,RESIDENSI DWI PESONA,,"Latest sales - Block A: 
 johor,,2026-08-17,30946-1,950,1950,RESIDENSI SENIBONG MUTIARA,,"Latest sales - Block A: 387, Block B: 369, Block C: 86, Block D: 108"
 johor,,2026-08-17,14523-4,47,416,RESIDENSI PANORAMA SENIBONG,"unit count on TEDUH is 416, tracker says 1500",Latest sales - Block A: 47
 johor,,2026-08-17,30635-1,1054,2156,RESIDENSI PARKLAND PERMAS,,"Latest sales - Block 1A: 326, Block 1B: 340, Block 2A: 213, Block 2B: 175"
-johor,,2026-08-17,31007-1,845,848,RESIDENSI KEBUN TEH (THE ASTERIAZ @ KEBUN TEH),,"Latest sales - Block 10: 11, Block 11: 14, Block 12: 14, Block 13: 27, Block 14: 27, Block 15: 27, Block 16: 27, Block 17: 27, Block 18: 27, Block 19: 26, Block 20: 27, Block 21: 27, Block 22: 27, Block 23: 27, Block 24: 25, Block 25: 27, Block 26: 27, Block 27: 27, Block 28: 27, Block 29: 27, Block 30: 26, Block 31: 27, Block 32: 27, Block 33: 27, Block 34: 27, Block 35: 27, Block 36: 27, Block 37: 27, Block 38: 27, Block 39: 27, Block 40: 27, Block 41: 27, Block 42: 27"
+johor,,2026-08-17,31007-1,845,848,RESIDENSI KEBUN TEH (THE ASTERIAZ @ KEBUN TEH),,
 johor,,2026-08-17,31100-1,1418,4525,RESIDENSI DATARAN SELATAN (DOVER TOWER),"unit count on TEDUH is 4525, tracker says 3692","Latest sales - Block A: 447, Block B1: 231, Block B2: 284, Block D1: 168, Block D2: 288"
 johor,,2026-08-17,31074-1,992,2743,RESIDENSI MAXIM PELANGI,,"Latest sales - Block A: 401, Block B: 365, Block C: 226"
 johor,,2026-08-17,9600-6,737,1733,RESIDENSI ANGGUN MEWAH,,"Latest sales - Block A: 491, Block B: 246"
 johor,,2026-08-17,31031-1,1391,1623,SKYLINE ONE SENTOSA,,"Latest sales - Block A: 725, Block B: 666"
-johor,,2026-08-17,30828-3,902,996,RESIDENSI GEN SFERA,,"Latest sales - Block 12: 27, Block 13: 26, Block 14: 26, Block 15: 26, Block 16: 24, Block 17: 25, Block 18: 28, Block 19: 26, Block 20: 26, Block 21: 26, Block 22: 26, Block 23: 26, Block 24: 26, Block 25: 26, Block 26: 25, Block 27: 26, Block 28: 24, Block 29: 25, Block 30: 25, Block 31: 25, Block 32: 23, Block 33: 26, Block 34: 25, Block 35: 25, Block 36: 24, Block 37: 23, Block 38: 22, Block 39: 26, Block 40: 21, Block 41: 22, Block 42: 22, Block 43: 22, Block 44: 19, Block 45: 21, Block 46: 21, Block 47: 23, Block 48: 23"
+johor,,2026-08-17,30828-3,902,996,RESIDENSI GEN SFERA,,
 johor,,2026-08-17,13531-2,715,824,RESIDENSI AMBAR RIMBA,,"Latest sales - Block A: 432, Block B: 283"
 johor,,2026-08-17,31034-1,386,1012,SOHO SUNWAY MAJESTIC,,"Latest sales - Block A: 294, Block B: 92"
 johor,,2026-08-17,31149-1,292,1274,RESIDENSI DANGA PARAGON 1,,"Latest sales - Block A: 210, Block B: 82"
