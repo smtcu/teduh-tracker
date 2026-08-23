@@ -52,6 +52,7 @@ confusing.
 ```
 projects.csv                     which projects to track — the config driving everything
 unit_types.json                  unit-type classification rules for 4 Johor projects
+block_groups.json                rolls TEDUH block names into her reported groupings
 .github/workflows/weekly-teduh.yml  the pipeline — workflow_dispatch only, no cron
 cloudflare-worker/               the Worker that fires workflow_dispatch twice a day
 worker.js / wrangler.toml        Cloudflare password gate for the website (unrelated
@@ -113,7 +114,7 @@ to disable — but the daily commits keep the repo active regardless.
 
 ## projects.csv columns
 
-`tracker, group, no, project, code, developer, launched, total_units, first_new, remarks, pin, unit_types`
+`tracker, group, no, project, code, developer, launched, total_units, first_new, remarks, pin, unit_types, note_prefix`
 
 - `code` may be comma-separated for multi-code projects; the scraper sums them.
   Parkland by the River is the example — two codes summing to 1,051 on 07.08,
@@ -122,6 +123,41 @@ to disable — but the daily commits keep the repo active regardless.
   (The Eclipse is currently in this state).
 - `unit_types` names the key(s) in `unit_types.json` for classified projects.
 - `group` is the Johor section heading (`Permas Jaya` / `JBCC`).
+
+### remarks vs note_prefix — two different jobs
+
+Both feed the Remarks column, and picking the wrong one loses information.
+
+- **`remarks` replaces the generated note outright.** Use it when the text is the
+  whole story and block numbers would add nothing: Seputeh's unit-size lines,
+  HillView's sale-scope note.
+- **`note_prefix` is a standing caveat that keeps the live numbers after it.**
+  Use it when the numbers matter but are misleading without context. Causewayz
+  Square is the case: 1,421 of 3,692 sold reads as weak selling until you know
+  Block C's 833 units were never released, so its `note_prefix` carries that
+  sentence and the block breakdown regenerates behind it every run.
+
+A generated note overwrites a seeded one whenever it is non-empty, so a caveat
+left only in `data/teduh_history.csv` *will* be lost on the next scrape. That is
+exactly how Causewayz's "Block C is not opened yet" disappeared. Anything that
+must survive belongs in one of these two columns.
+
+## block_groups.json
+
+TEDUH's block names are not always the names in her report. This file rolls them
+up, keyed by the project's first code:
+
+| project | TEDUH | reported as |
+|---|---|---|
+| Parkland by the River | `1A` `1B` `2A` `2B` | `Phase 1`, `Phase 2` |
+| Causewayz Square | `A` `B1` `B2` `D1` `D2` | `Block A`, `Block B`, `Block D` |
+
+`label` is the word before the name, `"Block "` by default; Parkland sets it to
+`""` because "Phase 1" already reads whole. A block that is not listed keeps its
+own name, so a new tower appearing on TEDUH shows up rather than being silently
+folded into another. Roll-ups never change the arithmetic — verified at the time
+of writing: Parkland 667 + 391 = 1,058 and Causewayz 449 + 516 + 456 = 1,421,
+both equal to Total Sold.
 
 ## TEDUH API
 
