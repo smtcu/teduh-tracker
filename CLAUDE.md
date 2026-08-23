@@ -52,8 +52,10 @@ confusing.
 ```
 projects.csv                     which projects to track — the config driving everything
 unit_types.json                  unit-type classification rules for 4 Johor projects
-weekly-teduh.yml                 the schedule (lives at .github/workflows/ in the repo)
-worker.js / wrangler.toml        Cloudflare password gate for the website
+.github/workflows/weekly-teduh.yml  the pipeline — workflow_dispatch only, no cron
+cloudflare-worker/               the Worker that fires workflow_dispatch twice a day
+worker.js / wrangler.toml        Cloudflare password gate for the website (unrelated
+                                 to cloudflare-worker/ above — different Worker)
 scripts/scrape_teduh.py          the scraper — writes all the data files
 scripts/unit_types.py            unit-number parsing, classification, block notes
 scripts/build_dashboard.py       builds docs/index.html (self-contained, ~47KB)
