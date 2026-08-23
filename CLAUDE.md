@@ -73,10 +73,33 @@ docs/downloads/                  generated .xlsx and .pdf files
 
 ## Schedule
 
-`cron: "17 23 * * *"` — 23:17 UTC, which is 07:17 Malaysia time next day. The odd
-minute is deliberate: GitHub queues scheduled jobs and delays cluster at the top
-of the hour. GitHub also auto-disables workflows after 60 days of repository
-inactivity; the daily commits keep it alive.
+The workflow has **no `schedule:` trigger**. It is started by `workflow_dispatch`,
+called twice a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
+`teduh-workflow-trigger`):
+
+| Worker cron | UTC | Malaysia time |
+|---|---|---|
+| `17 23 * * *` | 23:17 | 07:17 next day |
+| `0 8 * * *` | 08:00 | 16:00 same day |
+
+GitHub's own cron used to run alongside this and was removed on 23 Aug 2026.
+Two reasons, in order of importance:
+
+1. **Overlapping runs corrupt a Friday rebuild.** On 12 Aug 2026 a GitHub-cron run
+   and a dispatched run overlapped. Both regenerated the same `.xlsx` and `.pdf`
+   files; git cannot merge binaries, so the second run hit a conflict it could not
+   resolve, died mid-rebase and left a detached HEAD. `concurrency` queues the
+   second run but does not save it — it only no-ops on days where nothing changed.
+2. **GitHub's cron is queued and unreliable**, often an hour or more late. That is
+   the whole reason the Worker exists.
+
+The Worker holds a fine-grained PAT (repo-scoped, Actions: read and write) as an
+encrypted secret named `GITHUB_TOKEN`. It is never in the repo or in the Worker
+source — set it with `wrangler secret put`, or in the Cloudflare dashboard.
+
+Note that GitHub auto-disables *scheduled* workflows after 60 days of repository
+inactivity. That rule no longer applies here, since there is no `schedule:` left
+to disable — but the daily commits keep the repo active regardless.
 
 ## The three trackers
 

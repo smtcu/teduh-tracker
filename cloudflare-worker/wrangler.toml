@@ -1,0 +1,19 @@
+name = "teduh-workflow-trigger"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# This is the schedule the Worker itself runs on (Cloudflare's cron, not GitHub's).
+# 23:17 UTC = 07:17 AM Malaysia / Singapore time the following day, same time the
+# GitHub workflow was already aiming for.
+# 08:00 UTC = 4:00 PM Malaysia / Singapore time, same day -- a second daily refresh.
+[triggers]
+crons = ["17 23 * * *", "0 8 * * *"]
+
+[vars]
+GH_OWNER = "smtcu"
+GH_REPO = "teduh-tracker"
+GH_WORKFLOW_FILE = "weekly-teduh.yml"
+GH_REF = "main"
+
+# GITHUB_TOKEN is NOT set here on purpose -- it's a secret, added separately with
+# `npx wrangler secret put GITHUB_TOKEN` so it never gets written to a file or git.
