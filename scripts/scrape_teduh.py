@@ -101,7 +101,11 @@ def main():
                 b = UT.block_of(u)
                 if b:
                     by_block[b] = by_block.get(b, 0) + 1
-        note = UT.note_for(by_block)
+        grouped, label = UT.regroup(by_block, codes[0])
+        note = UT.note_for(grouped, label=label)
+        if note and sum(grouped.values()) != sold:
+            print(f"WARN {p['project']}: block note sums to {sum(grouped.values())}, "
+                  f"total sold is {sold}")
 
         hist_rows.append(dict(tracker=p["tracker"], seq="", week=TODAY, code=codes[0],
                               total_sold=sold, total_units=total, teduh_name=name,

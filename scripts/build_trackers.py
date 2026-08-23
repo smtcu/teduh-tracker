@@ -31,6 +31,17 @@ def cell(ws, r, c, v=None, font=None, align=CTR, fill=None, fmt=None):
     if fmt: x.number_format = fmt
     return x
 
+
+def remark_for(project, generated):
+    """Same rule as the website: `remarks` overrides outright, `note_prefix` is a
+    standing caveat that keeps the live block numbers after it. Kept in step with
+    build_dashboard.remark_for so the Excel and the site never disagree."""
+    override = (project.get('remarks') or '').strip()
+    if override:
+        return override
+    caveat = (project.get('note_prefix') or '').strip()
+    return ' '.join(part for part in (caveat, generated) if part)
+
 def load(projects_csv, history_csv):
     """Return (projects, {tracker: [snapshot_keys...]}, lookup).
 
@@ -214,7 +225,7 @@ def build_johor(projects, weeks, lookup, notes, report_date, path):
                 pc.value = f'={L(col + 1)}{r}/$D${r}'
                 prev = L(col + 1)
             col += 3
-        cell(ws, r, rem_col, notes.get(key, p.get('remarks', '')), align=LFT)
+        cell(ws, r, rem_col, remark_for(p, notes.get(key, '')), align=LFT)
         r += 1
 
     for c, w in [('A', 4), ('B', 26), ('C', 22), ('D', 9)]:

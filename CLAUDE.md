@@ -52,8 +52,11 @@ confusing.
 ```
 projects.csv                     which projects to track — the config driving everything
 unit_types.json                  unit-type classification rules for 4 Johor projects
-weekly-teduh.yml                 the schedule (lives at .github/workflows/ in the repo)
-worker.js / wrangler.toml        Cloudflare password gate for the website
+block_groups.json                rolls TEDUH block names into her reported groupings
+.github/workflows/weekly-teduh.yml  the pipeline — workflow_dispatch only, no cron
+cloudflare-worker/               the Worker that fires workflow_dispatch twice a day
+worker.js / wrangler.toml        Cloudflare password gate for the website (unrelated
+                                 to cloudflare-worker/ above — different Worker)
 scripts/scrape_teduh.py          the scraper — writes all the data files
 scripts/unit_types.py            unit-number parsing, classification, block notes
 scripts/build_dashboard.py       builds docs/index.html (self-contained, ~47KB)
@@ -73,10 +76,33 @@ docs/downloads/                  generated .xlsx and .pdf files
 
 ## Schedule
 
-`cron: "17 23 * * *"` — 23:17 UTC, which is 07:17 Malaysia time next day. The odd
-minute is deliberate: GitHub queues scheduled jobs and delays cluster at the top
-of the hour. GitHub also auto-disables workflows after 60 days of repository
-inactivity; the daily commits keep it alive.
+The workflow has **no `schedule:` trigger**. It is started by `workflow_dispatch`,
+called twice a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
+`teduh-workflow-trigger`):
+
+| Worker cron | UTC | Malaysia time |
+|---|---|---|
+| `17 23 * * *` | 23:17 | 07:17 next day |
+| `0 8 * * *` | 08:00 | 16:00 same day |
+
+GitHub's own cron used to run alongside this and was removed on 23 Aug 2026.
+Two reasons, in order of importance:
+
+1. **Overlapping runs corrupt a Friday rebuild.** On 12 Aug 2026 a GitHub-cron run
+   and a dispatched run overlapped. Both regenerated the same `.xlsx` and `.pdf`
+   files; git cannot merge binaries, so the second run hit a conflict it could not
+   resolve, died mid-rebase and left a detached HEAD. `concurrency` queues the
+   second run but does not save it — it only no-ops on days where nothing changed.
+2. **GitHub's cron is queued and unreliable**, often an hour or more late. That is
+   the whole reason the Worker exists.
+
+The Worker holds a fine-grained PAT (repo-scoped, Actions: read and write) as an
+encrypted secret named `GITHUB_TOKEN`. It is never in the repo or in the Worker
+source — set it with `wrangler secret put`, or in the Cloudflare dashboard.
+
+Note that GitHub auto-disables *scheduled* workflows after 60 days of repository
+inactivity. That rule no longer applies here, since there is no `schedule:` left
+to disable — but the daily commits keep the repo active regardless.
 
 ## The three trackers
 
@@ -88,7 +114,7 @@ inactivity; the daily commits keep it alive.
 
 ## projects.csv columns
 
-`tracker, group, no, project, code, developer, launched, total_units, first_new, remarks, pin, unit_types`
+`tracker, group, no, project, code, developer, launched, total_units, first_new, remarks, pin, unit_types, note_prefix`
 
 - `code` may be comma-separated for multi-code projects; the scraper sums them.
   Parkland by the River is the example — two codes summing to 1,051 on 07.08,
@@ -97,6 +123,41 @@ inactivity; the daily commits keep it alive.
   (The Eclipse is currently in this state).
 - `unit_types` names the key(s) in `unit_types.json` for classified projects.
 - `group` is the Johor section heading (`Permas Jaya` / `JBCC`).
+
+### remarks vs note_prefix — two different jobs
+
+Both feed the Remarks column, and picking the wrong one loses information.
+
+- **`remarks` replaces the generated note outright.** Use it when the text is the
+  whole story and block numbers would add nothing: Seputeh's unit-size lines,
+  HillView's sale-scope note.
+- **`note_prefix` is a standing caveat that keeps the live numbers after it.**
+  Use it when the numbers matter but are misleading without context. Causewayz
+  Square is the case: 1,421 of 3,692 sold reads as weak selling until you know
+  Block C's 833 units were never released, so its `note_prefix` carries that
+  sentence and the block breakdown regenerates behind it every run.
+
+A generated note overwrites a seeded one whenever it is non-empty, so a caveat
+left only in `data/teduh_history.csv` *will* be lost on the next scrape. That is
+exactly how Causewayz's "Block C is not opened yet" disappeared. Anything that
+must survive belongs in one of these two columns.
+
+## block_groups.json
+
+TEDUH's block names are not always the names in her report. This file rolls them
+up, keyed by the project's first code:
+
+| project | TEDUH | reported as |
+|---|---|---|
+| Parkland by the River | `1A` `1B` `2A` `2B` | `Phase 1`, `Phase 2` |
+| Causewayz Square | `A` `B1` `B2` `D1` `D2` | `Block A`, `Block B`, `Block D` |
+
+`label` is the word before the name, `"Block "` by default; Parkland sets it to
+`""` because "Phase 1" already reads whole. A block that is not listed keeps its
+own name, so a new tower appearing on TEDUH shows up rather than being silently
+folded into another. Roll-ups never change the arithmetic — verified at the time
+of writing: Parkland 667 + 391 = 1,058 and Causewayz 449 + 516 + 456 = 1,421,
+both equal to Total Sold.
 
 ## TEDUH API
 

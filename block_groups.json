@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "Rolls TEDUH's raw block names up into the groupings Samantha reports by.",
+    "Keyed by the project's first code, the same key used in data/teduh_history.csv.",
+    "  groups : raw block name from the unit number -> the name to report it under",
+    "  label  : word placed before the name. Defaults to 'Block '. Use \"\" when the",
+    "           group name already reads as a whole label, e.g. 'Phase 1'.",
+    "Any block not listed is reported unchanged, so a new block appearing on TEDUH",
+    "shows up under its own name rather than being silently folded into another."
+  ],
+
+  "30635-1": {
+    "label": "",
+    "groups": {
+      "1A": "Phase 1",
+      "1B": "Phase 1",
+      "2A": "Phase 2",
+      "2B": "Phase 2"
+    }
+  },
+
+  "31100-1": {
+    "groups": {
+      "B1": "B",
+      "B2": "B",
+      "D1": "D",
+      "D2": "D"
+    }
+  }
+}

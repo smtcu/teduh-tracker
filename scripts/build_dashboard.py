@@ -31,6 +31,23 @@ def to_int(v):
         return None
 
 
+def remark_for(project, generated):
+    """Remarks text: either a fixed override, or a standing caveat plus live numbers.
+
+    `remarks` still wins outright, which is what Seputeh's unit-size notes and
+    HillView's sale-scope note rely on. `note_prefix` is the other shape: a
+    caveat that has to survive every rebuild while the block numbers after it
+    keep updating -- Causewayz's unreleased Block C is the case that matters,
+    because without it 1,421 of 3,692 reads as weak sales when 833 of those
+    units are simply not on the market.
+    """
+    override = (project.get("remarks") or "").strip()
+    if override:
+        return override
+    caveat = (project.get("note_prefix") or "").strip()
+    return " ".join(part for part in (caveat, generated) if part)
+
+
 def build_payload():
     projects = read("projects.csv")
     weekly = read("data/teduh_history.csv")
@@ -99,7 +116,12 @@ def build_payload():
             "group": (p.get("group") or "").strip(),
             "codes": codes,
             "unitKeys": [k.strip() for k in (p.get("unit_types") or "").split(",") if k.strip()],
-            "remarks": (p.get("remarks") or "").strip() or notes.get(code, ""),
+            # `key`, not `code`: a project with no TEDUH code is filed under
+            # "NOCODE-<project>" in the history, so looking it up by the blank
+            # code silently lost its note (The Eclipse). build_trackers.py has
+            # always used the NOCODE key, which is why the Excel kept the note
+            # while the website dropped it.
+            "remarks": remark_for(p, notes.get(key, "")),
             "pin": (p.get("pin") or "").strip().lower() in ("yes", "y", "1", "true"),
             "weekly": [{"d": d, "v": v} for d, v in wpts],
             "series": [{"d": d, "v": v} for d, v in dpts],
@@ -234,11 +256,18 @@ td.nm{font-weight:700;color:var(--ink)}
 .grpcell{background:var(--sunk);font-weight:800;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);border-right:0}
 .wk{border-left:2px solid var(--rule)}
 .new{background:var(--hl)}
-th.new{background:var(--hl)}
 .live{background:rgba(235,104,52,.10)}
-th.live{background:rgba(235,104,52,.16)}
 html[data-theme="dark"] .live{background:rgba(217,89,38,.18)}
-html[data-theme="dark"] th.live{background:rgba(217,89,38,.26)}
+/* The header row is position:sticky, so its background has to be fully opaque --
+   a translucent one lets the rows scrolling underneath show straight through it.
+   These two columns are tinted, so paint the tint as a gradient layer on top of
+   an opaque base instead of as a see-through background colour. Same colour on
+   screen, but nothing bleeds through. */
+th.new{background-color:var(--sunk);background-image:linear-gradient(var(--hl),var(--hl))}
+th.live{background-color:var(--sunk);
+  background-image:linear-gradient(rgba(235,104,52,.16),rgba(235,104,52,.16))}
+html[data-theme="dark"] th.live{background-color:var(--sunk);
+  background-image:linear-gradient(rgba(217,89,38,.26),rgba(217,89,38,.26))}
 .live-card{border-left:4px solid var(--orange)}
 .livehd{border-left:2px solid var(--orange)!important}
 .rem{position:sticky;right:0;z-index:3;background:var(--surface);
@@ -261,26 +290,6 @@ tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins tr.newweek.sep td{border-top:2px solid var(--blue)}
 .ins tr.older td{background:var(--surface)}
 td.live-card{border-left:4px solid var(--orange)}
-.livehd{border-left:2px solid var(--orange)!important}
-.rem{position:sticky;right:0;z-index:3;background:var(--surface);
-  border-left:2px solid var(--rule);max-width:230px;min-width:230px;
-  white-space:normal;line-height:1.32;font-weight:600;font-size:11.8px}
-th.rem{z-index:5;background:var(--sunk)}
-tbody tr:hover td.rem{background:var(--sunk)}
-tr.pinned td.rem{background:var(--pinbg)}
-tr.noterow{display:none}
-tr.pinned+tr.noterow td{background:var(--pinbg)}
-.ins{margin-top:6px}
-.ins h3{font-size:14.5px;font-weight:750;margin:18px 0 2px;letter-spacing:-.01em}
-.ins .sz{font-weight:600;color:var(--muted);font-size:11px;display:block}
-.ins table{margin-top:8px}
-.ins td.lbl,.ins th.lbl{text-align:left;font-weight:750}
-.ins tr.tot td{background:var(--sunk);font-weight:750}
-.ins tr.sep td{border-top:2px solid var(--rule)}
-.ins tr.newweek td{background:var(--hl)}
-.ins tr.newweek td.lbl{font-weight:750}
-.ins tr.newweek.sep td{border-top:2px solid var(--blue)}
-.ins tr.older td{background:var(--surface)}
 tbody tr:hover td:not(.stick){background:var(--sunk)}
 .stick,.stick2,.stick3{position:sticky;background:var(--surface);z-index:2}
 tr.pinned td{position:sticky;z-index:3;background:var(--pinbg);
