@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       start:
-        description: "First developer code to probe"
-        default: "1"
+        description: "First developer code to probe (30000 covers the newest developers)"
+        default: "30000"
       end:
         description: "Last developer code to probe"
         default: "33000"
       rps:
-        description: "Requests per second (keep this gentle)"
-        default: "6"
+        description: "Starting requests per second — it slows itself further if TEDUH refuses"
+        default: "1.5"
       minutes:
         description: "Stop cleanly after this many minutes"
         default: "300"
