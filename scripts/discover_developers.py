@@ -80,30 +80,75 @@ def find_projek(payload):
 
 
 class Limiter:
-    """Spaces requests out across all worker threads."""
+    """Spaces requests out across all worker threads, and slows down when told to.
 
-    def __init__(self, rps):
+    TEDUH answers 429 well below the rate a server of its size could handle, so
+    a fixed rate is guesswork. This starts at the requested rate and halves it
+    every time the site pushes back, easing part of the way up again after a
+    long clean run. Because every thread queues on the same next_at, a penalty
+    pauses the whole scan, not just the thread that hit it.
+    """
+
+    def __init__(self, rps, floor_rps=0.2):
         self.gap = 1.0 / rps if rps > 0 else 0.0
+        self.fast = self.gap                        # never go quicker than asked
+        self.slow = 1.0 / floor_rps if floor_rps > 0 else 30.0
         self.lock = threading.Lock()
         self.next_at = 0.0
+        self.clean = 0
+        self.penalties = 0
 
     def wait(self):
         if not self.gap:
             return
         with self.lock:
-            now = time.monotonic()
-            due = max(now, self.next_at)
+            due = max(time.monotonic(), self.next_at)
             self.next_at = due + self.gap
         delay = due - time.monotonic()
         if delay > 0:
             time.sleep(delay)
 
+    def penalise(self, pause):
+        """Back off after a refusal, and hold every thread for `pause` seconds."""
+        with self.lock:
+            self.gap = min(self.slow, max(self.gap, 0.05) * 2)
+            self.next_at = max(self.next_at, time.monotonic() + pause)
+            self.clean = 0
+            self.penalties += 1
+            return self.gap
 
-def fetch(code, limiter, attempts=3):
+    def reward(self):
+        with self.lock:
+            self.clean += 1
+            if self.clean >= 300 and self.gap > self.fast:
+                self.gap = max(self.fast, self.gap / 1.5)
+                self.clean = 0
+
+    def rate(self):
+        with self.lock:
+            return 1.0 / self.gap if self.gap else 0.0
+
+
+def retry_after(e, fallback):
+    """Seconds the server asked us to wait, if it said."""
+    try:
+        v = e.headers.get("Retry-After")
+        if v and str(v).strip().isdigit():
+            return min(300, max(1, int(v)))
+    except Exception:
+        pass
+    return fallback
+
+
+def fetch(code, limiter, attempts=8):
     """Return the parsed payload, or None if the code does not exist.
 
     A 404 means no such project and is final -- no retry, since most codes in
     the range are empty and retrying them would multiply the scan for nothing.
+
+    A 429 means we are going too fast. That is not an error to retry blindly:
+    it slows the whole scan down and waits, so the next attempt is made at a
+    rate the site is willing to serve.
     """
     last = None
     for i in range(attempts):
@@ -112,11 +157,17 @@ def fetch(code, limiter, attempts=3):
             req = Request(API.format(code=code),
                           headers={"User-Agent": UA, "Accept": "application/json"})
             with urlopen(req, timeout=60) as r:
+                limiter.reward()
                 return json.loads(r.read().decode("utf-8"))
         except HTTPError as e:
             if e.code == 404:
+                limiter.reward()
                 return None
             last = e
+            if e.code in (429, 503):
+                pause = retry_after(e, min(120, 15 * (i + 1)))
+                limiter.penalise(pause)
+                continue                    # the pause is already in the queue
         except (URLError, json.JSONDecodeError, TimeoutError, ValueError) as e:
             last = e
         time.sleep(2 * (i + 1))
@@ -241,8 +292,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", type=int, default=1)
     ap.add_argument("--end", type=int, default=33000)
-    ap.add_argument("--rps", type=float, default=6.0, help="requests per second, all threads")
-    ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--rps", type=float, default=1.5,
+                    help="starting requests per second across all threads. TEDUH answers "
+                         "429 above roughly this, and the scan slows itself further if it "
+                         "still gets refused")
+    ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--minutes", type=float, default=300, help="stop cleanly before the job limit")
     ap.add_argument("--depth", type=int, default=1,
                     help="project numbers to try before calling a code empty. 1 keeps the "
@@ -313,7 +367,9 @@ def main():
             if n % 250 == 0:
                 flush()
                 print(f"  {n}/{len(todo)} probed, {counts['found']} developers, "
-                      f"{len(projects)} projects", flush=True)
+                      f"{len(projects)} projects, {limiter.rate():.2f} req/s"
+                      + (f", {limiter.penalties} backoffs" if limiter.penalties else ""),
+                      flush=True)
             if time.monotonic() > deadline:
                 stop.set()
         return None
@@ -324,6 +380,9 @@ def main():
     flush()
     last = max((int(k) for k in rows), default=args.start)
     print(f"\nfound {counts['found']}, empty {counts['empty']}, errors {counts['error']}")
+    print(f"finished at {limiter.rate():.2f} req/s after {limiter.penalties} backoffs")
+    if counts["error"]:
+        print("Codes that errored were not recorded, so the next run retries them.")
     print(f"{len(rows)} codes recorded in total, highest {last}")
     if want_projects:
         print(f"{len(projects)} projects indexed in {os.path.basename(args.projects_out)}")
