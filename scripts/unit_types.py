@@ -10,7 +10,6 @@ import json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CFG = None
-_GROUPS = None
 
 
 def config():
@@ -19,15 +18,6 @@ def config():
         path = os.path.join(ROOT, "unit_types.json")
         _CFG = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
     return _CFG
-
-
-def block_groups():
-    """Roll-up rules from block_groups.json, keyed by the project's first code."""
-    global _GROUPS
-    if _GROUPS is None:
-        path = os.path.join(ROOT, "block_groups.json")
-        _GROUPS = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
-    return _GROUPS
 
 
 def split(unit):
@@ -123,37 +113,14 @@ def tally(project_key, units):
     return sold_by_type, total_by_type, sold_by_block, unmatched
 
 
-def regroup(sold_by_block, code):
-    """Apply the block_groups.json roll-up. Returns (counts, label).
-
-    TEDUH numbers Parkland's towers 1A/1B/2A/2B and Causewayz's B1/B2/D1/D2,
-    but the report speaks in phases and in whole blocks. Rolling up here keeps
-    the totals identical -- every sold unit is still counted exactly once, it is
-    just filed under a coarser name.
-    """
-    spec = block_groups().get(code or "")
-    if not spec:
-        return sold_by_block, "Block "
-    mapping = spec.get("groups") or {}
-    rolled = {}
-    for b, n in sold_by_block.items():
-        name = mapping.get(b, b)          # unlisted blocks keep their own name
-        rolled[name] = rolled.get(name, 0) + n
-    return rolled, spec.get("label", "Block ")
-
-
-def note_for(sold_by_block, prefix="Latest sales", label="Block ", unit_word=" units"):
-    """'Latest sales - Block A: 187 units, Block B: 104 units'
-
-    `unit_word` is spelled out because her report always has done; `label` drops
-    to "" for projects grouped into names that already read whole, like 'Phase 1'.
-    """
+def note_for(sold_by_block, prefix="Latest sales"):
+    """'Latest sales - Block A: 187, Block B: 104'"""
     if not sold_by_block:
         return ""
     named = sorted((b, n) for b, n in sold_by_block.items() if b != OTHER)
     if not named:
         return ""          # single-tower project: no blocks, so nothing to break down
-    parts = [f"{label}{b}: {n}{unit_word}" for b, n in named]
+    parts = [f"Block {b}: {n}" for b, n in named]
     if sold_by_block.get(OTHER):
-        parts.append(f"{OTHER}: {sold_by_block[OTHER]}{unit_word}")
+        parts.append(f"{OTHER}: {sold_by_block[OTHER]}")
     return f"{prefix} - " + ", ".join(parts)
