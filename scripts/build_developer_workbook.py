@@ -18,7 +18,7 @@ docs/downloads for "*Developer*.xlsx" and copies the newest match onto the
 Klang Valley tracker -- a file named TEDUH_Developers.xlsx there would quietly
 overwrite it.
 """
-import csv, os, sys
+import csv, os, re, sys
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -132,6 +132,174 @@ def legend(wb, devs, companies, found):
     return ws
 
 
+def squash(s):
+    """Loose key for comparing project names across sources."""
+    return re.sub(r"[^a-z0-9]", "", str(s or "").lower())
+
+
+# Words that carry no identity: they appear in half the names on TEDUH.
+NOISE = {"residensi", "residence", "residences", "apartment", "apartments",
+         "pangsapuri", "kondominium", "condominium", "taman", "bandar", "fasa",
+         "phase", "the", "at", "by", "and", "sdn", "bhd", "suites", "suite",
+         "tower", "towers", "block", "blok", "development", "project"}
+
+
+def tokens(name, drop=()):
+    """Identity-bearing words in a project name.
+
+    TEDUH reorders and prefixes names -- your "Park One Residence" is filed as
+    "Residensi Park One" -- so comparing whole strings misses real matches.
+    Place names are dropped because they are the separate `place` signal; left
+    in, "Taman Melawati Fasa 3" would masquerade as "16 Quartz @ Taman Melawati".
+    """
+    words = re.findall(r"[a-z0-9]+", str(name or "").lower())
+    return {w for w in words if w not in NOISE and w not in drop and len(w) > 1}
+
+
+def name_match(a, b, drop=()):
+    """True when two project names plausibly describe the same development."""
+    sa, sb = squash(a), squash(b)
+    if sa and sb and (sa in sb or sb in sa):
+        return True
+    ta, tb = tokens(a, drop), tokens(b, drop)
+    shared = ta & tb
+    return len(shared) >= 2 or any(len(w) >= 7 for w in shared)
+
+
+def build_areas(wb, found, ppath):
+    """One sheet per area in areas.csv, listing projects rather than developers.
+
+    An area tracker asks "what is being built here", so it matches at project
+    level and on four independent signals, because no single one is reliable:
+
+      project    the name you already track, matched loosely against TEDUH's
+      place      an Ukay-area place name in the project name or the address
+      developer  a developer you know builds in the area
+      district   the wide sweep, Gombak and Hulu Langat
+
+    District alone is deliberately NOT enough to list a project: Gombak also
+    covers Selayang and Kundang, and the Melawati side sits in the Kuala Lumpur
+    district, so district on its own would be both noisy and incomplete. It is
+    still reported, and the sweep sheet shows everything in those districts so
+    nothing is silently dropped.
+
+    Where you already know the advertised unit count, it is put beside TEDUH's
+    and compared -- that is what confirms identity when the names diverge, the
+    same way Gen Sphere's 996 tied to Residensi Gen Sfera.
+    """
+    apath = os.path.join(ROOT, "areas.csv")
+    if not os.path.exists(apath) or not os.path.exists(ppath):
+        return
+    areas = read(apath)
+    projects = read(ppath)
+    known = read(os.path.join(ROOT, "area_projects.csv")) \
+        if os.path.exists(os.path.join(ROOT, "area_projects.csv")) else []
+    by_dev = {d["kod_pemaju"]: d for d in found}
+
+    for rule in areas:
+        area = rule["area"]
+        places = parts(rule.get("place_keywords"))
+        devs = parts(rule.get("developer_keywords"))
+        districts = {p.lower() for p in parts(rule.get("districts"))}
+        mine = [k for k in known if k.get("area", "").lower() == area.lower()]
+        names = {squash(k["project"]): k for k in mine if k.get("project")}
+
+        rows, sweep = [], []
+        for p in projects:
+            dev = by_dev.get(p.get("kod_pemaju"), {})
+            pname = (p.get("projek_nama") or "")
+            dname = (dev.get("nama_pemaju") or "")
+            addr = ((dev.get("alamat_perniagaan") or "") + " " +
+                    (dev.get("alamat_daftar") or "")).lower()
+            hay = (pname + " " + addr).lower()
+            dist = (p.get("daerah") or "").lower()
+
+            drop = {w for k in places for w in re.findall(r"[a-z0-9]+", k)}
+            hits, matched_to = [], None
+            for rec in mine:
+                if rec.get("project") and name_match(rec["project"], pname, drop):
+                    hits.append("project"); matched_to = rec; break
+            if any(k in hay for k in places):
+                hits.append("place")
+            if any(k in dname.lower() for k in devs):
+                hits.append("developer")
+            in_district = dist in districts
+            if in_district:
+                hits.append("district")
+
+            if in_district and len(hits) == 1:
+                sweep.append((p, dev, "district only"))
+                continue
+            if not hits:
+                continue
+
+            teduh_units = p.get("unit")
+            mine_units = (matched_to or {}).get("advertised_units", "")
+            verdict = ""
+            if str(teduh_units).strip().isdigit() and str(mine_units).strip().isdigit():
+                verdict = "MATCH" if int(teduh_units) == int(mine_units) else \
+                          f"differs by {int(teduh_units)-int(mine_units):+d}"
+            rows.append((p, dev, ", ".join(hits), matched_to, mine_units, verdict))
+
+        area_sheet(wb, area, rows)
+        sweep_sheet(wb, f"{area} district sweep", sweep)
+
+
+AREA_HEADS = ["MATCHED ON", "YOUR PROJECT", "PROJECT ON TEDUH", "PROJECT CODE",
+              "DEVELOPER", "DEV CODE", "TEDUH UNITS", "YOUR UNITS", "UNITS CHECK",
+              "DISTRICT", "STATE", "STATUS"]
+
+
+def area_sheet(wb, title, rows):
+    ws = wb.create_sheet(title[:31], 2)
+    for c, h in enumerate(AREA_HEADS, 1):
+        cell = ws.cell(1, c, h)
+        cell.font = Font(name=FONT, bold=True, color="FFFFFF", size=10)
+        cell.fill = PatternFill("solid", fgColor="EB6834") if h == "UNITS CHECK" else HEAD
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+    # strongest evidence first: a name match beats a district coincidence
+    rows.sort(key=lambda r: (-len(r[2].split(", ")), r[1].get("nama_pemaju", "") if r[1] else ""))
+    for r, (p, dev, hits, mine, mine_units, verdict) in enumerate(rows, 2):
+        vals = [hits, (mine or {}).get("project", ""), p.get("projek_nama", ""),
+                p.get("kod_projek", ""), dev.get("nama_pemaju", ""), p.get("kod_pemaju", ""),
+                int(p["unit"]) if str(p.get("unit", "")).strip().isdigit() else p.get("unit", ""),
+                int(mine_units) if str(mine_units).strip().isdigit() else mine_units,
+                verdict, p.get("daerah", ""), p.get("negeri", ""), p.get("status", "")]
+        for c, v in enumerate(vals, 1):
+            cell = ws.cell(r, c, v)
+            cell.font = Font(name=FONT, size=10)
+        if verdict == "MATCH":
+            ws.cell(r, 9).fill = PatternFill("solid", fgColor="D6EAD6")
+        elif verdict:
+            ws.cell(r, 9).fill = KNOWN
+    for c, w in enumerate([26, 30, 34, 13, 38, 10, 12, 11, 15, 16, 17, 14], 1):
+        ws.column_dimensions[get_column_letter(c)].width = w
+    ws.freeze_panes = "C2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(AREA_HEADS))}{max(2, len(rows)+1)}"
+    ws.row_dimensions[1].height = 28
+
+
+def sweep_sheet(wb, title, rows):
+    ws = wb.create_sheet(title[:31], 3)
+    heads = ["PROJECT ON TEDUH", "PROJECT CODE", "DEVELOPER", "DEV CODE",
+             "TEDUH UNITS", "DISTRICT", "STATE"]
+    for c, h in enumerate(heads, 1):
+        cell = ws.cell(1, c, h)
+        cell.font = Font(name=FONT, bold=True, color="FFFFFF", size=10)
+        cell.fill = HEAD
+    for r, (p, dev, _) in enumerate(rows, 2):
+        vals = [p.get("projek_nama", ""), p.get("kod_projek", ""), dev.get("nama_pemaju", ""),
+                p.get("kod_pemaju", ""),
+                int(p["unit"]) if str(p.get("unit", "")).strip().isdigit() else p.get("unit", ""),
+                p.get("daerah", ""), p.get("negeri", "")]
+        for c, v in enumerate(vals, 1):
+            ws.cell(r, c, v).font = Font(name=FONT, size=10)
+    for c, w in enumerate([34, 13, 38, 10, 12, 16, 17], 1):
+        ws.column_dimensions[get_column_letter(c)].width = w
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(heads))}{max(2, len(rows)+1)}"
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
         ROOT, "data", "TEDUH_Company_Index.xlsx")
@@ -216,6 +384,8 @@ def main():
     ws.freeze_panes = "B2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(heads))}{max(2, len(projects) + 1)}"
     ws.row_dimensions[1].height = 28
+
+    build_areas(wb, found, ppath)
 
     sheet(wb, "All developers", found)
 
