@@ -23,15 +23,46 @@ TODAY = NOW.strftime("%Y-%m-%d")
 IS_FRIDAY = NOW.weekday() == 4              # the weekly Excel snapshot lands on Friday
 
 
-def fetch(code, attempts=4):
-    """GET the unit list for one project code, with retries and backoff."""
+PAUSE = 1.0          # seconds between projects; raised when TEDUH pushes back
+
+
+def retry_after(e, fallback):
+    """Seconds the server asked us to wait, if it said so."""
+    try:
+        v = e.headers.get("Retry-After")
+        if v and str(v).strip().isdigit():
+            return min(300, max(1, int(v)))
+    except Exception:
+        pass
+    return fallback
+
+
+def fetch(code, attempts=7):
+    """GET the unit list for one project code, with retries and backoff.
+
+    429 means TEDUH is refusing because we are asking too fast -- usually
+    because something else is also hitting the portal. Retrying at the same
+    pace just gets refused again, so a refusal waits properly and slows every
+    later request in this run as well.
+    """
+    global PAUSE
     last = None
     for i in range(attempts):
         try:
             req = Request(API.format(code=code), headers={"User-Agent": UA, "Accept": "application/json"})
             with urlopen(req, timeout=90) as r:
                 return json.loads(r.read().decode("utf-8"))
-        except (URLError, HTTPError, json.JSONDecodeError, TimeoutError) as e:
+        except HTTPError as e:
+            last = e
+            if e.code in (429, 503):
+                wait = retry_after(e, min(180, 20 * (i + 1)))
+                PAUSE = min(15.0, PAUSE * 1.5)
+                print(f"  {code}: {e.code}, waiting {wait}s "
+                      f"(pace now {PAUSE:.1f}s between projects)", file=sys.stderr, flush=True)
+                time.sleep(wait)
+                continue
+            time.sleep(5 * (i + 1))
+        except (URLError, json.JSONDecodeError, TimeoutError, ValueError) as e:
             last = e
             time.sleep(5 * (i + 1))
     raise RuntimeError(f"{code}: failed after {attempts} attempts -> {last}")
@@ -74,6 +105,7 @@ def main():
         all_units = []
         failed = False
         for code in codes:
+            time.sleep(PAUSE)          # gentle by default, slower if TEDUH pushes back
             try:
                 nm, t, s_, g, units = tally(fetch(code))
             except Exception as e:
