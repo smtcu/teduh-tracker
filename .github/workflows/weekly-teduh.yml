@@ -54,6 +54,13 @@ jobs:
           fi
           echo "Day of week (MYT): $DOW"
 
+      # Runs before the scrape on purpose. A broken script used to surface only
+      # once the scraper reached its first project, several minutes and one
+      # wasted TEDUH round-trip later. This fails in seconds instead, and does
+      # it before anything has written to data/ or docs/.
+      - name: Pre-flight self-test
+        run: python scripts/selftest.py
+
       - name: Scrape TEDUH
         run: python scripts/scrape_teduh.py
 
