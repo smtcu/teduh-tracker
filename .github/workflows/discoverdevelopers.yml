@@ -28,7 +28,7 @@ permissions:
 # Deliberately not the daily job's group: a three-hour scan must not hold up
 # the morning refresh. The push step rebases instead.
 concurrency:
-  group: teduh-discovery
+  group: teduh-refresh
   cancel-in-progress: false
 
 jobs:
