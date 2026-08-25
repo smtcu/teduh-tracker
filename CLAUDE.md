@@ -65,6 +65,7 @@ scripts/build_daily_xlsx.py      builds the daily workbook
 scripts/build_pdf.py             weekly and daily PDF reports (landscape A4)
 scripts/build_unit_workbook.py   unit-type and unit-list workbook
 scripts/weekly_summary.py        the summary text used in the email and WhatsApp
+scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
 data/teduh_by_type.csv           sold/unsold by unit type, per run
@@ -103,6 +104,38 @@ source — set it with `wrangler secret put`, or in the Cloudflare dashboard.
 Note that GitHub auto-disables *scheduled* workflows after 60 days of repository
 inactivity. That rule no longer applies here, since there is no `schedule:` left
 to disable — but the daily commits keep the repo active regardless.
+
+## scripts/selftest.py — run this before believing an edit is safe
+
+```bash
+python scripts/selftest.py
+```
+
+It imports every script, asserts the functions one module calls on another all
+exist, and re-checks the handful of behaviours this repo has regressed on:
+`block_of()`'s two-segment rule, that a roll-up never changes a sum, the
+`"… units"` wording, and that every key in `block_groups.json` and every
+`unit_types` name in `projects.csv` actually resolves. No network, no writes,
+a couple of seconds.
+
+It runs in two places:
+
+- **`.github/workflows/selftest.yml`** — on every push and PR that touches
+  `scripts/`, the config files or a workflow. This is the one that matters when
+  editing in the GitHub web UI: a bad paste gets a red tick within a minute.
+  Data-only commits are filtered out so the bot's daily pushes do not trigger it.
+- **A pre-flight step in `weekly-teduh.yml`**, before the scrape, so a broken
+  script costs seconds rather than failing part-way through a live run.
+
+Why it exists: on 25 Aug 2026 `unit_types.py` was replaced by a hand-pasted copy
+without `regroup()`, which `scrape_teduh.py` calls. Importing the module would
+not have caught it — the missing name is only reached inside `main()` — so every
+daily run died on its first project until someone noticed. The API section of
+this test fails that case in seconds, by name.
+
+Note that a failing pre-flight marks the run failed and prints the reason first,
+but the later build steps use `if: always()` and will still attempt to run. That
+is the pipeline's existing "publish what we can" behaviour, unchanged here.
 
 ## The three trackers
 

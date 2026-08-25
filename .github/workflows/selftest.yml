@@ -1,0 +1,51 @@
+name: Self-test
+
+# Catches a broken script at the moment it lands rather than at the next run.
+#
+# The case this was built for: editing a file directly in the GitHub web UI and
+# pasting in a stale copy. That is a push, so this fires within a minute and the
+# commit gets a red tick, instead of the breakage sitting unnoticed until the
+# next morning's refresh dies part-way through.
+#
+# Deliberately filtered to code and config. The bot commits data/ and docs/ two
+# or three times a day and none of that can break an import, so those pushes do
+# not need to burn a runner. The two path lists are written out in full rather
+# than shared with a YAML anchor, because the Actions parser rejects anchors.
+
+on:
+  push:
+    paths:
+      - 'scripts/**'
+      - 'projects.csv'
+      - 'unit_types.json'
+      - 'block_groups.json'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'projects.csv'
+      - 'unit_types.json'
+      - 'block_groups.json'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # selftest.py imports every build script, and those import openpyxl and
+      # reportlab, so the check needs them even though it writes nothing.
+      - name: Install dependencies
+        run: pip install --quiet openpyxl reportlab
+
+      - name: Self-test
+        run: python scripts/selftest.py
