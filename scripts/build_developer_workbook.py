@@ -227,6 +227,7 @@ def build_areas(wb, found, ppath):
         places = parts(rule.get("place_keywords"))
         devs = parts(rule.get("developer_keywords"))
         districts = {p.lower() for p in parts(rule.get("districts"))}
+        states = {p.lower() for p in parts(rule.get("states"))}
         mine = [k for k in known if k.get("area", "").lower() == area.lower()]
         names = {squash(k["project"]): k for k in mine if k.get("project")}
 
@@ -238,7 +239,22 @@ def build_areas(wb, found, ppath):
             addr = ((dev.get("alamat_perniagaan") or "") + " " +
                     (dev.get("alamat_daftar") or "")).lower()
             hay = (pname + " " + addr).lower()
-            dist = (p.get("daerah") or "").lower()
+            dist = (p.get("daerah") or "").strip().lower()
+            neg = (p.get("negeri") or "").strip().lower()
+            if dist in ("-", ""):           # TEDUH leaves these blank on older records
+                dist = ""
+            if neg in ("-", ""):
+                neg = ""
+
+            # Geography is a veto, not a signal. A project whose state or
+            # district is known and wrong is not in this area, however much its
+            # name looks right -- PKNS builds a "Melawati" in Kuala Selangor,
+            # and Sime Darby's Saujana Impian sits in Hulu Langat, neither of
+            # which is Ukay. Blank means unknown, so it is allowed through.
+            if states and neg and neg not in states:
+                continue
+            if districts and dist and dist not in districts:
+                continue
 
             drop = {w for k in places for w in re.findall(r"[a-z0-9]+", k)}
             hits, matched_to, grade = [], None, None
