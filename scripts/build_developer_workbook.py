@@ -157,13 +157,39 @@ def tokens(name, drop=()):
 
 
 def name_match(a, b, drop=()):
-    """True when two project names plausibly describe the same development."""
-    sa, sb = squash(a), squash(b)
-    if sa and sb and (sa in sb or sb in sa):
-        return True
+    """True when two project names plausibly describe the same development.
+
+    Compares identity words only. A plain substring test is far too generous
+    here: "DaMai" sits inside Taman Damai Impian, Damai Suria, Bandar Damai
+    Perdana and 167 other unrelated Malaysian projects.
+
+    So a single shared word is only accepted when it is long enough to be a
+    real name and is essentially the whole of the shorter title -- "Wellnessa"
+    identifies Trinity Wellnessa, "Hijauan" does not identify Sierra Hijauan,
+    because half the country has Hijauan in it.
+
+    Returns "strong", "weak" or None. Weak means the names agree on a single
+    short word -- your "DaMai" against a project actually called "Taman Damai".
+    That is real evidence but not proof, so a weak match has to be backed by a
+    second signal before it earns a place on the sheet.
+    """
     ta, tb = tokens(a, drop), tokens(b, drop)
+    if not ta or not tb:
+        return None
+    if squash(a) == squash(b):          # the same name, written the same way
+        return "strong"
     shared = ta & tb
-    return len(shared) >= 2 or any(len(w) >= 7 for w in shared)
+    if not shared:
+        return None
+    if len(shared) >= 2:
+        return "strong"
+    word = next(iter(shared))
+    shorter = ta if len(ta) <= len(tb) else tb
+    if shared != shorter:               # the shorter name says more than this
+        return None
+    if len(word) >= 8:                  # long enough to be a real project name
+        return "strong"
+    return "weak" if ta == tb else None
 
 
 def build_areas(wb, found, ppath):
@@ -215,10 +241,16 @@ def build_areas(wb, found, ppath):
             dist = (p.get("daerah") or "").lower()
 
             drop = {w for k in places for w in re.findall(r"[a-z0-9]+", k)}
-            hits, matched_to = [], None
+            hits, matched_to, grade = [], None, None
             for rec in mine:
-                if rec.get("project") and name_match(rec["project"], pname, drop):
-                    hits.append("project"); matched_to = rec; break
+                if not rec.get("project"):
+                    continue
+                g = name_match(rec["project"], pname, drop)
+                if g:
+                    grade = g
+                    hits.append("project" if g == "strong" else "project?")
+                    matched_to = rec
+                    break
             if any(k in hay for k in places):
                 hits.append("place")
             if any(k in dname.lower() for k in devs):
@@ -227,8 +259,15 @@ def build_areas(wb, found, ppath):
             if in_district:
                 hits.append("district")
 
-            if in_district and len(hits) == 1:
-                sweep.append((p, dev, "district only"))
+            # What earns a place on the sheet. A name match or an Ukay place
+            # name is specific enough on its own. A developer match is not:
+            # Sime Darby alone has 15 registered companies building all over
+            # Malaysia, so it only counts alongside something else. District
+            # alone goes to the sweep rather than the main list.
+            strong = (grade == "strong") or ("place" in hits)
+            if not strong and len(hits) < 2:
+                if in_district:
+                    sweep.append((p, dev, "district only"))
                 continue
             if not hits:
                 continue
