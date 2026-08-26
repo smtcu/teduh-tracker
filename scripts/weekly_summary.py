@@ -3,7 +3,7 @@
 import csv, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
+LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
 
 
 def read(path):
