@@ -85,7 +85,8 @@ jobs:
           # Done in Python, not shell globbing: the filenames contain spaces, and the
           # fixed-name copy is excluded so it can never be copied onto itself.
           pairs = [("*Seputeh*.xlsx", "Seputeh_Hills_Teduh_Weekly_Update.xlsx"),
-                   ("*Developer*.xlsx", "Tduh_Developer_Project_Sales_Status.xlsx")]
+                   ("*Developer*.xlsx", "Tduh_Developer_Project_Sales_Status.xlsx"),
+                   ("*Ukay*.xlsx", "Ukay_Teduh_Weekly_Update.xlsx")]
           for pattern, stable in pairs:
               dated = [f for f in glob.glob(os.path.join(d, pattern))
                        if os.path.basename(f) != stable]
@@ -129,7 +130,7 @@ jobs:
           to: ${{ secrets.MAIL_TO }}
           subject: TEDUH weekly update
           body: ${{ env.SUMMARY }}
-          attachments: docs/downloads/TEDUH_Weekly_Report.pdf,docs/downloads/TEDUH_Daily_Report.pdf,docs/downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx,docs/downloads/Tduh_Developer_Project_Sales_Status.xlsx,docs/downloads/Teduh_Daily_Tracker.xlsx
+          attachments: docs/downloads/TEDUH_Weekly_Report.pdf,docs/downloads/TEDUH_Daily_Report.pdf,docs/downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx,docs/downloads/Tduh_Developer_Project_Sales_Status.xlsx,docs/downloads/Ukay_Teduh_Weekly_Update.xlsx,docs/downloads/Teduh_Daily_Tracker.xlsx
 
       - name: WhatsApp alert
         if: always() && steps.when.outputs.weekly == 'yes' && env.WHATSAPP_PHONE != ''

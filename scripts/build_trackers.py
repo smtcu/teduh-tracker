@@ -175,12 +175,17 @@ def build_status13(projects, weeks, lookup, report_date, path):
     ws.freeze_panes = 'F5'; ws.row_dimensions[4].height = 30
     wb.save(path); return path
 
-def build_johor(projects, weeks, lookup, notes, report_date, path):
-    """Johor keeps every week ever recorded, in two sections, with a Remarks column."""
+def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='johor',
+                  heading='WEEKLY TEDUH SALES REPORT (JB PROJECTS)'):
+    """Keeps every week ever recorded, with optional group headings and a NOTES column.
+
+    Shared by the Johor and Ukay trackers. They differ only in which rows they take,
+    the heading, and whether `group` is set -- Ukay leaves it blank, so it renders as
+    one flat list with no section rows."""
     wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True
     ws = wb.active; ws.title = report_date.strftime('%d%m%Y')
     ws['A2'] = 'Report as at ' + report_date.strftime('%d/%m/%Y'); ws['A2'].font = F(bold=True, color='FF0000')
-    ws['A3'] = 'WEEKLY TEDUH SALES REPORT (JB PROJECTS)'; ws['A3'].font = F(bold=True, size=12)
+    ws['A3'] = heading; ws['A3'].font = F(bold=True, size=12)
     for i, h in enumerate(['NO', 'PROJECT', 'DEVELOPER', 'TOTAL \nUNIT'], 1):
         cell(ws, 4, i, h, F(bold=True), fill=HDR)
     col = 5
@@ -195,7 +200,7 @@ def build_johor(projects, weeks, lookup, notes, report_date, path):
     rem_col = col
     cell(ws, 4, rem_col, 'NOTES', F(bold=True), fill=HDR)
 
-    rows = [p for p in projects if p['tracker'] == 'johor']
+    rows = [p for p in projects if p['tracker'] == tracker]
     r = 5
     group = None
     for p in rows:
@@ -213,7 +218,7 @@ def build_johor(projects, weeks, lookup, notes, report_date, path):
         cell(ws, r, 4, units, fmt='#,##0')
         col, prev = 5, None
         for i, snap in enumerate(weeks):
-            v = lookup.get(('johor', snap, key))
+            v = lookup.get((tracker, snap, key))
             fill = NEWFILL if i == len(weeks) - 1 else None
             n = cell(ws, r, col, fmt='#,##0', fill=fill)
             t = cell(ws, r, col + 1, fmt='#,##0', fill=fill)
@@ -253,6 +258,11 @@ if __name__ == '__main__':
                         os.path.join(outdir, rd.strftime('%d%m%Y') + 'Tduh Developer Project Sales Status 13.xlsx'))
     print(p1); print(p2)
     if 'johor' in order:
-        p3 = build_johor(projects, order['johor'], lookup, notes, rd,
-                         os.path.join(outdir, rd.strftime('%Y%m%d') + '_Johor_Teduh_Weekly_Update.xlsx'))
+        p3 = build_grouped(projects, order['johor'], lookup, notes, rd,
+                           os.path.join(outdir, rd.strftime('%Y%m%d') + '_Johor_Teduh_Weekly_Update.xlsx'))
         print(p3)
+    if 'ukay' in order:
+        p4 = build_grouped(projects, order['ukay'], lookup, notes, rd,
+                           os.path.join(outdir, rd.strftime('%Y%m%d') + '_Ukay_Teduh_Weekly_Update.xlsx'),
+                           tracker='ukay', heading='WEEKLY TEDUH SALES REPORT (UKAY PROJECTS)')
+        print(p4)

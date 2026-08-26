@@ -18,7 +18,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (BaseDocTemplate, Frame, PageTemplate, Paragraph,
                                 Spacer, Table, TableStyle, PageBreak)
 
-LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
+LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
 
 BLUE = colors.HexColor("#2a78d6")
 INK = colors.HexColor("#0b0b0b")

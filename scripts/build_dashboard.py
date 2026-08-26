@@ -13,7 +13,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 MYT = timezone(timedelta(hours=8))
 
-TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
+TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
 
 
 def read(path):

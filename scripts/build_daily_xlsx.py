@@ -13,7 +13,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter as L
 
-TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor"}
+TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
 
 
 def F(**k):
