@@ -74599,7 +74599,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,straits-view-duo,A-7-8,A,C,1
 2026-08-28,straits-view-duo,A-7-9,A,C,0
 2026-08-28,straits-view-duo,A-7-10,A,A,1
-2026-08-28,straits-view-duo,A-7-11,A,A,0
+2026-08-28,straits-view-duo,A-7-11,A,A,1
 2026-08-28,straits-view-duo,A-8-1,A,B,1
 2026-08-28,straits-view-duo,A-8-2,A,B,1
 2026-08-28,straits-view-duo,A-8-3,A,A,1
@@ -75102,7 +75102,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,straits-view-duo,B-18-12,B,B1,1
 2026-08-28,straits-view-duo,B-18-13,B,B,1
 2026-08-28,straits-view-duo,B-19-1,B,B,1
-2026-08-28,straits-view-duo,B-19-2,B,B,0
+2026-08-28,straits-view-duo,B-19-2,B,B,1
 2026-08-28,straits-view-duo,B-19-3,B,A,1
 2026-08-28,straits-view-duo,B-19-4,B,A,0
 2026-08-28,straits-view-duo,B-19-5,B,A,1
@@ -75151,7 +75151,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,straits-view-duo,B-22-9,B,C,0
 2026-08-28,straits-view-duo,B-22-10,B,A,0
 2026-08-28,straits-view-duo,B-22-11,B,A,1
-2026-08-28,straits-view-duo,B-22-12,B,B1,0
+2026-08-28,straits-view-duo,B-22-12,B,B1,1
 2026-08-28,straits-view-duo,B-22-13,B,B,1
 2026-08-28,straits-view-duo,B-23-1,B,B,1
 2026-08-28,straits-view-duo,B-23-2,B,B,0
@@ -75428,13 +75428,13 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,A-16-10,A,B,1
 2026-08-28,permas-heights,A-16-11,A,A,1
 2026-08-28,permas-heights,A-16-12,A,A,1
-2026-08-28,permas-heights,A-16-13,A,A,0
+2026-08-28,permas-heights,A-16-13,A,A,1
 2026-08-28,permas-heights,A-16-14,A,C,1
 2026-08-28,permas-heights,A-16-15,A,C,1
 2026-08-28,permas-heights,A-16-16,A,C,1
 2026-08-28,permas-heights,A-16-17,A,C,0
 2026-08-28,permas-heights,A-16-18,A,A,1
-2026-08-28,permas-heights,A-16-19,A,A,0
+2026-08-28,permas-heights,A-16-19,A,A,1
 2026-08-28,permas-heights,A-16-20,A,A,1
 2026-08-28,permas-heights,A-17-01,A,B,1
 2026-08-28,permas-heights,A-17-02,A,B,1
@@ -75487,7 +75487,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,A-19-09,A,B,1
 2026-08-28,permas-heights,A-19-10,A,B,0
 2026-08-28,permas-heights,A-19-11,A,A,1
-2026-08-28,permas-heights,A-19-12,A,A,0
+2026-08-28,permas-heights,A-19-12,A,A,1
 2026-08-28,permas-heights,A-19-13,A,A,1
 2026-08-28,permas-heights,A-19-14,A,C,1
 2026-08-28,permas-heights,A-19-15,A,C,1
@@ -75495,7 +75495,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,A-19-17,A,C,1
 2026-08-28,permas-heights,A-19-18,A,A,0
 2026-08-28,permas-heights,A-19-19,A,A,1
-2026-08-28,permas-heights,A-19-20,A,A,0
+2026-08-28,permas-heights,A-19-20,A,A,1
 2026-08-28,permas-heights,A-20-01,A,B,1
 2026-08-28,permas-heights,A-20-02,A,B,1
 2026-08-28,permas-heights,A-20-03,A,B,1
@@ -75657,7 +75657,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,A-27-19,A,A,0
 2026-08-28,permas-heights,A-27-20,A,A,0
 2026-08-28,permas-heights,A-28-01,A,B,1
-2026-08-28,permas-heights,A-28-02,A,B,0
+2026-08-28,permas-heights,A-28-02,A,B,1
 2026-08-28,permas-heights,A-28-03,A,B,1
 2026-08-28,permas-heights,A-28-04,A,C,1
 2026-08-28,permas-heights,A-28-05,A,C,1
@@ -75785,7 +75785,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,A-34-07,A,C,1
 2026-08-28,permas-heights,A-34-08,A,B,0
 2026-08-28,permas-heights,A-34-09,A,B,0
-2026-08-28,permas-heights,A-34-10,A,B,0
+2026-08-28,permas-heights,A-34-10,A,B,1
 2026-08-28,permas-heights,A-34-11,A,A,1
 2026-08-28,permas-heights,A-34-12,A,A,1
 2026-08-28,permas-heights,A-34-13,A,A,1
@@ -75814,7 +75814,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,B-10-16,B,C,0
 2026-08-28,permas-heights,B-10-17,B,C,0
 2026-08-28,permas-heights,B-10-18,B,A,1
-2026-08-28,permas-heights,B-10-19,B,A,0
+2026-08-28,permas-heights,B-10-19,B,A,1
 2026-08-28,permas-heights,B-10-20,B,A,1
 2026-08-28,permas-heights,B-11-01,B,B,1
 2026-08-28,permas-heights,B-11-02,B,B,1
@@ -75937,7 +75937,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,B-16-19,B,A,1
 2026-08-28,permas-heights,B-16-20,B,A,0
 2026-08-28,permas-heights,B-17-01,B,B,1
-2026-08-28,permas-heights,B-17-02,B,B,0
+2026-08-28,permas-heights,B-17-02,B,B,1
 2026-08-28,permas-heights,B-17-03,B,B,1
 2026-08-28,permas-heights,B-17-04,B,C,1
 2026-08-28,permas-heights,B-17-05,B,C,0
@@ -76190,7 +76190,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,B-29-12,B,A,1
 2026-08-28,permas-heights,B-29-13,B,A,1
 2026-08-28,permas-heights,B-29-14,B,C,0
-2026-08-28,permas-heights,B-29-15,B,C,0
+2026-08-28,permas-heights,B-29-15,B,C,1
 2026-08-28,permas-heights,B-29-16,B,C,1
 2026-08-28,permas-heights,B-29-17,B,C,0
 2026-08-28,permas-heights,B-29-18,B,A,1
@@ -77235,7 +77235,7 @@ week,project_key,unit,block,unit_type,sold
 2026-08-28,permas-heights,D-34-07,D,C,0
 2026-08-28,permas-heights,D-34-08,D,A,0
 2026-08-28,permas-heights,D-34-09,D,A,0
-2026-08-28,permas-heights,D-34-10,D,A,0
+2026-08-28,permas-heights,D-34-10,D,A,1
 2026-08-28,permas-heights,D-34-11,D,B,1
 2026-08-28,permas-heights,D-34-12,D,B,1
 2026-08-28,permas-heights,D-34-13,D,B,0
