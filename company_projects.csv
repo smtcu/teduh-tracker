@@ -1,0 +1,146 @@
+company,project,location,advertised_units,confidence
+Exsim,The Queenswoodz,Bukit Jalil,1004,high
+Exsim,The Vividz,Bukit Jalil,1138,high
+Exsim,Veladaz Residences,Bukit Jalil,508,high
+Exsim,The Kingswoodz,Bukit Jalil,1558,high
+Exsim,Branniganz Suites,Bukit Bintang,759,high
+Exsim,Hugoz Suites,KL City Centre,674,high
+Exsim,Kyliez Suites,KL City Centre,346,medium
+Exsim,Hanaz Suites,KL City Centre,270,high
+Exsim,The Aldenz,Damansara / PJ,662,medium
+Exsim,D'Tessera Residences,Damansara / PJ,671,medium
+Exsim,D'Terra Residences,Damansara / PJ,767,medium
+Exsim,D'Clover Residences,Damansara / PJ,593,high
+Exsim,The Fiddlewoodz,KL Metropolis,679,medium
+Exsim,The Asteriaz,"Kebun Teh, JB",848,medium
+Exsim,Causewayz Square @ JBCC,Johor Bahru City Centre,,low
+Exsim,Noordinz Suites,George Town,603,high
+Exsim,The Lighthauz,Gelugor,671,medium
+Exsim,The Stallionz,Ipoh White Times Square,395,high
+Exsim,Qubaz Suites,Kuala Terengganu,759,medium
+Exsim,Sea Crestz,Kuantan Waterfront Resort City,456,medium
+Exsim,Jesselton Docklands,Kota Kinabalu,1080,medium
+Exsim,Bayu Residences,Sabah,,low
+Exsim,Sejati Sentral,Sandakan,147,medium
+Armani,Armani Residence Setia Alam 2,SELANGOR,1367,high
+Armani,Armani Rasa Industrial Park,SELANGOR,64,high
+Armani,Armani BizCore,SELANGOR,346,high
+Armani,Armani Avani,SELANGOR,328,high
+Armani,Armani Residence Setia Alam,SELANGOR,770,high
+Armani,ATS Armani Industrial Park Kajang,SELANGOR,157,high
+Armani,Armani Residence Shah Alam,SELANGOR,350,high
+Armani,Armani Signature Residence,SELANGOR,315,high
+Armani,Alderwood Residence,KUALA LUMPUR,186,high
+Armani,Armani Hallson KLCC,KUALA LUMPUR,2215,high
+Armani,Residensi Armani Kg Baru 1,KUALA LUMPUR,387,high
+Armani,Lofthill Residence,KUALA LUMPUR,653,high
+Armani,Armani Prestige,KUALA LUMPUR,350,high
+Armani,Armani Residence Kepong,KUALA LUMPUR,306,high
+Armani,Residensi Armani Putra,PUTRAJAYA,990,high
+Armani,Taman Bukit Tualang 2,PAHANG,30,high
+Armani,Pekan Perdana Pusat Komersial,PAHANG,59,high
+Armani,Armani Cameron Residence,PAHANG,384,high
+Armani,Armani Business Park,SABAH,44,high
+Armani,Taman PMINT Tebing Tembah 2,TERENGGANU,116,high
+Avaland,Aetas Seputeh,KUALA LUMPUR,126,high
+Avaland,Aetas Taman Desa,KUALA LUMPUR,217,medium
+Avaland,Alora Residences @ Avenue25,SELANGOR,770,high
+Avaland,Amika Residences,SELANGOR,468,high
+Avaland,Avalon,SELANGOR,343,high
+Avaland,Meria @ Cybersouth – Phase 2,SELANGOR,,low
+Avaland,Sanderling 2 Lakefront,SELANGOR,606,high
+Avaland,Anja Residences & Signature Retail,SELANGOR,900,medium
+Avaland,Accent Petaling Jaya,SELANGOR,231,low
+Skyworld,SkyAman 1 Residences,Kuala Lumpur,510,high
+Skyworld,SkyAwani PRIMA Residences,Kuala Lumpur,492,medium
+Skyworld,Vesta Residences,Kuala Lumpur,1001,high
+Skyworld,Curvo Residences,Kuala Lumpur,830,high
+Skyworld,SkyWorld Pearlmont,Penang,5738,medium
+Skyworld,SkySOLIS,Vietnam,1101,high
+Mah Sing,M Aria,KUALA LUMPUR,606,high
+Mah Sing,M Azura,KUALA LUMPUR,1140,high
+Mah Sing,M Aspira,KUALA LUMPUR,1618,high
+Mah Sing,M Aurora,KUALA LUMPUR,1544,high
+Mah Sing,M Zenya,KUALA LUMPUR,619,high
+Mah Sing,M Nova,KUALA LUMPUR,2074,medium
+Mah Sing,M Sinar @ Southville City,SELANGOR,999,medium
+Mah Sing,M Legasi,SELANGOR,,low
+Mah Sing,M Terra,SELANGOR,999,high
+Mah Sing,M Panora,SELANGOR,396,high
+Mah Sing,M Grand Minori,JOHOR,1733,medium
+Mah Sing,M Minori,JOHOR,1526,high
+Mah Sing,M Tiara,JOHOR,754,medium
+Mah Sing,Jasmine 2 @ Meridin East,JOHOR,168,high
+Mah Sing,Allamanda 5 & 6 @ Meridin East,JOHOR,235,high
+Mah Sing,Ixora Park City,JOHOR,66,medium
+Mah Sing,M Amaya,JOHOR,833,high
+Mah Sing,M Zenni,JOHOR,494,high
+Mah Sing,Ferringhi Residence 2,JOHOR,632,high
+TS Law,Skyline Embassy,Kuala Lumpur,1296,high
+TS Law,Skyline Kuchai,Kuala Lumpur,1838,high
+TS Law,KL Exchange (KLX),Kuala Lumpur,,low
+TS Law,Skyline (Eastside) @ OneSentosa,Johor,1623,high
+TS Law,Residence Hill,Negeri Sembilan,42,low
+Majestic Gen,Gen Starz,Kuala Lumpur,360,high
+Majestic Gen,Majestic Residence,Kuala Lumpur,478,high
+Majestic Gen,Gen Rise,Johor,732,high
+Majestic Gen,Gen Sphere,Johor,996,high
+Majestic Gen,Yahya Awal Mixed Development (JV with Sunway Property),Johor,1012,low
+Majestic Gen,Majestic Aman,Penang,96,high
+Majestic Gen,Northern TechValley @ BKE (JV with AME),Penang,,low
+Majestic Gen,George Town High-Rise Development,Penang,,low
+Majestic Gen,Majestic Flora,Selangor,140,high
+Majestic Gen,Majestic Yu,Selangor,106,high
+Majestic Gen,Majestic Metro,Selangor,,low
+Majestic Gen,Majestic PD Township*,Selangor,97,medium
+Maxim,Residensi Maxim Risen,Kuala Lumpur,1236,high
+Maxim,Residensi Max II,Kuala Lumpur,604,high
+Maxim,Residensi The Atas,Kuala Lumpur,624,high
+Maxim,Residensi Maxim D’Parc,Kuala Lumpur,1116,high
+Maxim,Residensi Maxim Pelangi,Johor,2743,high
+Platinum Victory,PV22 Residences,Kuala Lumpur,2082,high
+Platinum Victory,Platinum Melati Residences,Kuala Lumpur,556,high
+Platinum Victory,Vista Melati,Kuala Lumpur,238,high
+Platinum Victory,MHP3 Residences,Kuala Lumpur,1688,high
+Platinum Victory,PSV1 Residences,Kuala Lumpur,500,high
+Platinum Victory,PSV2 Residences,Kuala Lumpur,1500,high
+Platinum Victory,The Maison 23,Kuala Lumpur,23,high
+Platinum Victory,Residensi Sateria Wardieburn,Kuala Lumpur,,low
+Platinum Victory,Residensi Sateria Setapak,Kuala Lumpur,,low
+Binastra,Binastra Cochrane,Kuala Lumpur,830,high
+Binastra,Binastra Cochrane 2,Kuala Lumpur,,low
+Binastra,Binastra Business Park @ Pulau Meranti 2,Selangor,21,high
+Binastra,Binastra Business Park @ Alam Damai,Selangor,,low
+Binastra,Binastra Business Park @ Subang Airport,Selangor,,low
+Binastra,Binastra The Hill @ Kemensah,Selangor,,low
+Binastra,Binastra Business Park @ Pulau Meranti,Selangor,9,high
+Trinity Group,Trinity Nordic,Selangor,714,high
+Trinity Group,Trinity Rainfora,Selangor,535,high
+Trinity Group,Trinity Zia,Selangor,,low
+Trinity Group,Lot 847 @ USJ19,Selangor,,low
+Trinity Group,Trinity Activerse,Selangor,,low
+Trinity Group,MA Land,Selangor,2964,high
+Trinity Group,Trinity Sensoria,Kuala Lumpur,737,high
+Trinity Group,Lot 850 @ Ampang,Kuala Lumpur,,low
+Trinity Group,Permas Jaya – Phase 1,Johor,,low
+Trinity Group,Permas Jaya – Phase 2,Johor,,low
+Trinity Group,Permas Jaya – Phase 3,Johor,,low
+Malton,Park Green @ Pavilion Bukit Jalil,Kuala Lumpur,453,high
+Malton,River Park Bangsar South,Kuala Lumpur,1332,high
+Malton,Ria Bangsar South,Kuala Lumpur,336,high
+Malton,Mutiara Lake Puchong,Selangor,526,high
+Malton,Nova Business Hub,Selangor,33,high
+Malton,Rapid City Centre,Johor,,low
+Malton,Mutiara Kempas,Johor,562,high
+Chin Hin,DIVINE KLCC,Kuala Lumpur,1033,high
+Chin Hin,Dawn KLCC,Kuala Lumpur,960,medium
+Chin Hin,Aricia Residences,Kuala Lumpur,787,high
+Chin Hin,Quaver Residence,Kuala Lumpur,684,high
+Chin Hin,Ayanna Resort Residences,Kuala Lumpur,824,high
+Chin Hin,Solarvest Suites,Kuala Lumpur,345,medium
+Chin Hin,Avantro Residences,Selangor,634,high
+Chin Hin,Botanica Hills,Selangor,,low
+Chin Hin,Residensi Andalan,Selangor,823,medium
+Chin Hin,The NeX,Selangor,242,high
+Chin Hin,Crown Penang,Penang,588,high
+Chin Hin,Amberwood Resort Residences,Johor,824,high
