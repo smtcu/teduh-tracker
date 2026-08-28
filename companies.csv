@@ -1,14 +1,14 @@
 company,known_codes,match_name,match_email,match_address,notes
-Exsim,31007|31100,EXSIM,exsim.my|exsim.com.my,Exsim Tower|Millerz Square,"31007 Exsim Kebun Teh (The Asteriaz); 31100 Exsim Lumba Kuda (Causewayz Square, 4 phases). All three signals work."
-Armani,,ARMANI,armanigroup.com.my,,Unconfirmed — no tracked project yet.
+Exsim,31007|31100|13415|12291,EXSIM,exsim.my|exsim.com.my,Exsim Tower|Millerz Square|Jalil Link,"Jalil Link moved here from Binastra. Verify: Citizen and Citizen2 @ Old Klang Road (codes 14116, 19117) are filed at Jalil Link but may be Binastra's -- worth one check."
+Armani,,ARMANI,armanigroup.com.my,,Armani Hartajaya is Pavilion's and Pinnacle Armani is Pinnacle's. Neither is yours.
 Avaland,,AVALAND|MCT,avaland.com.my,,Unconfirmed — formerly MCT Berhad.
-Skyworld,,SKYWORLD,skyworldgroup.com.my|skyworld.my,,Unconfirmed.
-Mah Sing,9600,MAH SING,mahsing.com.my,Wisma Mah Sing,"9600 Dsara Sentral (M Grand Minori, 7 projects). Name signal fails — match on email."
-TS Law,31031,TS LAW,tslawland.com|tslaw.com.my,Plaza Sentosa,"31031 Plaza Sentosa Properties (Skyline One). Name signal fails — match on email."
-Majestic Gen,30828,MAJESTIC,majestic-gen.com,Pavilion Damansara Heights,"30828 Majestic Gen (Gen Sphere, 3 projects). Address is a shared office tower — expect false positives."
-Maxim,,MAXIM,maximglobal.com.my,,Unconfirmed.
-Platinum Victory,,PLATINUM,platinumvictory.com,,Unconfirmed.
-Binastra,31332,BINASTRA,binastra.com.my,Jalil Link,"31332 Binastra Synergy (Binastra Cochrane). All three signals work."
+Skyworld,31282|31075,SKYWORLD,skyworldgroup.com.my|skyworld.my,,Unconfirmed.
+Mah Sing,9600|11433|10393|10264|19318|11347|13078|10279,MAH SING,mahsing.com.my,Wisma Mah Sing,"9600 Dsara Sentral (M Grand Minori, 7 projects). Name signal fails — match on email."
+TS Law,31031,TS LAW,tslawland.com|tslaw.com.my,Plaza Sentosa,31031 Plaza Sentosa Properties (Skyline One). Name signal fails — match on email.
+Majestic Gen,30828,MAJESTIC,majestic-gen.com,Pavilion Damansara Heights,"Match on majestic-gen.com only. All seven 'Majestic' name matches were other companies: Eco Majestic is EcoWorld, Majestic Land is Mayland, the rest are unrelated firms in Penang, Perak, Johor and Puchong."
+Maxim,14438|12313|12414,MAXIM,maximglobal.com.my,,Unconfirmed.
+Platinum Victory,8898|13231|13113,PLATINUM,platinumvictory.com,,"Only three are genuine: 8898 (the parent), 13231 Setapak, and 13113 MH Platinum at the same Taman Melati Utama address. The other 14 'Platinum' companies belong to Chin Hin, NCT, Mayland and others -- the word is too common to match on."
+Binastra,31332|9354,BINASTRA,binastra.com.my,,"Match on the binastra.com.my email or the BINASTRA name only. The Jalil Link address was removed: Exsim's companies are registered in the same business park, and Twin Arkz, filed there, is Exsim's. 9354 Binastra Properties is genuine (binastra@tm.net.my)."
 Trinity Group,,TRINITY,trinitygroup.com.my,,"Unconfirmed. Her sheet lists Permas Jaya Phases 1-3 under Trinity, but code 835 is Permas Jaya Sdn Bhd with a brdb.com.my email — check whether this is a JV or a group relationship."
 Malton,,MALTON,malton.com.my,,Unconfirmed. Pavilion Bukit Jalil related.
 Chin Hin,13531,CHIN HIN,fiamma.com.my|chinhinproperty.com,Menara Chin Hin,"13531 Affluent Crafts (Amberwood, filed as Residensi Ambar Rimba). Name and email signals both fail — match on address."
