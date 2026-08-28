@@ -402,8 +402,10 @@ def corroborate(dev_code, by_dev, known, by_units):
     return ""
 
 
-def grade_candidate(hits, corr):
+def grade_candidate(hits, corr, confirmed=False):
     """How much of your attention this row deserves."""
+    if confirmed:
+        return "CONFIRMED - you checked this code"
     if "email" in hits:
         return "CONFIRMED - email domain"
     if corr:
@@ -454,7 +456,8 @@ def main():
             corr = corroborate(d["kod_pemaju"], by_dev_all, mine, by_units)
             row = dict(d)
             row["_matched"] = ", ".join(hits) if hits else "known code"
-            row["_confidence"] = grade_candidate(hits, corr)
+            row["_confidence"] = grade_candidate(
+                hits, corr, str(d["kod_pemaju"]).upper() in known)
             cands.append(row)
             if corr:
                 for p in by_dev_all.get(str(d["kod_pemaju"]), []):
