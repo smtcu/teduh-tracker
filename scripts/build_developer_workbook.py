@@ -437,8 +437,11 @@ def main():
 
     summary, needs_check, missing = [], [], []
     for rule in companies:
-        known = set(parts(rule.get("known_codes")))
-        known = {k.upper() for k in known}
+        known = {k.upper() for k in parts(rule.get("known_codes"))}
+        # Codes you have already looked at and ruled out. Without this they come
+        # back on every rebuild, and a list that keeps re-asking settled
+        # questions stops being read.
+        rejected = {k.upper() for k in parts(rule.get("rejected_codes"))}
         mine = [k for k in company_projects
                 if k.get("company", "").lower() == rule["company"].lower()]
         by_units = {}
@@ -450,6 +453,8 @@ def main():
 
         cands, covered = [], set()
         for d in found:
+            if str(d["kod_pemaju"]).upper() in rejected:
+                continue
             hits = matches(d, rule)
             if not (hits or str(d["kod_pemaju"]) in known):
                 continue
