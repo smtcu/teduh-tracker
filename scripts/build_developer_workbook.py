@@ -166,6 +166,27 @@ def tokens(name, drop=()):
     return {w for w in words if w not in NOISE and w not in drop and len(w) > 1}
 
 
+# How often each word appears across every project on TEDUH. "Hijauan" is in
+# dozens of names and identifies nothing; "Kyliez" is in one. Rarity is the
+# real signal -- word length was only ever a crude stand-in for it.
+WORD_FREQ = {}
+
+
+def learn_vocabulary(projects):
+    WORD_FREQ.clear()
+    for p in projects:
+        for w in tokens(p.get("projek_nama", "")):
+            WORD_FREQ[w] = WORD_FREQ.get(w, 0) + 1
+
+
+def distinctive(word):
+    """A word rare enough to identify a project on its own."""
+    n = WORD_FREQ.get(word)
+    if n is None:                       # never seen in the index at all
+        return len(word) >= 6
+    return n <= 4
+
+
 def name_match(a, b, drop=()):
     """True when two project names plausibly describe the same development.
 
@@ -183,6 +204,15 @@ def name_match(a, b, drop=()):
     That is real evidence but not proof, so a weak match has to be backed by a
     second signal before it earns a place on the sheet.
     """
+    # TEDUH often files the registered name with the marketing name in
+    # brackets: "Dataran Sentral (d'tessera Residences)". The bracketed part is
+    # the name you would recognise, so compare against it directly.
+    for x, y in ((a, b), (b, a)):
+        for inner in re.findall(r"\(([^)]+)\)", str(y or "")):
+            sx, si = squash(x), squash(inner)
+            if sx and si and (sx in si or si in sx):
+                return "strong"
+
     ta, tb = tokens(a, drop), tokens(b, drop)
     if not ta or not tb:
         return None
@@ -197,7 +227,7 @@ def name_match(a, b, drop=()):
     shorter = ta if len(ta) <= len(tb) else tb
     if shared != shorter:               # the shorter name says more than this
         return None
-    if len(word) >= 8:                  # long enough to be a real project name
+    if distinctive(word):               # rare enough to name a project
         return "strong"
     return "weak" if ta == tb else None
 
@@ -228,6 +258,7 @@ def build_areas(wb, found, ppath):
         return
     areas = read(apath)
     projects = read(ppath)
+    learn_vocabulary(projects)
     known = read(os.path.join(ROOT, "area_projects.csv")) \
         if os.path.exists(os.path.join(ROOT, "area_projects.csv")) else []
     by_dev = {d["kod_pemaju"]: d for d in found}
@@ -384,6 +415,27 @@ def sweep_sheet(wb, title, rows):
     ws.auto_filter.ref = f"A1:{get_column_letter(len(heads))}{max(2, len(rows)+1)}"
 
 
+def rank_candidates(rec, spare, top=3):
+    """Best guesses for which TEDUH project is yours.
+
+    Ranked by unit count first, because that is the evidence that actually
+    settled the Ukay list, then by how many identity words the names share.
+    An exact unit match is shown even when several projects have it -- Ayanna
+    and Amberwood are both 824 units, and seeing both is the point.
+    """
+    want = str(rec.get("advertised_units", "")).strip()
+    want = int(want) if want.isdigit() else None
+    scored = []
+    for p in spare:
+        u = str(p.get("unit", "")).strip()
+        u = int(u) if u.isdigit() else None
+        gap = abs(u - want) if (u and want) else 10 ** 6
+        shared = len(tokens(rec.get("project", "")) & tokens(p.get("projek_nama", "")))
+        scored.append((0 if gap == 0 else 1, -shared, gap, p))
+    scored.sort(key=lambda x: x[:3])
+    return [p for *_, p in scored[:top]]
+
+
 def corroborate(dev_code, by_dev, known, by_units):
     """Does this developer own a project you already know belongs to the company?
 
@@ -430,12 +482,14 @@ def main():
     ppath0 = os.path.join(ROOT, "data", "projects_index.csv")
     by_dev_all = {}
     if os.path.exists(ppath0):
-        for p in read(ppath0):
+        all_projects = read(ppath0)
+        learn_vocabulary(all_projects)
+        for p in all_projects:
             by_dev_all.setdefault(p["kod_pemaju"], []).append(p)
     cpath = os.path.join(ROOT, "company_projects.csv")
     company_projects = read(cpath) if os.path.exists(cpath) else []
 
-    summary, needs_check, missing = [], [], []
+    summary, needs_check, missing, to_link = [], [], [], []
     for rule in companies:
         known = {k.upper() for k in parts(rule.get("known_codes"))}
         # Codes you have already looked at and ruled out. Without this they come
@@ -451,7 +505,7 @@ def main():
                 by_units.setdefault(int(v), []).append(k)
         by_units = {u: v[0] for u, v in by_units.items() if len(v) == 1}
 
-        cands, covered = [], set()
+        cands, covered, linked_codes, pool = [], set(), set(), []
         for d in found:
             if str(d["kod_pemaju"]).upper() in rejected:
                 continue
@@ -464,20 +518,25 @@ def main():
             row["_confidence"] = grade_candidate(
                 hits, corr, str(d["kod_pemaju"]).upper() in known)
             cands.append(row)
-            if corr:
-                for p in by_dev_all.get(str(d["kod_pemaju"]), []):
-                    pn = p.get("projek_nama") or ""
-                    for rec in mine:
-                        if rec.get("project") and name_match(rec["project"], pn):
-                            covered.add(rec["project"])
-                    u = str(p.get("unit", "")).strip()
-                    if u.isdigit() and int(u) in by_units:
-                        covered.add(by_units[int(u)]["project"])
+            for p in by_dev_all.get(str(d["kod_pemaju"]), []):
+                pool.append(p)
+                if not corr:
+                    continue
+                pn = p.get("projek_nama") or ""
+                for rec in mine:
+                    if rec.get("project") and name_match(rec["project"], pn):
+                        covered.add(rec["project"]); linked_codes.add(p.get("kod_projek"))
+                u = str(p.get("unit", "")).strip()
+                if u.isdigit() and int(u) in by_units:
+                    covered.add(by_units[int(u)]["project"]); linked_codes.add(p.get("kod_projek"))
             if row["_confidence"].startswith("CHECK"):
                 needs_check.append((rule["company"], row))
+        # Everything of theirs on TEDUH that no project of yours claims yet.
+        spare = [p for p in pool if p.get("kod_projek") not in linked_codes]
         for rec in mine:
             if rec.get("project") and rec["project"] not in covered:
                 missing.append((rule["company"], rec))
+                to_link.append((rule["company"], rec, rank_candidates(rec, spare)))
         cands.sort(key=lambda r: (r["_confidence"].startswith("CHECK"),
                                   r["_confidence"].startswith("LIKELY"),
                                   r["nama_pemaju"]))
@@ -565,7 +624,41 @@ def main():
     ws.auto_filter.ref = f"A1:{get_column_letter(len(heads))}{max(2, len(needs_check)+1)}"
     ws.row_dimensions[1].height = 28
 
-    ws = wb.create_sheet("Missing", 2)
+    # The worksheet that finishes the job: your unlinked projects, each beside
+    # the best guesses from that company's own TEDUH projects.
+    ws = wb.create_sheet("Link projects", 2)
+    heads = ["COMPANY", "YOUR PROJECT", "YOUR UNITS", "CONFIRMED CODE",
+             "BEST GUESS", "CODE", "UNITS", "SECOND GUESS", "CODE", "UNITS",
+             "THIRD GUESS", "CODE", "UNITS"]
+    for c, h in enumerate(heads, 1):
+        cell = ws.cell(1, c, h)
+        cell.font = Font(name=FONT, bold=True, color="FFFFFF", size=10)
+        cell.fill = PatternFill("solid", fgColor="EB6834") if h == "CONFIRMED CODE" else HEAD
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+    for r, (comp, rec, guesses) in enumerate(to_link, 2):
+        u = str(rec.get("advertised_units", "")).strip()
+        vals = [comp, rec.get("project", ""), int(u) if u.isdigit() else u, ""]
+        for g in guesses:
+            gu = str(g.get("unit", "")).strip()
+            vals += [g.get("projek_nama", ""), g.get("kod_projek", ""),
+                     int(gu) if gu.isdigit() else gu]
+        while len(vals) < len(heads):
+            vals.append("")
+        for c, v in enumerate(vals, 1):
+            cell = ws.cell(r, c, v)
+            cell.font = Font(name=FONT, size=10)
+            if c == 4:
+                cell.fill = PatternFill("solid", fgColor="FFF2CC")
+            # green where a guess has exactly your unit count
+            if c in (7, 10, 13) and isinstance(v, int) and u.isdigit() and v == int(u):
+                cell.fill = PatternFill("solid", fgColor="D6EAD6")
+    for c, w in enumerate([16, 36, 11, 16, 32, 11, 8, 32, 11, 8, 32, 11, 8], 1):
+        ws.column_dimensions[get_column_letter(c)].width = w
+    ws.freeze_panes = "B2"
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(heads))}{max(2, len(to_link)+1)}"
+    ws.row_dimensions[1].height = 28
+
+    ws = wb.create_sheet("Missing", 3)
     heads = ["COMPANY", "PROJECT ON YOUR LIST", "LOCATION", "ADVERTISED UNITS",
              "NOTE"]
     for c, h in enumerate(heads, 1):
