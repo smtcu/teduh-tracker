@@ -192,7 +192,7 @@
   }
  },
  "parkland-phase-1": {
-  "label": "Parkland by the River \u2014 Phase 1",
+  "label": "Parkland by the River — Phase 1",
   "codes": [
    "30635-1"
   ],
@@ -235,7 +235,7 @@
   }
  },
  "parkland-phase-2": {
-  "label": "Parkland by the River \u2014 Phase 2",
+  "label": "Parkland by the River — Phase 2",
   "codes": [
    "30635-2"
   ],
@@ -276,5 +276,206 @@
    "18": "C",
    "19": "C"
   }
+ },
+ "hillview-senibong": {
+  "label": "HillView Senibong Cove — Block A",
+  "codes": [
+   "14523-4"
+  ],
+  "types": [
+   {
+    "key": "A1",
+    "size": "598 sf",
+    "total": 111
+   },
+   {
+    "key": "A1a",
+    "size": "764 sf",
+    "total": 4
+   },
+   {
+    "key": "B1",
+    "size": "853 sf",
+    "total": 125
+   },
+   {
+    "key": "B1a",
+    "size": "1103 sf",
+    "total": 5
+   },
+   {
+    "key": "B2",
+    "size": "890 sf",
+    "total": 40
+   },
+   {
+    "key": "C1",
+    "size": "1007 sf",
+    "total": 94
+   },
+   {
+    "key": "C1a",
+    "size": "1198 sf",
+    "total": 2
+   },
+   {
+    "key": "C1b",
+    "size": "1007 sf",
+    "total": 28
+   },
+   {
+    "key": "C1c",
+    "size": "1163 sf",
+    "total": 1
+   },
+   {
+    "key": "D1",
+    "size": "1349 sf",
+    "total": 2
+   },
+   {
+    "key": "D2",
+    "size": "1288 sf",
+    "total": 2
+   },
+   {
+    "key": "D2a",
+    "size": "1288 sf",
+    "total": 1
+   }
+  ],
+  "exact": {
+   "A-01-08": "C1a",
+   "A-07-15": "C1a",
+   "A-07-09": "C1c",
+   "A-35-01": "D1",
+   "A-35-06": "D1",
+   "A-35-03": "D2",
+   "A-35-05": "D2",
+   "A-35-02": "D2a",
+   "A-35-12": "C1"
+  },
+  "rules": [
+   {
+    "tower": "A",
+    "floors": [
+     7,
+     7
+    ],
+    "units": [
+     "10",
+     "11",
+     "12",
+     "13"
+    ],
+    "type": "A1a"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     8,
+     34
+    ],
+    "units": [
+     "10",
+     "11",
+     "12",
+     "13"
+    ],
+    "type": "A1"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     35,
+     35
+    ],
+    "units": [
+     "08",
+     "10",
+     "11"
+    ],
+    "type": "A1"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     1,
+     1
+    ],
+    "units": [
+     "02",
+     "03",
+     "05",
+     "06",
+     "07"
+    ],
+    "type": "B1a"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     2,
+     26
+    ],
+    "units": [
+     "02",
+     "03",
+     "05",
+     "06",
+     "07"
+    ],
+    "type": "B1"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     27,
+     34
+    ],
+    "units": [
+     "02",
+     "03",
+     "05",
+     "06",
+     "07"
+    ],
+    "type": "B2"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     8,
+     35
+    ],
+    "units": [
+     "09"
+    ],
+    "type": "C1b"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     2,
+     34
+    ],
+    "units": [
+     "01",
+     "08"
+    ],
+    "type": "C1"
+   },
+   {
+    "tower": "A",
+    "floors": [
+     7,
+     34
+    ],
+    "units": [
+     "15"
+    ],
+    "type": "C1"
+   }
+  ]
  }
 }
