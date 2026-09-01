@@ -141,13 +141,14 @@ is the pipeline's existing "publish what we can" behaviour, unchanged here.
 
 | tracker key | file | notes |
 |---|---|---|
-| `seputeh` | Seputeh Hills | 6 projects, has Launched and Remarks columns |
+| `seputeh` | Seputeh Hills | 7 projects, has a Remarks column |
 | `status13` | Klang Valley | 13 projects (renamed from "Developer Sales Status") |
 | `johor` | Johor | 14 projects in two groups: Permas Jaya, JBCC |
+| `ukay` | Ukay | 17 projects, flat list, no group headings |
 
 ## projects.csv columns
 
-`tracker, group, no, project, code, developer, launched, total_units, first_new, remarks, pin, unit_types, note_prefix`
+`tracker, group, no, project, code, developer, launched, apdl, total_units, first_new, remarks, pin, unit_types, note_prefix`
 
 - `code` may be comma-separated for multi-code projects; the scraper sums them.
   Parkland by the River is the example — two codes summing to 1,051 on 07.08,
@@ -156,6 +157,25 @@ is the pipeline's existing "publish what we can" behaviour, unchanged here.
   (The Eclipse is currently in this state).
 - `unit_types` names the key(s) in `unit_types.json` for classified projects.
 - `group` is the Johor section heading (`Permas Jaya` / `JBCC`).
+
+### apdl — the advertising-permit date
+
+`apdl` is the **earliest** advertising-permit start date for the project: the
+`Tarikh Sah Laku Permit Terkini` begin date, or the earliest entry under
+`Senarai Permit Terdahulu` where the permit has been renewed. TEDUH's *current*
+permit start is often years later than the first one -- Residensi Rimba Flora
+reads 23 May 2026 today but first opened 23 May 2023, and 2023 is the answer.
+
+It is stored per project rather than fetched each run, because it never changes
+once issued and fetching it would mean a second API call per project.
+
+It **replaced the Launched date column on 01 Sep 2026**, in every tracker and on
+the website, and sits immediately before TOTAL UNIT. The `launched` column is
+still in projects.csv but nothing renders it. Blank-code rows have no APDL date.
+
+On the website the frozen columns are now `#`, PROJECT, APDL DATE and TOTAL
+UNITS (`.stick` .. `.stick4`); APDL is dropped below 760px, where four frozen
+columns would leave nothing for the figures.
 
 ### remarks vs note_prefix — two different jobs
 

@@ -3,9 +3,13 @@
 
 Usage: python3 build_trackers.py <projects.csv> <teduh_history.csv> <outdir> [report_date YYYY-MM-DD]
 
-Layout is copied from Samantha's originals:
-  seputeh  : NO | PROJECT | CODE | DEVELOPER | Launched | TOTAL UNIT | (NEW SALES,TOTAL SOLD,%) x weeks | Remarks
-  status13 : NO | PROJECT | CODE | DEVELOPER | TOTAL UNIT | (SOLD,%) | (NEW SALES,TOTAL SOLD,%) x weeks
+Layout, with APDL DATE and TOTAL UNIT ahead of the code and developer:
+  seputeh  : NO | PROJECT | APDL DATE | TOTAL UNIT | CODE | DEVELOPER | (NEW SALES,TOTAL SOLD,%) x weeks | Remarks
+  status13 : NO | PROJECT | APDL DATE | TOTAL UNIT | CODE | DEVELOPER | (SOLD,%) | (NEW SALES,TOTAL SOLD,%) x weeks
+  grouped  : NO | PROJECT | APDL DATE | TOTAL UNIT | DEVELOPER | (NEW SALES,TOTAL SOLD,TOTAL %) x weeks | NOTES
+APDL DATE is the earliest advertising-permit start, stored per project in
+projects.csv rather than fetched, because it never changes once issued.
+It replaced the Launched date column on 01 Sep 2026.
 NEW SALES and % are live Excel formulas, never hardcoded results.
 """
 import csv, sys, os
@@ -23,6 +27,11 @@ CTR = Alignment(horizontal='center', vertical='center', wrap_text=True)
 LFT = Alignment(horizontal='left', vertical='center', wrap_text=True)
 HDR = PatternFill('solid', fgColor='D9E1F2')
 NEWFILL = PatternFill('solid', fgColor='FFF2CC')   # highlights the newest week
+
+def apdl_date(p):
+    """Earliest advertising-permit start, as stored in projects.csv."""
+    s = (p.get('apdl') or '').strip()
+    return datetime.strptime(s, '%Y-%m-%d') if s else None
 
 def cell(ws, r, c, v=None, font=None, align=CTR, fill=None, fmt=None):
     x = ws.cell(r, c, v)
@@ -84,7 +93,7 @@ def build_seputeh(projects, weeks, lookup, report_date, path):
     wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True; ws = wb.active; ws.title = report_date.strftime('%Y%m%d')
     ws['A1'] = 'Teduh Weekly Update: Seputeh Hills Competitor Studies'; ws['A1'].font = F(bold=True, size=12)
     ws['A2'] = 'Report as at ' + report_date.strftime('%d/%m/%Y'); ws['A2'].font = F(bold=True, color='FF0000')
-    for i, h in enumerate(['NO','PROJECT','PROJECT \nCODE','DEVELOPER','Launched date','TOTAL \nUNIT'], 1):
+    for i, h in enumerate(['NO','PROJECT','APDL \nDATE','TOTAL \nUNIT','PROJECT \nCODE','DEVELOPER'], 1):
         cell(ws, 4, i, h, F(bold=True), fill=HDR)
     col = 7
     for i, (_, wk) in enumerate(weeks):
@@ -102,10 +111,10 @@ def build_seputeh(projects, weeks, lookup, report_date, path):
     for r, p in enumerate(rows, 5):
         cell(ws, r, 1, int(p['no']))
         cell(ws, r, 2, p['project'], align=LFT)
-        cell(ws, r, 3, p['code'])
-        cell(ws, r, 4, p['developer'], align=LFT)
-        cell(ws, r, 5, datetime.strptime(p['launched'], '%Y-%m-%d') if p['launched'] else None, fmt='MMM-YY')
-        cell(ws, r, 6, int(p['total_units']), fmt='#,##0')
+        cell(ws, r, 3, apdl_date(p), fmt='DD/MM/YYYY')
+        cell(ws, r, 4, int(p['total_units']), fmt='#,##0')
+        cell(ws, r, 5, p['code'])
+        cell(ws, r, 6, p['developer'], align=LFT)
         col, prev = 7, None
         for i, snap in enumerate(weeks):
             v = lookup.get(('seputeh', snap, p['code']))
@@ -114,12 +123,12 @@ def build_seputeh(projects, weeks, lookup, report_date, path):
             if v is not None:
                 t.value = v
                 n.value = f'={L(col+1)}{r}-{prev}{r}' if prev else (int(p['first_new']) if str(p['first_new']).strip() else None)
-                pc.value = f'={L(col+1)}{r}/$F${r}'
+                pc.value = f'={L(col+1)}{r}/$D${r}'
                 prev = L(col+1)
             col += 3
         cell(ws, r, rem, p['remarks'], align=LFT)
 
-    for c, w in [('A',4),('B',26),('C',10),('D',28),('E',12),('F',8)]:
+    for c, w in [('A',4),('B',26),('C',12),('D',8),('E',10),('F',28)]:
         ws.column_dimensions[c].width = w
     for c in range(7, rem): ws.column_dimensions[L(c)].width = 9
     ws.column_dimensions[L(rem)].width = 42
@@ -130,12 +139,12 @@ def build_status13(projects, weeks, lookup, report_date, path):
     wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True; ws = wb.active; ws.title = report_date.strftime('%d%m%Y')
     ws['A2'] = 'Report as at ' + report_date.strftime('%d/%m/%Y'); ws['A2'].font = F(bold=True, color='FF0000')
     ws['A3'] = 'TEDUH WEEKLY UPDATE '; ws['A3'].font = F(bold=True, size=12)
-    for i, h in enumerate(['NO','PROJECT','PROJECT \nCODE','DEVELOPER','TOTAL \nUNIT'], 1):
+    for i, h in enumerate(['NO','PROJECT','APDL \nDATE','TOTAL \nUNIT','PROJECT \nCODE','DEVELOPER'], 1):
         cell(ws, 4, i, h, F(bold=True), fill=HDR)
-    ws.merge_cells('F3:G3')
-    cell(ws, 3, 6, datetime.strptime(weeks[0][1], '%Y-%m-%d'), F(bold=True), fmt='DD/MM/YYYY')
-    cell(ws, 4, 6, 'SOLD', F(bold=True), fill=HDR); cell(ws, 4, 7, '%', F(bold=True), fill=HDR)
-    col = 8
+    ws.merge_cells('G3:H3')
+    cell(ws, 3, 7, datetime.strptime(weeks[0][1], '%Y-%m-%d'), F(bold=True), fmt='DD/MM/YYYY')
+    cell(ws, 4, 7, 'SOLD', F(bold=True), fill=HDR); cell(ws, 4, 8, '%', F(bold=True), fill=HDR)
+    col = 9
     for i, (_, wk) in enumerate(weeks[1:], 1):
         last = (i == len(weeks) - 1)
         ws.merge_cells(start_row=3, start_column=col, end_row=3, end_column=col+2)
@@ -151,13 +160,14 @@ def build_status13(projects, weeks, lookup, report_date, path):
         key = p['code'] if p['code'] else f'NOCODE-R{r}'
         cell(ws, r, 1, int(p['no']))
         cell(ws, r, 2, p['project'], align=LFT)
-        cell(ws, r, 3, p['code'])
-        cell(ws, r, 4, p['developer'], align=LFT)
-        cell(ws, r, 5, int(p['total_units']), fmt='#,##0')
+        cell(ws, r, 3, apdl_date(p), fmt='DD/MM/YYYY')
+        cell(ws, r, 4, int(p['total_units']), fmt='#,##0')
+        cell(ws, r, 5, p['code'])
+        cell(ws, r, 6, p['developer'], align=LFT)
         v0 = lookup.get(('status13', weeks[0], key))
-        cell(ws, r, 6, v0, fmt='#,##0')
-        cell(ws, r, 7, f'=F{r}/$E${r}' if v0 is not None else None, fmt='0.0%')
-        col, prev = 8, ('F' if v0 is not None else None)
+        cell(ws, r, 7, v0, fmt='#,##0')
+        cell(ws, r, 8, f'=G{r}/$D${r}' if v0 is not None else None, fmt='0.0%')
+        col, prev = 9, ('G' if v0 is not None else None)
         for i, snap in enumerate(weeks[1:], 1):
             v = lookup.get(('status13', snap, key))
             fill = NEWFILL if i == len(weeks) - 1 else None
@@ -165,14 +175,14 @@ def build_status13(projects, weeks, lookup, report_date, path):
             if v is not None:
                 t.value = v
                 if prev: n.value = f'={L(col+1)}{r}-{prev}{r}'
-                pc.value = f'={L(col+1)}{r}/$E${r}'
+                pc.value = f'={L(col+1)}{r}/$D${r}'
                 prev = L(col+1)
             col += 3
 
-    for c, w in [('A',4),('B',26),('C',10),('D',30),('E',8)]:
+    for c, w in [('A',4),('B',26),('C',12),('D',8),('E',10),('F',30)]:
         ws.column_dimensions[c].width = w
-    for c in range(6, end): ws.column_dimensions[L(c)].width = 9
-    ws.freeze_panes = 'F5'; ws.row_dimensions[4].height = 30
+    for c in range(7, end): ws.column_dimensions[L(c)].width = 9
+    ws.freeze_panes = 'G5'; ws.row_dimensions[4].height = 30
     wb.save(path); return path
 
 def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='johor',
@@ -186,9 +196,9 @@ def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='jo
     ws = wb.active; ws.title = report_date.strftime('%d%m%Y')
     ws['A2'] = 'Report as at ' + report_date.strftime('%d/%m/%Y'); ws['A2'].font = F(bold=True, color='FF0000')
     ws['A3'] = heading; ws['A3'].font = F(bold=True, size=12)
-    for i, h in enumerate(['NO', 'PROJECT', 'DEVELOPER', 'TOTAL \nUNIT'], 1):
+    for i, h in enumerate(['NO', 'PROJECT', 'APDL \nDATE', 'TOTAL \nUNIT', 'DEVELOPER'], 1):
         cell(ws, 4, i, h, F(bold=True), fill=HDR)
-    col = 5
+    col = 6
     for i, snap in enumerate(weeks):
         last = (i == len(weeks) - 1)
         ws.merge_cells(start_row=3, start_column=col, end_row=3, end_column=col + 2)
@@ -214,9 +224,10 @@ def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='jo
         units = int(p['total_units']) if str(p.get('total_units', '')).strip().isdigit() else 0
         cell(ws, r, 1, int(p['no']))
         cell(ws, r, 2, p['project'], align=LFT)
-        cell(ws, r, 3, p['developer'], align=LFT)
+        cell(ws, r, 3, apdl_date(p), fmt='DD/MM/YYYY')
         cell(ws, r, 4, units, fmt='#,##0')
-        col, prev = 5, None
+        cell(ws, r, 5, p['developer'], align=LFT)
+        col, prev = 6, None
         for i, snap in enumerate(weeks):
             v = lookup.get((tracker, snap, key))
             fill = NEWFILL if i == len(weeks) - 1 else None
@@ -233,12 +244,12 @@ def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='jo
         cell(ws, r, rem_col, remark_for(p, notes.get(key, '')), align=LFT)
         r += 1
 
-    for c, w in [('A', 4), ('B', 26), ('C', 22), ('D', 9)]:
+    for c, w in [('A', 4), ('B', 26), ('C', 12), ('D', 9), ('E', 22)]:
         ws.column_dimensions[c].width = w
-    for c in range(5, rem_col):
+    for c in range(6, rem_col):
         ws.column_dimensions[L(c)].width = 9
     ws.column_dimensions[L(rem_col)].width = 46
-    ws.freeze_panes = 'E5'; ws.row_dimensions[4].height = 30
+    ws.freeze_panes = 'F5'; ws.row_dimensions[4].height = 30
     wb.save(path); return path
 
 

@@ -120,7 +120,8 @@ except Exception as e:                          # noqa: BLE001
     ck(False, f"projects.csv: {e}")
     projects = []
 
-expected_cols = {"tracker", "project", "code", "total_units", "remarks", "note_prefix", "unit_types"}
+expected_cols = {"tracker", "project", "code", "total_units", "remarks", "note_prefix",
+                 "unit_types", "apdl"}
 if projects:
     missing = expected_cols - set(projects[0])
     ck(not missing, f"projects.csv has the columns the scripts read{'' if not missing else f' (missing {missing})'}")

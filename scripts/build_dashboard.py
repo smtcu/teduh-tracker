@@ -111,7 +111,7 @@ def build_payload():
             "name": (p.get("project") or "").replace("\n", " ").strip(),
             "code": code,
             "developer": (p.get("developer") or "").strip(),
-            "launched": p.get("launched") or "",
+            "apdl": p.get("apdl") or "",
             "units": units,
             "group": (p.get("group") or "").strip(),
             "codes": codes,
@@ -291,18 +291,20 @@ tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins tr.older td{background:var(--surface)}
 td.live-card{border-left:4px solid var(--orange)}
 tbody tr:hover td:not(.stick){background:var(--sunk)}
-.stick,.stick2,.stick3{position:sticky;background:var(--surface);z-index:2}
+.stick,.stick2,.stick3,.stick4{position:sticky;background:var(--surface);z-index:2}
 tr.pinned td{position:sticky;z-index:3;background:var(--pinbg);
   border-top:2px solid var(--blue);border-bottom:2px solid var(--blue);font-weight:700}
-tr.pinned td.stick,tr.pinned td.stick2,tr.pinned td.stick3{z-index:4;background:var(--pinbg)}
+tr.pinned td.stick,tr.pinned td.stick2,tr.pinned td.stick3,tr.pinned td.stick4{z-index:4;background:var(--pinbg)}
 tbody tr.pinned:hover td{background:var(--pinbg)}
 tr.pinned td.nm::after{content:" \2605";color:var(--blue)}
 .stick{left:0;width:38px;min-width:38px}
 .stick2{left:38px;width:196px;min-width:196px;max-width:196px;white-space:normal;line-height:1.32}
-.stick3{left:234px;width:64px;min-width:64px;max-width:64px;border-right:2px solid var(--rule)}
-th.stick3,th.stick2{white-space:normal;line-height:1.25}
-th.stick,th.stick2,th.stick3{z-index:4;background:var(--sunk)}
-tbody tr:hover .stick,tbody tr:hover .stick2,tbody tr:hover .stick3{background:var(--sunk)}
+.stick3{left:234px;width:78px;min-width:78px;max-width:78px}
+.stick4{left:312px;width:64px;min-width:64px;max-width:64px;border-right:2px solid var(--rule)}
+th.stick3,th.stick2,th.stick4{white-space:normal;line-height:1.25}
+th.stick,th.stick2,th.stick3,th.stick4{z-index:4;background:var(--sunk)}
+tbody tr:hover .stick,tbody tr:hover .stick2,tbody tr:hover .stick3,
+tbody tr:hover .stick4{background:var(--sunk)}
 tr:last-child td{border-bottom:0}
 
 .tip{position:fixed;pointer-events:none;opacity:0;transition:opacity .1s;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 8px 28px rgba(0,0,0,.2);font-size:12.5px;z-index:50;max-width:250px;font-weight:600}
@@ -340,14 +342,17 @@ tr:last-child td{border-bottom:0}
   th,td{padding:7px 7px}
   .stick{width:26px;min-width:26px}
   .stick2{left:26px;max-width:98px;min-width:98px;font-size:11.5px}
-  .stick3{left:124px;width:46px;min-width:46px;max-width:46px;font-size:11.5px}
+  /* APDL date is dropped on phones -- four frozen columns would leave almost
+     nothing for the figures. It is still in the Excel trackers. */
+  .stick3{display:none}
+  .stick4{left:124px;width:46px;min-width:46px;max-width:46px;font-size:11.5px}
   /* On phones the Remarks column is replaced by a full-width line under each
      project, and the # column is dropped -- together they were leaving 12px of
      338px for the actual figures. */
   .rem{display:none}
   .stick{display:none}
   .stick2{left:0;max-width:112px;min-width:112px}
-  .stick3{left:112px}
+  .stick4{left:112px}
   tr.noterow{display:table-row}
   tr.noterow td{background:var(--sunk);border-right:0;padding:0}
   tr.noterow .notebox{position:sticky;left:0;width:calc(100vw - 46px);
@@ -520,8 +525,8 @@ function table() {
 
   const tb = el('table');
   const r1 = el('tr'), r2 = el('tr');
-  const fixed = [['#', 'stick'], ['PROJECT', 'stick2'], ['TOTAL UNITS', 'stick3'],
-                 ['CODE', 'opt'], ['DEVELOPER', 'opt'], ['LAUNCHED', 'opt']];
+  const fixed = [['#', 'stick'], ['PROJECT', 'stick2'], ['APDL DATE', 'stick3'],
+                 ['TOTAL UNITS', 'stick4'], ['CODE', 'opt'], ['DEVELOPER', 'opt']];
   fixed.forEach(([label, cls], i) => {
     const th = el('th', (cls ? cls + ' ' : '') + (i < 5 ? 'l' : ''), label);
     th.rowSpan = 2; r1.appendChild(th);
@@ -564,10 +569,10 @@ function table() {
     const tr = el('tr', p.pin ? 'pinned' : '');
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
     tr.appendChild(el('td', 'l stick2 nm', p.name));
-    tr.appendChild(el('td', 'stick3', nf(p.units)));
+    tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
+    tr.appendChild(el('td', 'stick4', nf(p.units)));
     tr.appendChild(el('td', 'l opt', p.code || '–'));
     tr.appendChild(el('td', 'l opt', p.developer));
-    tr.appendChild(el('td', 'l opt', p.launched ? fdate(p.launched) : '–'));
 
     const map = {}; p.weekly.forEach(s => map[s.d] = s.v);
     const delta = {}; let prev = null;
