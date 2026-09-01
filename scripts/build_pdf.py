@@ -8,7 +8,7 @@ the daily file, shows the last 5 snapshots and drops the % column, which is what
 keeps five days of numbers legible at this page width. Tables only, on purpose:
 this is meant to be skimmed and forwarded, not studied.
 """
-import csv, sys
+import csv, os, sys
 from datetime import datetime
 
 from reportlab.lib import colors
@@ -73,12 +73,25 @@ def num(v):
         return None
 
 
+def first_code(p):
+    """The key a project's readings are filed under.
+
+    A project spanning several phases stores them comma-joined -- Causewayz is
+    "31100-1,31100-2,31100-3,31100-4" -- but the history is keyed by the first
+    code alone, which is what build_trackers.py and build_dashboard.py both use.
+    This script was looking the whole string up as one key, so every multi-code
+    project printed as an empty row: Causewayz, M Grand Minori, Parkland,
+    Sierra Hijauan, Nassim Heights.
+    """
+    return (p.get("code") or "").split(",")[0].strip()
+
+
 def fdate(s, short=False):
     d = datetime.strptime(s, "%Y-%m-%d")
     return d.strftime("%d %b") if short else d.strftime("%d %b %Y")
 
 
-def load(pcsv, hcsv):
+def load(pcsv, hcsv, daily_csv=None):
     projects = list(csv.DictReader(open(pcsv, encoding="utf-8")))
     hist = list(csv.DictReader(open(hcsv, encoding="utf-8")))
     series = {}
@@ -86,15 +99,36 @@ def load(pcsv, hcsv):
         v = num(r.get("total_sold"))
         if v is not None:
             series.setdefault(r["code"], {})[r["week"]] = v
-    return projects, series, sorted({r["week"] for r in hist})
+    dates = sorted({r["week"] for r in hist})
+
+    # A project the scraper has only just started visiting has a daily reading
+    # but no Friday record, so it would print as a row of blanks -- which is
+    # what made the first competitor report look broken rather than new. Seed it
+    # at the newest Friday so the reader gets a number. No NEW figure follows,
+    # because there is no earlier week to subtract. Same rule as the website and
+    # the Excel trackers.
+    if daily_csv and os.path.exists(daily_csv):
+        daily = list(csv.DictReader(open(daily_csv, encoding="utf-8")))
+        if daily:
+            latest_day = max(r["week"] for r in daily)
+            dated_at = dates[-1] if dates else latest_day
+            for r in daily:
+                if r["week"] != latest_day or r["code"] in series:
+                    continue
+                v = num(r.get("total_sold"))
+                if v is not None:
+                    series[r["code"]] = {dated_at: v}
+            if not dates:
+                dates = [dated_at]
+    return projects, series, dates
 
 
-def build(pcsv, hcsv, out, daily=False, periods=4, only=None):
+def build(pcsv, hcsv, out, daily=False, periods=4, only=None, seed_from=None):
     # Daily columns drop the percentage: it barely moves day to day, and dropping it
     # is what keeps the numbers from colliding at this width.
     show_pct = not daily
     per_period = 3 if show_pct else 2
-    projects, series, all_dates = load(pcsv, hcsv)
+    projects, series, all_dates = load(pcsv, hcsv, seed_from)
     if not all_dates:
         raise SystemExit("no data to report on")
     report_date = all_dates[-1]
@@ -139,7 +173,7 @@ def build(pcsv, hcsv, out, daily=False, periods=4, only=None):
                       key=lambda x: (x.get("pin", "").strip().lower() not in ("yes", "y", "1", "true")))
         if not mine:
             continue
-        codes = [p["code"] for p in mine if (p.get("code") or "").strip()]
+        codes = [c for c in (first_code(p) for p in mine) if c]
         have = sorted({d for c in codes for d in series.get(c, {})})
         if not have:
             continue
@@ -151,8 +185,8 @@ def build(pcsv, hcsv, out, daily=False, periods=4, only=None):
         for p in mine:
             u = num(p.get("total_units")) or 0
             units += u
-            cur = series.get(p.get("code", ""), {}).get(latest)
-            first = series.get(p.get("code", ""), {}).get(cols[0])
+            cur = series.get(first_code(p), {}).get(latest)
+            first = series.get(first_code(p), {}).get(cols[0])
             if cur is not None:
                 sold += cur
                 if first is not None:
@@ -176,7 +210,7 @@ def build(pcsv, hcsv, out, daily=False, periods=4, only=None):
                 section = p["group"]
                 group_rows.add(len(data))
                 data.append([section] + [""] * (4 + len(cols) * per_period))
-            s = series.get((p.get("code") or "").split(",")[0].strip(), {})
+            s = series.get(first_code(p), {})
             u = num(p.get("total_units")) or 0
             # "apdl", with "launched" only as a fallback. projects.csv renamed
             # this column on 01 Sep 2026 and this script was still reading the
@@ -253,6 +287,8 @@ if __name__ == "__main__":
     periods = next((int(f.split("=")[1]) for f in flags if f.startswith("--periods=")),
                    5 if daily else 4)
     only = next((f.split("=")[1] for f in flags if f.startswith("--only=")), None)
+    seed_from = next((f.split("=", 1)[1] for f in flags if f.startswith("--seed-from=")), None)
     if only not in (None, "areas", "developers"):
         raise SystemExit("--only= takes 'areas' or 'developers'")
-    build(args[0], args[1], args[2], daily=daily, periods=periods, only=only)
+    build(args[0], args[1], args[2], daily=daily, periods=periods, only=only,
+          seed_from=seed_from)
