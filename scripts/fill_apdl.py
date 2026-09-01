@@ -74,33 +74,48 @@ def fetch(code, state):
     return None, False
 
 
+MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
+
+
 def iso(v):
+    """Accept "2023-05-08" or "08 May 2023" (the form lesen_records uses) -> ISO, else ""."""
     v = str(v or "").strip()
-    return v if (len(v) == 10 and v[4] == "-" and v[7] == "-") else ""
+    if len(v) == 10 and v[4] == "-" and v[7] == "-":
+        return v
+    parts = v.split()
+    if len(parts) == 3 and parts[0].isdigit() and parts[2].isdigit():
+        m = MONTHS.get(parts[1][:3].lower())
+        if m:
+            return f"{int(parts[2]):04d}-{m:02d}-{int(parts[0]):02d}"
+    return ""
 
 
 def permit_start(detail):
-    """The advertising-permit start date, or "".
+    """The EARLIEST advertising-permit start, or "".
 
-    `permitMula` lives under the `projek` block -- root.projek.permitMula -- not
-    at the root of the response. Reading it at the root returns nothing for every
-    project, which is exactly what the first run did across all 131 codes.
+    TEDUH's "Senarai Permit Terdahulu" is the `lesen_records` array, and the
+    current permit is root.projek.permitMula. A permit runs about three years
+    and is then renewed, and the renewal replaces permitMula -- so on its own
+    permitMula gives 2026-05-08 for Vista Adesa, which launched in May 2023.
+    The original sits in lesen_records as "08 May 2023". APDL means the first
+    permit, so this takes the earliest date across all of them.
 
-    permitMula is preferred over tarikh_mula because it is the one that matches
-    the dates already recorded by hand: 31100-1 gives 2025-11-05 and 31332-1
-    gives 2026-07-02, both exactly as they sit in projects.csv. tarikh_mula is a
-    different date entirely -- for 11202-4 it is 2026-11-10 against a permitMula
-    of 2026-08-08 -- so it is only a last resort.
+    tarikh_mula is deliberately ignored: that is the developer's licence, a
+    different thing, and for 30363-1 it is 2023-02-13 -- three months before
+    the advertising permit.
     """
     if not isinstance(detail, dict):
         return ""
-    blocks = [detail.get("projek"), detail]
-    blocks += [r for r in (detail.get("lesen_records") or []) if isinstance(r, dict)]
-    for key in ("permitMula", "tarikh_mula"):     # every block, preferred key first
-        for b in blocks:
-            if isinstance(b, dict) and iso(b.get(key)):
-                return iso(b.get(key))
-    return ""
+    found = []
+    projek = detail.get("projek") if isinstance(detail.get("projek"), dict) else {}
+    for src in (projek, detail):
+        found.append(iso(src.get("permitMula")))
+    for rec in detail.get("lesen_records") or []:
+        if isinstance(rec, dict):
+            found.append(iso(rec.get("mula")))
+    found = [d for d in found if d]
+    return min(found) if found else ""
 
 
 def main():
@@ -124,6 +139,9 @@ def main():
     if not todo:
         print("Every project with a code already has an APDL date. Nothing to fetch.")
         return
+    if refetch_all:
+        print("Checking EVERY project's APDL against the earliest permit on TEDUH."
+              + ("  (dry run: nothing will be written)" if dry else ""))
 
     codes = sorted({c.strip() for r in todo for c in r["code"].split(",") if c.strip()})
     print(f"{len(todo)} projects need a date, {len(codes)} codes to fetch.\n")
@@ -150,17 +168,37 @@ def main():
                   f"re-run later to pick up the rest.", flush=True)
             break
 
-    filled, missing = 0, []
+    filled, missing, same, differ = 0, [], 0, []
     for r in todo:
         dates = sorted(found[c.strip()] for c in r["code"].split(",")
                        if c.strip() in found)
-        if dates:
-            r["apdl"] = dates[0]       # earliest phase = the project's APDL
-            filled += 1
-        else:
-            missing.append(f"{r.get('tracker_label') or r['tracker']} / {r['project']}")
+        label = f"{r.get('tracker_label') or r['tracker']} / {r['project']}"
+        if not dates:
+            missing.append(label)
+            continue
+        earliest = dates[0]            # earliest phase = the project's APDL
+        current = (r.get("apdl") or "").strip()
+        if current and current != earliest:
+            differ.append((label, current, earliest))
+        elif current:
+            same += 1
+        if not current or refetch_all:
+            if r["apdl"] != earliest:
+                filled += 1
+            r["apdl"] = earliest
 
-    print(f"\nfilled {filled} of {len(todo)}")
+    if refetch_all:
+        print(f"\n{same} projects already carry the earliest permit date.")
+        if differ:
+            print(f"{len(differ)} projects where projects.csv differs from the earliest permit on TEDUH:")
+            print(f"  {'project':44} {'in projects.csv':>16} {'earliest on TEDUH':>18}")
+            for label, cur, ear in differ:
+                tag = "  (yours is EARLIER)" if cur < ear else ""
+                print(f"  {label[:44]:44} {cur:>16} {ear:>18}{tag}")
+        else:
+            print("No differences.")
+    else:
+        print(f"\nfilled {filled} of {len(todo)}")
     if missing:
         print(f"no permit date on TEDUH for {len(missing)}:")
         for m in missing[:20]:

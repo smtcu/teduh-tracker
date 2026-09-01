@@ -93,7 +93,23 @@ def classify(project_key, unit):
     parts = split(key)
     if not parts:
         return None
-    tower, _, num = parts
+    tower, floor, num = parts
+
+    # Floor-banded rules, for towers where the same unit position changes type
+    # as you go up. HillView is the case: position 10 is A1a on level 7, A1 on
+    # levels 8-34; positions 02-07 are B1a on level 1, B1 on 2-26, B2 on 27-34.
+    # Neither by_unit nor by_tower_unit can say that. First matching rule wins,
+    # so list the narrow bands before the wide ones.
+    for rule in spec.get("rules") or []:
+        if rule.get("tower") and rule["tower"].upper() != tower:
+            continue
+        lo, hi = rule.get("floors") or (None, None)
+        if lo is not None and floor < int(lo):
+            continue
+        if hi is not None and floor > int(hi):
+            continue
+        if str(num) in {str(int(u)) for u in rule.get("units", [])}:
+            return rule["type"]
 
     by_tower = spec.get("by_tower_unit")
     if by_tower:
