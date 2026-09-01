@@ -37,7 +37,12 @@ def retry_after(err, fallback):
 
 
 def fetch(code, state):
-    """Project detail as a dict, or None. Slows down when TEDUH pushes back."""
+    """(detail, reached). `reached` is False only when TEDUH could not be talked to.
+
+    The two are kept apart on purpose. "I asked and this project has no permit
+    date" and "I could not ask" look identical from the caller otherwise, and
+    conflating them is what made the first run stop after twelve codes.
+    """
     wait = 2.0
     for attempt in range(ATTEMPTS):
         time.sleep(state["pause"])
@@ -48,10 +53,10 @@ def fetch(code, state):
                 body = json.loads(r.read().decode("utf-8"))
             # A clean run earns a little speed back, but never below the opening pace.
             state["pause"] = max(PAUSE, state["pause"] * 0.9)
-            return body
+            return body, True
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                return None
+                return None, True          # answered clearly: no such project
             if e.code in (429, 503):
                 state["pause"] = min(MAX_PAUSE, state["pause"] * 1.8)
                 nap = retry_after(e, wait)
@@ -61,22 +66,40 @@ def fetch(code, state):
                 wait = min(wait * 2, 60)
                 continue
             print(f"    HTTP {e.code} on {code}", flush=True)
-            return None
+            return None, True
         except Exception as e:
             print(f"    {type(e).__name__} on {code} — retrying", flush=True)
             time.sleep(wait)
             wait = min(wait * 2, 60)
-    return None
+    return None, False
+
+
+def iso(v):
+    v = str(v or "").strip()
+    return v if (len(v) == 10 and v[4] == "-" and v[7] == "-") else ""
 
 
 def permit_start(detail):
-    """`permitMula` is the APDL start. Fall back to tarikh_mula if it is absent."""
+    """The advertising-permit start date, or "".
+
+    `permitMula` lives under the `projek` block -- root.projek.permitMula -- not
+    at the root of the response. Reading it at the root returns nothing for every
+    project, which is exactly what the first run did across all 131 codes.
+
+    permitMula is preferred over tarikh_mula because it is the one that matches
+    the dates already recorded by hand: 31100-1 gives 2025-11-05 and 31332-1
+    gives 2026-07-02, both exactly as they sit in projects.csv. tarikh_mula is a
+    different date entirely -- for 11202-4 it is 2026-11-10 against a permitMula
+    of 2026-08-08 -- so it is only a last resort.
+    """
     if not isinstance(detail, dict):
         return ""
-    for key in ("permitMula", "tarikh_mula"):
-        v = str(detail.get(key) or "").strip()
-        if len(v) == 10 and v[4] == "-" and v[7] == "-":
-            return v
+    blocks = [detail.get("projek"), detail]
+    blocks += [r for r in (detail.get("lesen_records") or []) if isinstance(r, dict)]
+    for key in ("permitMula", "tarikh_mula"):     # every block, preferred key first
+        for b in blocks:
+            if isinstance(b, dict) and iso(b.get(key)):
+                return iso(b.get(key))
     return ""
 
 
@@ -110,18 +133,19 @@ def main():
     # for hours to accomplish nothing. Twelve dead codes in a row is not bad
     # luck, so stop and keep whatever was collected before that point.
     STREAK = 12
-    misses = 0
+    unreachable = 0
     for i, code in enumerate(codes, 1):
-        d = permit_start(fetch(code, state))
+        detail, reached = fetch(code, state)
+        d = permit_start(detail)
         if d:
             found[code] = d
-            misses = 0
-        else:
-            misses += 1
+        # Only a failure to reach TEDUH counts towards stopping. A project that
+        # genuinely has no permit date is an answer, not an outage.
+        unreachable = 0 if reached else unreachable + 1
         print(f"  [{i}/{len(codes)}] {code:12} {d or '— no permit date'}", flush=True)
-        if misses >= STREAK:
-            print(f"\nStopping: {STREAK} codes in a row returned nothing, so TEDUH is "
-                  f"probably unreachable rather than missing the dates. "
+        if unreachable >= STREAK:
+            print(f"\nStopping: {STREAK} codes in a row could not be reached at all, so "
+                  f"TEDUH is down rather than missing the dates. "
                   f"{len(found)} dates collected so far are still written; "
                   f"re-run later to pick up the rest.", flush=True)
             break
