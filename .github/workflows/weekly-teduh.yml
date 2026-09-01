@@ -14,6 +14,15 @@ on:
   # The website and the daily workbook refresh every day.
   # The Excel trackers and the PDF report are rebuilt on Fridays only.
   workflow_dispatch:        # the Cloudflare Worker, or you from the Actions tab
+    inputs:
+      apdl:
+        description: "APDL dates"
+        type: choice
+        default: "fill blanks"
+        options:
+          - "fill blanks"
+          - "check all (report only, writes nothing)"
+          - "apply earliest permit to all"
 
 permissions:
   contents: write
@@ -78,7 +87,11 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-          python scripts/fill_apdl.py projects.csv
+          case "${{ inputs.apdl }}" in
+            check*)  python scripts/fill_apdl.py projects.csv --all --dry-run ;;  # report only
+            apply*)  python scripts/fill_apdl.py projects.csv --all ;;            # overwrite with earliest
+            *)       python scripts/fill_apdl.py projects.csv ;;                  # daily: blanks only
+          esac
           rm -f projects.csv.bak
 
       # The website build has moved BELOW the workbook and PDF steps. Its
