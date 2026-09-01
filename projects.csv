@@ -1,57 +1,178 @@
-tracker,group,no,project,code,developer,launched,apdl,total_units,first_new,remarks,pin,unit_types,note_prefix
-seputeh,,1,The Eden,32-16,BRDB Developments Sdn Bhd,2025-07-01,2025-07-25,146,3,"Big unit (5,533 to Penthouse 19,031sqft)",,,
-seputeh,,2,Imperial Residences- Pavilion DH,30216-1,Pavilion Group (Jendela Mayang S/B),2025-10-01,2025-10-15,154,1,"Big unit (3,380 to 4,090sqft  & Penthouse 7,459sqft).",,,
-seputeh,,3,Royal Suites- Pavilion DH (small unit),30216-2,Pavilion Group (Jendela Mayang S/B),2026-01-01,2026-01-06,490,6,"Small unit (452 to 1,679 sq ft)",,,
-seputeh,,4,The Batai,31078-1,Tan & Tan Dev Berhad (Arabayu Sepakat S/B),2025-12-01,2025-12-03,48,0,"4-storey Villa (4,854 to 5,157 sq ft); left 3 bumi units",,,
-seputeh,,5,Aosis Mont Kiara,31274-1,JKG Land Berhad (Modern Plus Sdn Bhd),2026-04-01,2026-04-10,244,0,"Big unit (1,648 to 3,856 sq ft)",,,
-seputeh,,6,ParkCity Residences,2463-23,Perdana ParkCity S/B,2026-07-26,2026-06-16,433,,"Big unit (2,842 to 10,613 sq ft)",,,
-status13,,1,RESIDENSI WARISAN SALAK SELATAN,31202-1,EC VANTAGE SDN. BHD.,2026-06-18,2026-06-18,1310,,Wilayah Persekutuan Kuala Lumpur,yes,,
-status13,,2,M AURORA,13262-2,MAJORLAND DEVELOPMENT SDN BHD,,2026-03-19,1544,,,,,
-status13,,3,"ARTE STAR
+tracker,tracker_label,group,no,project,code,developer,launched,apdl,total_units,first_new,remarks,pin,unit_types,note_prefix
+seputeh,,,1,The Eden,32-16,BRDB Developments Sdn Bhd,2025-07-01,2025-07-25,146,3,"Big unit (5,533 to Penthouse 19,031sqft)",,,
+seputeh,,,2,Imperial Residences- Pavilion DH,30216-1,Pavilion Group (Jendela Mayang S/B),2025-10-01,2025-10-15,154,1,"Big unit (3,380 to 4,090sqft  & Penthouse 7,459sqft).",,,
+seputeh,,,3,Royal Suites- Pavilion DH (small unit),30216-2,Pavilion Group (Jendela Mayang S/B),2026-01-01,2026-01-06,490,6,"Small unit (452 to 1,679 sq ft)",,,
+seputeh,,,4,The Batai,31078-1,Tan & Tan Dev Berhad (Arabayu Sepakat S/B),2025-12-01,2025-12-03,48,0,"4-storey Villa (4,854 to 5,157 sq ft); left 3 bumi units",,,
+seputeh,,,5,Aosis Mont Kiara,31274-1,JKG Land Berhad (Modern Plus Sdn Bhd),2026-04-01,2026-04-10,244,0,"Big unit (1,648 to 3,856 sq ft)",,,
+seputeh,,,6,ParkCity Residences,2463-23,Perdana ParkCity S/B,2026-07-26,2026-06-16,433,,"Big unit (2,842 to 10,613 sq ft)",,,
+status13,,,1,RESIDENSI WARISAN SALAK SELATAN,31202-1,EC VANTAGE SDN. BHD.,2026-06-18,2026-06-18,1310,,Wilayah Persekutuan Kuala Lumpur,yes,,
+status13,,,2,M AURORA,13262-2,MAJORLAND DEVELOPMENT SDN BHD,,2026-03-19,1544,,,,,
+status13,,,3,"ARTE STAR
 MILANO",30590-2,SURIAMEGA DEVELOPMENT,,2025-11-11,996,,,,,
-status13,,4, M ASPIRA,5911-33,MAH SING GROUP BERHAD,,2024-08-27,1618,,,,,
-status13,,5,"RESIDENSI DESA TIMUR
+status13,,,4, M ASPIRA,5911-33,MAH SING GROUP BERHAD,,2024-08-27,1618,,,,,
+status13,,,5,"RESIDENSI DESA TIMUR
 A DESA",30363-2,FITRAH RESOURCES SDN BHD,,2023-06-23,1218,,,,,
-status13,,6,"RADIUM ARENA
+status13,,,6,"RADIUM ARENA
 RESIDENSI RADIUM",30821-1,RADIUM GLOBAL SDN BHD,,2024-10-25,988,,,,,
-status13,,7,RESIDENSI AMBIEN,30366-1,FAITHVIEW RESOURCES SDN BHD,,2023-07-18,482,,,,,
-status13,,8,RESIDENSI HANA,13074-4,NATURAL DOMAIN SDN BHD,,2024-02-19,299,,,,,
-status13,,9,"RESIDENSI
+status13,,,7,RESIDENSI AMBIEN,30366-1,FAITHVIEW RESOURCES SDN BHD,,2023-07-18,482,,,,,
+status13,,,8,RESIDENSI HANA,13074-4,NATURAL DOMAIN SDN BHD,,2024-02-19,299,,,,,
+status13,,,9,"RESIDENSI
 SUNWAY COCHRANE",8824-5,SUNWAY COCHRANE SDN BHD,,2025-09-30,1296,,,,,
-status13,,10,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),20253-3,PEMBINAAN SERTA HEBAT SDN.BHD,,2024-11-14,1500,,,,,
-status13,,11,RESIDENSI VERIDIAN,30876-1,PERUMAHAN MASTERON SDN BHD,,2025-03-27,551,,,,,
-status13,,12,RESIDENSI AURUM,30250-2,AMBER HOMES SRI PETALING SDN BHD,,2023-09-04,661,,,,,
-status13,,13,THE SHANG RESIDENCE,,SHANG HEIGHT REALTY SDN. BHD.,,,449,,,,,
-status13,,14,BINASTRA COCHRANE,31332-1,BINASTRA SYNERGY SDN. BHD.,2026-07-02,2026-07-02,830,,,,,
-johor,Permas Jaya,1,The Straits View Duo,835-14,BRDB,,2025-09-26,715,,,,straits-view-duo,
-johor,Permas Jaya,2,Permas Heights,30946-1,MB World,,2025-02-20,1950,,,,permas-heights,
-johor,Permas Jaya,3,HillView Senibong Cove,14523-4,WM Senibong,,2026-03-25,1500,,Open sale for Block A (416 units) only; tracked against the full development,,,
-johor,Permas Jaya,4,Parkland by the River,"30635-1,30635-2",Parkland,,2024-08-08,2156,,,,"parkland-phase-1,parkland-phase-2",
-johor,JBCC,1,The Asteriaz,31007-1,Exsim,,2025-07-18,848,,,,,
-johor,JBCC,2,Causewayz Square,"31100-1,31100-2,31100-3,31100-4",Exsim,,2025-11-05,3692,,,,,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet."
-johor,JBCC,3,The Address,31074-1,Maxim Global,,2025-08-15,2743,,,,,
-johor,JBCC,4,M Grand Minori,"9600-6,9600-7",Mah Sing,,2025-08-29,1733,,,,,
-johor,JBCC,5,Skyline One,31031-1,TS Law,,2025-08-20,1623,,,,,
-johor,JBCC,6,Gen Sphere,30828-3,Majestic Gen,,2025-05-27,996,,,,,
-johor,JBCC,7,The Eclipse,,Chin Hin,,,1116,,,,,
-johor,JBCC,8,Amberwood,13531-2,Chin Hin,,2026-01-06,824,,,,,
-johor,JBCC,9,Sunway Majestic,31034-1,Sunway/Majestic Gen,,2025-10-06,1012,,,,,
-johor,JBCC,10,Calia,31149-1,PGB,,2025-12-24,1274,,,,,
-ukay,,1,DaMai,9500-8,SDB Properties Sdn Bhd,,2025-05-22,306,,,,,
-ukay,,2,Trinity Sensoria,20140-2,Trinity Group (Trinity Wellnessa & Enlivea Dev S/B),,2024-10-10,737,,,,,
-ukay,,3,Ukay Spring,,Malton Berhad (Gapadu Harta S/B),,,142,,No TEDUH code,,,
-ukay,,4,Chin Hin Ulu Kelang,,Chin Hin Property (Melawati) S/B,,,1449,,No TEDUH code,,,
-ukay,,5,LEA By The Hills,11519-3,OSK Property (Jelang Vista S/B),,2022-06-09,344,,,,,
-ukay,,6,Park One Residence,597-13,Sime Darby Property (KL East) S/B,,2022-10-07,234,,,,,
-ukay,,7,Sierra Hijauan,"10296-3,10296-4,10296-5,10296-6,10296-7,10296-8,10296-9",IJM Land (Sierra Ukay S/B),,2015-10-10,310,,,,,
-ukay,,8,Embun @ Kemensah,12369-1,Titijaya Land Bhd (Aman Kemensah S/B),,2013-08-17,51,,Emery not found on TEDUH,,,
-ukay,,9,Tijani Ukay Ampang,12166-1,Symphony Life Bhd (Ketapang Realty S/B),,2013-10-22,118,,,,,
-ukay,,10,19Trees,9500-7,SDB Properties Sdn Bhd,,2022-09-27,222,,,,,
-ukay,,11,20Trees,9500-2,SDB Properties Sdn Bhd,,2007-03-26,201,,No unit found on TEDUH,,,
-ukay,,12,Nadayu 63,11078-3,Nadayu Properties (Twin Ridge S/B),,2014-09-10,296,,,,,
-ukay,,13,16 Quartz @ Taman Melawati,12123-1,Mitraland (Mitraland Melawati S/B),,2013-09-10,117,,,,,
-ukay,,14,Trinity Wellnessa,20140-1,Trinity Group (Trinity Wellnessa & Enlivea Dev S/B),,2021-07-16,463,,,,,
-ukay,,15,Nassim Heights,"12437-2,12437-3,12437-4",Newfield Holding (Nassim Development S/B),,2021-02-24,106,,,,,
-ukay,,16,Kelab Ukay Residence,11602-1,Sri Datai / Strong Heritage S/B,,2011-09-13,15,,,,,
-ukay,,17,Villaria,,,,,,,No TEDUH code,,,
-seputeh,,7,MAIA,30141-2,UEM Sunrise (Laser Tower S/B),,2026-06-11,495,,Not yet launched,,,
+status13,,,10,RESIDENSI PLATINUM SAUJANA VIOLET 2 (PSV2),20253-3,PEMBINAAN SERTA HEBAT SDN.BHD,,2024-11-14,1500,,,,,
+status13,,,11,RESIDENSI VERIDIAN,30876-1,PERUMAHAN MASTERON SDN BHD,,2025-03-27,551,,,,,
+status13,,,12,RESIDENSI AURUM,30250-2,AMBER HOMES SRI PETALING SDN BHD,,2023-09-04,661,,,,,
+status13,,,13,THE SHANG RESIDENCE,,SHANG HEIGHT REALTY SDN. BHD.,,,449,,,,,
+status13,,,14,BINASTRA COCHRANE,31332-1,BINASTRA SYNERGY SDN. BHD.,2026-07-02,2026-07-02,830,,,,,
+johor,,Permas Jaya,1,The Straits View Duo,835-14,BRDB,,2025-09-26,715,,,,straits-view-duo,
+johor,,Permas Jaya,2,Permas Heights,30946-1,MB World,,2025-02-20,1950,,,,permas-heights,
+johor,,Permas Jaya,3,HillView Senibong Cove,14523-4,WM Senibong,,2026-03-25,1500,,Open sale for Block A (416 units) only; tracked against the full development,,,
+johor,,Permas Jaya,4,Parkland by the River,"30635-1,30635-2",Parkland,,2024-08-08,2156,,,,"parkland-phase-1,parkland-phase-2",
+johor,,JBCC,1,The Asteriaz,31007-1,Exsim,,2025-07-18,848,,,,,
+johor,,JBCC,2,Causewayz Square,"31100-1,31100-2,31100-3,31100-4",Exsim,,2025-11-05,3692,,,,,"Open sale for Block A, B & D only. Block C (833 units) is not opened yet."
+johor,,JBCC,3,The Address,31074-1,Maxim Global,,2025-08-15,2743,,,,,
+johor,,JBCC,4,M Grand Minori,"9600-6,9600-7",Mah Sing,,2025-08-29,1733,,,,,
+johor,,JBCC,5,Skyline One,31031-1,TS Law,,2025-08-20,1623,,,,,
+johor,,JBCC,6,Gen Sphere,30828-3,Majestic Gen,,2025-05-27,996,,,,,
+johor,,JBCC,7,The Eclipse,,Chin Hin,,,1116,,,,,
+johor,,JBCC,8,Amberwood,13531-2,Chin Hin,,2026-01-06,824,,,,,
+johor,,JBCC,9,Sunway Majestic,31034-1,Sunway/Majestic Gen,,2025-10-06,1012,,,,,
+johor,,JBCC,10,Calia,31149-1,PGB,,2025-12-24,1274,,,,,
+ukay,,,1,DaMai,9500-8,SDB Properties Sdn Bhd,,2025-05-22,306,,,,,
+ukay,,,2,Trinity Sensoria,20140-2,Trinity Group (Trinity Wellnessa & Enlivea Dev S/B),,2024-10-10,737,,,,,
+ukay,,,3,Ukay Spring,,Malton Berhad (Gapadu Harta S/B),,,142,,No TEDUH code,,,
+ukay,,,4,Chin Hin Ulu Kelang,,Chin Hin Property (Melawati) S/B,,,1449,,No TEDUH code,,,
+ukay,,,5,LEA By The Hills,11519-3,OSK Property (Jelang Vista S/B),,2022-06-09,344,,,,,
+ukay,,,6,Park One Residence,597-13,Sime Darby Property (KL East) S/B,,2022-10-07,234,,,,,
+ukay,,,7,Sierra Hijauan,"10296-3,10296-4,10296-5,10296-6,10296-7,10296-8,10296-9",IJM Land (Sierra Ukay S/B),,2015-10-10,310,,,,,
+ukay,,,8,Embun @ Kemensah,12369-1,Titijaya Land Bhd (Aman Kemensah S/B),,2013-08-17,51,,Emery not found on TEDUH,,,
+ukay,,,9,Tijani Ukay Ampang,12166-1,Symphony Life Bhd (Ketapang Realty S/B),,2013-10-22,118,,,,,
+ukay,,,10,19Trees,9500-7,SDB Properties Sdn Bhd,,2022-09-27,222,,,,,
+ukay,,,11,20Trees,9500-2,SDB Properties Sdn Bhd,,2007-03-26,201,,No unit found on TEDUH,,,
+ukay,,,12,Nadayu 63,11078-3,Nadayu Properties (Twin Ridge S/B),,2014-09-10,296,,,,,
+ukay,,,13,16 Quartz @ Taman Melawati,12123-1,Mitraland (Mitraland Melawati S/B),,2013-09-10,117,,,,,
+ukay,,,14,Trinity Wellnessa,20140-1,Trinity Group (Trinity Wellnessa & Enlivea Dev S/B),,2021-07-16,463,,,,,
+ukay,,,15,Nassim Heights,"12437-2,12437-3,12437-4",Newfield Holding (Nassim Development S/B),,2021-02-24,106,,,,,
+ukay,,,16,Kelab Ukay Residence,11602-1,Sri Datai / Strong Heritage S/B,,2011-09-13,15,,,,,
+ukay,,,17,Villaria,,,,,,,No TEDUH code,,,
+seputeh,,,7,MAIA,30141-2,UEM Sunrise (Laser Tower S/B),,2026-06-11,495,,Not yet launched,,,
+armani,Armani,,1,Alderwood Residence,31112-1,GOLDEN ALDERWOOD PROPERTIES SDN. BHD.,,,186,,,,,Filed on TEDUH as “Residensi Alderwood”.
+armani,Armani,,2,Armani Avani,30135-3,ARMANI DEVELOPMENT SDN. BHD.,,,328,,,,,Filed on TEDUH as “Residensi Armani”.
+armani,Armani,,3,Armani Business Park,30705-2,USAHA MULIA SDN. BHD.,,,44,,,,,Filed on TEDUH as “Harmoni Indah”.
+armani,Armani,,4,Armani Cameron Residence,"30273-1,30273-2",,,,232,,,,,
+armani,Armani,,5,Armani Hallson KLCC,30256-2,ARMANI HALLSON KLCC SDN. BHD.,,,2215,,,,,Filed on TEDUH as “Residensi Armani Hallson Klcc”.
+armani,Armani,,6,Armani Residence Kepong,6820-8,MAGNA PARK SDN. BHD.,,,306,,,,,Filed on TEDUH as “Residensi Armani Kepong”.
+armani,Armani,,7,Armani Residence Setia Alam,30727-1,,,,648,,,,,
+armani,Armani,,8,Armani Residence Setia Alam 2,30727-2,,,,998,,,,,
+armani,Armani,,9,Armani Residence Shah Alam,30339-1,ARMANI ALLIANCE SDN. BHD.,,,338,,,,,Filed on TEDUH as “Residensi Alam Armani”.
+armani,Armani,,10,Armani Signature Residence,13975-5,GOLDEN ARMANI SDN. BHD.,,,315,,,,,Filed on TEDUH as “Residensi Armani”.
+armani,Armani,,11,Lofthill Residence,30641-1,LOFTHILL DEVELOPMENT SDN. BHD.,,,653,,,,,Filed on TEDUH as “Residensi Lofthill”.
+armani,Armani,,12,Residensi Armani Kg Baru 1,13975-6,GOLDEN ARMANI SDN. BHD.,,,387,,,,,
+armani,Armani,,13,Residensi Armani Putra,30799-1,GOLDEN CHAIN DEVELOPMENT SDN. BHD.,,,984,,,,,
+armani,Armani,,14,Taman Bukit Tualang 2,30393-1,GOLDEN ARMANI DEVELOPMENT SDN. BHD.,,,30,,,,,Filed on TEDUH as “Taman Bukit Tualang”.
+armani,Armani,,15,Armani Prestige,30135-2,,,,280,,,,,Code not yet confirmed against TEDUH.
+armani,Armani,,16,Taman PMINT Tebing Tembah 2,13970-3,,,,116,,,,,Code not yet confirmed against TEDUH.
+avaland,Avaland,,1,Aetas Seputeh,30624-1,ARDENT RESIDENCE SDN. BHD.,,,126,,,,,Filed on TEDUH as “Residensi Aetas Seputeh”.
+avaland,Avaland,,2,Alora Residences @ Avenue25,"30162-1,30162-2",,,,770,,,,,
+avaland,Avaland,,3,Amika Residences,20185-3,NEXT DELTA SDN. BHD.,,,468,,,,,Filed on TEDUH as “Residensi Amika”.
+avaland,Avaland,,4,Anja Residences & Signature Retail,"9490-3,9490-4",USJ ONE AVENUE SDN. BHD.,,,900,,,,,
+avaland,Avaland,,5,Avalon,"30240-3,30240-4",ECOLAKE RESIDENCE SDN. BHD.,,,343,,,,,Filed on TEDUH as “Avalon Cybersouth”.
+avaland,Avaland,,6,Sanderling 2 Lakefront,12047-4,LAKEFRONT RESIDENCE SDN. BHD.,,,606,,,,,Filed on TEDUH as “Lakefront Residence”.
+avaland,Avaland,,7,Accent Petaling Jaya,,,,,231,,,,,Not launched yet.
+avaland,Avaland,,8,Aetas Taman Desa,20017-1,,,,226,,,,,Code not yet confirmed against TEDUH.
+binastra,Binastra,,1,Binastra Cochrane,31332-1,BINASTRA SYNERGY SDN. BHD.,,,830,,,,,
+binastra,Binastra,,2,Binastra Cochrane 2,,BINASTRA SYNERGY SDN. BHD.,,,830,,,,,Not launched yet.
+binastra,Binastra,,3,Binastra The Hill @ Kemensah,,,,,,,,,,Not on TEDUH.
+chinhin,Chin Hin,,1,Amberwood Resort Residences,13531-2,AFFLUENT CRAFTS SDN. BHD.,,,824,,,,,Filed on TEDUH as “Residensi Ambar Rimba”.
+chinhin,Chin Hin,,2,Aricia Residences,30632-1,ARICIA SDN. BHD.,,,787,,,,,Filed on TEDUH as “Residensi Aris”.
+chinhin,Chin Hin,,3,Avantro Residences,30190-1,BOON KOON COMMERCIAL SDN. BHD.,,,842,,,,,Filed on TEDUH as “Residensi Avantro”.
+chinhin,Chin Hin,,4,Ayanna Resort Residences,"30382-1,30382-2",BKSP AUTOWORLD SDN. BHD.,,,824,,,,,Filed on TEDUH as “Residensi Ayanna”.
+chinhin,Chin Hin,,5,Crown Penang,30744-1,STELLAR PLATINUM SDN. BHD.,,,588,,,,,Filed on TEDUH as “The Crown”.
+chinhin,Chin Hin,,6,DIVINE KLCC,31096-1,SINARAN URUSJUTA SDN. BHD.,,,1033,,,,,
+chinhin,Chin Hin,,7,Quaver Residence,30064-1,QUAVER SDN. BHD.,,,684,,,,,Filed on TEDUH as “Simfoni Residensi”.
+chinhin,Chin Hin,,8,Residensi Andalan,30382-3,BKSP AUTOWORLD SDN. BHD.,,,823,,,,,
+chinhin,Chin Hin,,9,Botanica Hills,"30907-1,30907-2",,,,231,,,,,Code not yet confirmed against TEDUH.
+chinhin,Chin Hin,,10,Dawn KLCC,30629-2,,,,492,,,,,Code not yet confirmed against TEDUH.
+exsim,Exsim,,1,Branniganz Suites,30784-1,LEMBARAN BERUNTUNG SDN. BHD.,,,269,,,,,Filed on TEDUH as “Branniganz Suites @ Bukit Bintang”.
+exsim,Exsim,,2,D'Clover Residences,20011-3,MIGHTYPROP  SDN. BHD.,,,593,,,,,Filed on TEDUH as “Dataran Sentral (d'clover Residences)”.
+exsim,Exsim,,3,D'Terra Residences,20011-2,MIGHTYPROP  SDN. BHD.,,,767,,,,,Filed on TEDUH as “Dataran Sentral (d'terra Residences)”.
+exsim,Exsim,,4,D'Tessera Residences,20011-4,MIGHTYPROP  SDN. BHD.,,,671,,,,,Filed on TEDUH as “Dataran Sentral (d'tessera Residences)”.
+exsim,Exsim,,5,Hanaz Suites,13666-2,SUNRISE CHARM SDN. BHD.,,,98,,,,,Filed on TEDUH as “Menara Sutera Indah (hanaz Suites @ Kl City Centre)”.
+exsim,Exsim,,6,Hugoz Suites,30370-1,ARMADA ISTIMEWA SDN. BHD.,,,320,,,,,Filed on TEDUH as “Menara Sutera Ria (hugoz Suites @ Kl City Centre)”.
+exsim,Exsim,,7,Kyliez Suites,30789-1,EXSIM AVENUE SDN. BHD.,,,126,,,,,Filed on TEDUH as “Kyliez Suites @ Kl City Centre”.
+exsim,Exsim,,8,Noordinz Suites,30571-1,EXSIM NOORDIN SDN. BHD.,,,603,,,,,Filed on TEDUH as “Noordinz Suites @ George Town”.
+exsim,Exsim,,9,Qubaz Suites,30914-1,EXSIM KG TIONG (KT)  SDN. BHD.,,,759,,,,,Filed on TEDUH as “Menara Kubah (qubaz Suites @ Kuala Terengganu)”.
+exsim,Exsim,,10,Sea Crestz,30830-1,KUANTAN WATERFRONT RESORT CITY SDN. BHD.,,,456,,,,,Filed on TEDUH as “Sea Crestz @ Kuantan Waterfront Resort City”.
+exsim,Exsim,,11,The Aldenz,20011-5,MIGHTYPROP  SDN. BHD.,,,662,,,,,Filed on TEDUH as “Residensi Damai Mekar (the Aldenz)”.
+exsim,Exsim,,12,The Asteriaz,31007-1,EXSIM KEBUN TEH SDN. BHD.,,,848,,,,,Filed on TEDUH as “Residensi Kebun Teh (the Asteriaz @ Kebun Teh)”.
+exsim,Exsim,,13,The Fiddlewoodz,20084-1,IVORY INTERPOINT SDN. BHD.,,,679,,,,,Filed on TEDUH as “The Fiddlewoodz @ Kl Metropolis”.
+exsim,Exsim,,14,The Kingswoodz,30741-1,EXSIM JALIL LINK   SDN. BHD.,,,1558,,,,,Filed on TEDUH as “The Kingswoodz @ Bukit Jalil”.
+exsim,Exsim,,15,The Lighthauz,31088-1,EXSIM WATERFRONT SDN. BHD.,,,671,,,,,
+exsim,Exsim,,16,The Queenswoodz,30741-2,EXSIM JALIL LINK   SDN. BHD.,,,1004,,,,,Filed on TEDUH as “Residensi Mahkota Bukit Jalil”.
+exsim,Exsim,,17,The Vividz,30357-2,EXSIM BUKIT JALIL CITY SDN. BHD.,,,1138,,,,,Filed on TEDUH as “Residensi Seri Lestari (the Vividz @ Bukit Jalil)”.
+exsim,Exsim,,18,Veladaz Residences,30357-1,EXSIM BUKIT JALIL CITY SDN. BHD.,,,508,,,,,Filed on TEDUH as “Residensi Sejahtera Damai (veladaz Residences @ Bukit Jalil)”.
+exsim,Exsim,,19,Causewayz Square @ JBCC,"31100-1,31100-2,31100-3,31100-4",,,,3692,,,,,Code not yet confirmed against TEDUH.
+exsim,Exsim,,20,The Stallionz,30131-1,,,,424,,,,,Code not yet confirmed against TEDUH.
+mahsing,Mah Sing,,1,Allamanda 5 & 6 @ Meridin East,"14297-25,14297-28",MERIDIN EAST SDN. BHD.,,,235,,,,,Filed on TEDUH as “Meridin East”.
+mahsing,Mah Sing,,2,Ferringhi Residence 2,12324-2,UPTREND HOUSING DEVELOPMENT SDN. BHD.,,,478,,,,,Filed on TEDUH as “Ferringhi Residence”.
+mahsing,Mah Sing,,3,Jasmine 2 @ Meridin East,14297-24,MERIDIN EAST SDN. BHD.,,,168,,,,,Filed on TEDUH as “Meridin East Jasmine 2”.
+mahsing,Mah Sing,,4,M Amaya,12029-4,VIENNA VIEW DEVELOPMENT SDN. BHD.,,,833,,,,,
+mahsing,Mah Sing,,5,M Aria,31251-1,M ARIA SDN. BHD.,,,606,,,,,Filed on TEDUH as “Residensi M Aria”.
+mahsing,Mah Sing,,6,M Aspira,5911-33,MAH SING PROPERTIES SDN. BHD.,,,1618,,,,,Filed on TEDUH as “Residensi M Aspira”.
+mahsing,Mah Sing,,7,M Aurora,13262-2,MAJOR LAND DEVELOPMENT SDN. BHD.,,,1544,,,,,Filed on TEDUH as “Residensi M Aurora”.
+mahsing,Mah Sing,,8,M Azura,30834-1,M AZURA  SDN. BHD.,,,1140,,,,,Filed on TEDUH as “Residensi M Azura”.
+mahsing,Mah Sing,,9,M Legasi,30897-1,MESTIKA BISTARI SDN. BHD.,,,330,,,,,
+mahsing,Mah Sing,,10,M Nova,"11202-4,11202-5",MYVILLA DEVELOPMENT SDN. BHD.,,,2080,,,,,Filed on TEDUH as “Residensi M Nova”.
+mahsing,Mah Sing,,11,M Panora,"11998-4,11998-5",SEMAI MERANTI SDN. BHD.,,,396,,,,,Filed on TEDUH as “Panora”.
+mahsing,Mah Sing,,12,M Sinar @ Southville City,"13425-8,13425-9",SOUTHVILLE CITY SDN. BHD.,,,999,,,,,Filed on TEDUH as “M Sinar”.
+mahsing,Mah Sing,,13,M Terra,30805-1,SUPREME SPRINGS SDN. BHD.,,,999,,,,,Filed on TEDUH as “Residensi M Terra”.
+mahsing,Mah Sing,,14,M Tiara,"10279-5,10279-6,10279-7,10279-8",VENICE VIEW DEVELOPMENT SDN. BHD.,,,223,,,,,Filed on TEDUH as “Taman Tiara Indah (m Tiara)”.
+mahsing,Mah Sing,,15,M Zenni,12029-3,VIENNA VIEW DEVELOPMENT SDN. BHD.,,,494,,,,,
+mahsing,Mah Sing,,16,M Zenya,11430-2,M ZENYA  SDN. BHD.,,,619,,,,,Filed on TEDUH as “Residensi M Zenya”.
+mahsing,Mah Sing,,17,M Grand Minori,"9600-6,9600-7",,,,1733,,,,,Code not yet confirmed against TEDUH.
+mahsing,Mah Sing,,18,M Minori,"30440-1,30440-2,30440-3",,,,1526,,,,,Code not yet confirmed against TEDUH.
+majesticgen,Majestic Gen,,1,Gen Rise,30828-2,MAJESTIC GEN  SDN. BHD.,,,732,,,,,Filed on TEDUH as “Residensi Gen”.
+majesticgen,Majestic Gen,,2,Gen Sphere,30828-3,MAJESTIC GEN  SDN. BHD.,,,996,,,,,
+majesticgen,Majestic Gen,,3,Gen Starz,30828-1,MAJESTIC GEN  SDN. BHD.,,,360,,,,,Filed on TEDUH as “Residensi Gen”.
+majesticgen,Majestic Gen,,4,Majestic Residence,30244-1,MAJESTIC LUXE SDN. BHD.,,,478,,,,,Filed on TEDUH as “Residensi Majestic”.
+majesticgen,Majestic Gen,,5,Majestic Yu,30990-1,MAJESTIC GEN (SOUTHERN) SDN. BHD.,,,106,,,,,Filed on TEDUH as “Taman Yu”.
+majesticgen,Majestic Gen,,6,Yahya Awal Mixed Development (JV with Sunway Property),31034-1,SUNWAY MAJESTIC  SDN. BHD.,,,1012,,,,,Filed on TEDUH as “Soho Sunway Majestic”.
+majesticgen,Majestic Gen,,7,George Town High-Rise Development,,,,,,,,,,Not launched yet.
+majesticgen,Majestic Gen,,8,Majestic Aman,30989-1,,,,73,,,,,Code not yet confirmed against TEDUH.
+majesticgen,Majestic Gen,,9,Majestic Flora,12069-7,,,,140,,,,,Code not yet confirmed against TEDUH.
+majesticgen,Majestic Gen,,10,Majestic PD Township*,,,,,97,,,,,Not launched yet.
+malton,Malton,,1,Mutiara Kempas,31139-1,KHUAN CHOO SDN. BHD.,,,562,,,,,
+malton,Malton,,2,Mutiara Lake Puchong,8950-4,INTERPILE (M) SDN BHD,,,526,,,,,
+malton,Malton,,3,Park Green @ Pavilion Bukit Jalil,30667-1,REGAL PATH SDN. BHD.,,,453,,,,,Filed on TEDUH as “Pavilion Bukit Jalil”.
+malton,Malton,,4,Ria Bangsar South,14035-6,KUMPULAN GAPADU SDN. BHD.,,,336,,,,,Filed on TEDUH as “Residensi Kerinchi Ria”.
+malton,Malton,,5,River Park Bangsar South,"14035-4,14035-5",,,,1332,,,,,Code not yet confirmed against TEDUH.
+maxim,Maxim,,1,Residensi Max II,30267-1,PROMINENT MAXIM SDN. BHD.,,,604,,,,,
+maxim,Maxim,,2,Residensi Maxim D’Parc,31046-1,MIZUMI MAXIM SDN. BHD.,,,1116,,,,,Filed on TEDUH as “Residensi Maxim D'parc”.
+maxim,Maxim,,3,Residensi Maxim Pelangi,31074-1,MAXIM PELANGI SDN. BHD.,,,2743,,,,,
+maxim,Maxim,,4,Residensi Maxim Risen,30037-1,BUILTAMONT DEVELOPMENT SDN. BHD.,,,1236,,,,,
+maxim,Maxim,,5,Residensi The Atas,19088-3,KAISAR MAXIM SDN. BHD.,,,624,,,,,
+platinumvictory,Platinum Victory,,1,MHP3 Residences,30581-1,MHP3 SDN. BHD.,,,1688,,,,,Filed on TEDUH as “Residensi Mh Platinum 3”.
+platinumvictory,Platinum Victory,,2,PV22 Residences,9832-11,PLATINUM VICTORY DEVELOPMENT SDN. BHD.,,,2082,,,,,Filed on TEDUH as “Residensi Pv 22”.
+platinumvictory,Platinum Victory,,3,Platinum Melati Residences,31008-1,SMART ADVANCE RESOURCES SDN. BHD.,,,794,,,,,Filed on TEDUH as “Residensi Platinum Melati”.
+platinumvictory,Platinum Victory,,4,PSV1 Residences,20253-2,,,,500,,,,,Code not yet confirmed against TEDUH.
+platinumvictory,Platinum Victory,,5,PSV2 Residences,20253-3,,,,1500,,,,,Code not yet confirmed against TEDUH.
+platinumvictory,Platinum Victory,,6,The Maison 23,30937-1,,,,23,,,,,Code not yet confirmed against TEDUH.
+platinumvictory,Platinum Victory,,7,Vista Melati,,,,,794,,,,,"Code 31008-1 removed: TEDUH confirms it is Residensi Platinum Melati (794 units), which is the row above. No code matched yet."
+skyworld,Skyworld,,1,SkyAwani PRIMA Residences,31051-1,,,,492,,,,,
+skyworld,Skyworld,,2,Curvo Residences,30176-1,,,,830,,,,,Code not yet confirmed against TEDUH.
+skyworld,Skyworld,,3,SkyAman 1 Residences,30976-1,,,,510,,,,,Code not yet confirmed against TEDUH.
+skyworld,Skyworld,,4,SkyWorld Pearlmont,"31075-1,31075-2",,,,,,,,,Code not yet confirmed against TEDUH.
+skyworld,Skyworld,,5,Vesta Residences,19840-2,,,,1001,,,,,Code not yet confirmed against TEDUH.
+tslaw,TS Law,,1,Skyline (Eastside) @ OneSentosa,31031-1,PLAZA SENTOSA PROPERTIES SDN. BHD.,,,1623,,,,,Filed on TEDUH as “Skyline One Sentosa”.
+tslaw,TS Law,,2,Skyline Kuchai,"30331-1,30331-2",L & T REALTY SDN. BHD.,,,1838,,,,,Filed on TEDUH as “Residensi Skyline Kuchai”.
+tslaw,TS Law,,3,KL Exchange (KLX),,,,,,,,,,Not launched yet.
+tslaw,TS Law,,4,Residence Hill,9158-9,,,,42,,,,,Code not yet confirmed against TEDUH.
+tslaw,TS Law,,5,Skyline Embassy,"19760-1,19760-2",,,,1296,,,,,Code not yet confirmed against TEDUH.
+trinitygroup,Trinity Group,,1,Trinity Nordic/Zia,30857-1,OLYMPIC BUILDERS SDN. BHD.,,,714,,,,,Filed on TEDUH as “Pangsapuri Seri Aura”.
+trinitygroup,Trinity Group,,2,Trinity Sensoria,20140-2,TRINITY WELLNESSA & ENLIVEA DEVELOPMENT SDN. BHD.,,,737,,,,,Filed on TEDUH as “Bayu Ceria”.
+trinitygroup,Trinity Group,,3,Lot 850 @ Ampang,,,,,,,,,,Not launched yet.
+trinitygroup,Trinity Group,,4,MA Land,,,,,2964,,,,,Not launched yet.
+trinitygroup,Trinity Group,,5,Permas Jaya – Phase 1,,,,,,,,,,Not launched yet.
+trinitygroup,Trinity Group,,6,Permas Jaya – Phase 2,,,,,,,,,,Not launched yet.
+trinitygroup,Trinity Group,,7,Permas Jaya – Phase 3,,,,,,,,,,Not launched yet.
+trinitygroup,Trinity Group,,8,Trinity Activerse,,,,,,,,,,Not launched yet.
+trinitygroup,Trinity Group,,9,Trinity Rainfora,10826-4,,,,535,,,,,Code not yet confirmed against TEDUH.
