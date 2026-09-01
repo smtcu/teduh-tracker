@@ -72,9 +72,9 @@ def main():
         ws["A2"] = "Every day the tracker has run, newest first. Generated " + datetime.now().strftime("%d/%m/%Y")
         ws["A2"].font = F(bold=True, color="C00000")
 
-        for i, h in enumerate(["NO", "PROJECT", "PROJECT \nCODE", "DEVELOPER", "TOTAL \nUNITS"], 1):
+        for i, h in enumerate(["NO", "PROJECT", "APDL \nDATE", "TOTAL \nUNITS", "PROJECT \nCODE", "DEVELOPER"], 1):
             cell(ws, 4, i, h, F(bold=True), fill=HDR)
-        col = 6
+        col = 7
         for i, d in enumerate(days):
             ws.merge_cells(start_row=3, start_column=col, end_row=3, end_column=col + 2)
             cell(ws, 3, col, datetime.strptime(d, "%Y-%m-%d"), F(bold=True), fmt="DD/MM/YYYY",
@@ -88,9 +88,12 @@ def main():
             units = int(p["total_units"]) if str(p.get("total_units", "")).strip().isdigit() else 0
             cell(ws, r, 1, int(p["no"]))
             cell(ws, r, 2, (p["project"] or "").replace("\n", " ").strip(), align=LFT)
-            cell(ws, r, 3, code or "-")
-            cell(ws, r, 4, p["developer"], align=LFT)
-            cell(ws, r, 5, units, fmt="#,##0")
+            apdl = (p.get("apdl") or "").strip()
+            cell(ws, r, 3, datetime.strptime(apdl, "%Y-%m-%d") if apdl else None,
+                 fmt="DD/MM/YYYY")
+            cell(ws, r, 4, units, fmt="#,##0")
+            cell(ws, r, 5, code or "-")
+            cell(ws, r, 6, p["developer"], align=LFT)
 
             # deltas computed chronologically, then written newest-first
             delta, prev = {}, None
@@ -102,7 +105,7 @@ def main():
                     delta[d] = v - prev
                 prev = v
 
-            col = 6
+            col = 7
             for i, d in enumerate(days):
                 fill = NEWF if i == 0 else None
                 v = lookup.get((code, d))
@@ -110,14 +113,14 @@ def main():
                 cell(ws, r, col + 1, v, fmt="#,##0", fill=fill)
                 pc = cell(ws, r, col + 2, None, fmt="0.0%", fill=fill)
                 if v is not None and units:
-                    pc.value = f"={L(col + 1)}{r}/$E${r}"
+                    pc.value = f"={L(col + 1)}{r}/$D${r}"
                 col += 3
 
-        for c, w in [("A", 4), ("B", 26), ("C", 10), ("D", 30), ("E", 8)]:
+        for c, w in [("A", 4), ("B", 26), ("C", 12), ("D", 8), ("E", 10), ("F", 30)]:
             ws.column_dimensions[c].width = w
-        for c in range(6, col):
+        for c in range(7, col):
             ws.column_dimensions[L(c)].width = 9
-        ws.freeze_panes = "F5"
+        ws.freeze_panes = "G5"
         ws.row_dimensions[4].height = 30
 
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
