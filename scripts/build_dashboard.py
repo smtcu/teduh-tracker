@@ -149,6 +149,11 @@ def build_payload():
     projects = read("projects.csv")
     weekly = read("data/teduh_history.csv")
     utypes = read("data/teduh_unit_types_weekly.csv")
+    # The daily classification, for a project whose rules were added since the
+    # last Friday. The scraper writes the weekly file on Fridays only, so a new
+    # key would otherwise be invisible on the site until then even though it was
+    # classified this morning. Used only when the weekly file has nothing.
+    utypes_daily = read("data/teduh_unit_types.csv")
     daily = read("data/teduh_daily.csv") or weekly
     bytype = read("data/teduh_by_type.csv")
 
@@ -265,6 +270,13 @@ def build_payload():
     insight = []
     for pkey, meta in spec.items():
         rows_ = [r for r in utypes if r.get("project_key") == pkey]
+        seeded = False
+        if not rows_:
+            drows = [r for r in utypes_daily if r.get("project_key") == pkey]
+            if drows:
+                newest = max(r["week"] for r in drows)
+                rows_ = [r for r in drows if r["week"] == newest]
+                seeded = True
         if not rows_:
             continue
         wks = sorted({r["week"] for r in rows_})
@@ -275,6 +287,7 @@ def build_payload():
             "types": meta.get("types", []),
             "weeks": wks,
             "sold": [[got.get((w, t["key"])) for t in meta.get("types", [])] for w in wks],
+            "seeded": seeded,
         })
 
     weeks = sorted(known_weeks | seeded_weeks)
@@ -834,6 +847,12 @@ function insight() {
 
   blocks.forEach(b => {
     const h = el('h3', '', b.label); host.appendChild(h);
+    if (b.seeded) {
+      /* New rules, no Friday yet: this is today's classification standing in
+         until the first weekly record lands. */
+      host.appendChild(el('p', 'note', 'Classified today (' + fdate(b.weeks[b.weeks.length - 1]) +
+        '). The weekly record starts on the first Friday after the rules were added.'));
+    }
     const total = b.types.reduce((a, t) => a + (t.total || 0), 0);
     const tb = el('table');
     const hr = el('tr');
