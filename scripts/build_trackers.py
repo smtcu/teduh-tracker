@@ -28,6 +28,24 @@ LFT = Alignment(horizontal='left', vertical='center', wrap_text=True)
 HDR = PatternFill('solid', fgColor='D9E1F2')
 NEWFILL = PatternFill('solid', fgColor='FFF2CC')   # highlights the newest week
 
+AREA_TRACKERS = ('seputeh', 'status13', 'johor', 'ukay')
+
+
+def developer_trackers(projects):
+    """[(tracker key, sheet name)] for every non-area tracker, A-Z by label.
+
+    Anything in projects.csv that is not one of the four area sheets is a
+    competitor watch. Read from the data rather than listed here, so adding a
+    fourteenth company means adding rows to projects.csv and nothing else.
+    """
+    labels = {}
+    for p in projects:
+        key = (p.get('tracker') or '').strip()
+        if key and key not in AREA_TRACKERS and key not in labels:
+            labels[key] = (p.get('tracker_label') or '').strip() or key.title()
+    return sorted(labels.items(), key=lambda kv: kv[1].lower())
+
+
 def apdl_date(p):
     """Earliest advertising-permit start, as stored in projects.csv."""
     s = (p.get('apdl') or '').strip()
@@ -51,8 +69,46 @@ def remark_for(project, generated):
     caveat = (project.get('note_prefix') or '').strip()
     return ' '.join(part for part in (caveat, generated) if part)
 
-def load(projects_csv, history_csv):
-    """Return (projects, {tracker: [snapshot_keys...]}, lookup).
+def seed_missing(projects, order, lookup, daily_csv):
+    """Give a tracker with no weekly record one column, taken from today's reading.
+
+    A competitor tracker added midweek has daily readings but nothing yet in
+    teduh_history.csv, so its sheet would come out as a list of projects with no
+    figures at all. Seeding it means the sheet reads properly the day it is
+    created, and the first real Friday run replaces the seeded column with a
+    recorded one. Trackers that already have weekly history are never touched.
+
+    Same rule as build_dashboard.build_payload, including dating the column at
+    the newest Friday rather than at today, so the seeded column lines up with
+    the other sheets instead of inventing a date of its own.
+    """
+    if not daily_csv or not os.path.exists(daily_csv):
+        return set()
+    daily = list(csv.DictReader(open(daily_csv, encoding='utf-8')))
+    if not daily:
+        return set()
+    latest_day = max(r['week'] for r in daily)
+    dated_at = max((wk for snaps in order.values() for _, wk in snaps), default=latest_day)
+
+    missing = {(p.get('tracker') or '').strip() for p in projects} - set(order) - {''}
+    seeded = set()
+    for t in sorted(missing):
+        rows = [r for r in daily if r.get('tracker') == t and r['week'] == latest_day]
+        if not rows:
+            continue
+        snap = (1, dated_at)
+        order[t] = [snap]
+        for r in rows:
+            try:
+                lookup[(t, snap, r['code'])] = int(float(r['total_sold']))
+            except (TypeError, ValueError):
+                continue
+        seeded.add(t)
+    return seeded
+
+
+def load(projects_csv, history_csv, daily_csv=None):
+    """Return (projects, {tracker: [snapshot_keys...]}, lookup, seeded_trackers).
 
     A snapshot is one weekly column. It is keyed by (seq, week) rather than the
     date alone, because the tracker legitimately contains two columns bearing the
@@ -87,7 +143,8 @@ def load(projects_csv, history_csv):
         except (TypeError, ValueError): v = None
         lookup[(t, snap, h['code'])] = v
     order = {t: sorted(v) for t, v in order.items()}
-    return projects, order, lookup
+    seeded = seed_missing(projects, order, lookup, daily_csv)
+    return projects, order, lookup, seeded
 
 def build_seputeh(projects, weeks, lookup, report_date, path):
     wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True; ws = wb.active; ws.title = report_date.strftime('%Y%m%d')
@@ -185,20 +242,33 @@ def build_status13(projects, weeks, lookup, report_date, path):
     ws.freeze_panes = 'G5'; ws.row_dimensions[4].height = 30
     wb.save(path); return path
 
-def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='johor',
-                  heading='WEEKLY TEDUH SALES REPORT (JB PROJECTS)'):
-    """Keeps every week ever recorded, with optional group headings and a NOTES column.
+def fill_grouped(ws, projects, weeks, lookup, notes, report_date, tracker='johor',
+                 heading='WEEKLY TEDUH SALES REPORT (JB PROJECTS)', show_code=False,
+                 seeded=False):
+    """Fill one worksheet: every week ever recorded, optional group headings, NOTES.
 
-    Shared by the Johor and Ukay trackers. They differ only in which rows they take,
-    the heading, and whether `group` is set -- Ukay leaves it blank, so it renders as
-    one flat list with no section rows."""
-    wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True
-    ws = wb.active; ws.title = report_date.strftime('%d%m%Y')
+    Shared by Johor, Ukay and all thirteen developer sheets. They differ only in
+    which rows they take, the heading, whether `group` is set -- Ukay leaves it
+    blank, so it renders as one flat list with no section rows -- and whether the
+    PROJECT CODE column is shown. The developer sheets show it: the whole point of
+    those sheets is which TEDUH code a competitor's project turned out to be.
+
+    Split out of build_grouped so a workbook can hold many of these sheets.
+    """
     ws['A2'] = 'Report as at ' + report_date.strftime('%d/%m/%Y'); ws['A2'].font = F(bold=True, color='FF0000')
     ws['A3'] = heading; ws['A3'].font = F(bold=True, size=12)
-    for i, h in enumerate(['NO', 'PROJECT', 'APDL \nDATE', 'TOTAL \nUNIT', 'DEVELOPER'], 1):
+    if seeded:
+        ws['A1'] = ('New tracker: the single column below is today\'s reading standing in '
+                    'for a weekly record, so it has no NEW SALES figure yet.')
+        ws['A1'].font = F(bold=True, color='C00000', size=9)
+    heads = ['NO', 'PROJECT', 'APDL \nDATE', 'TOTAL \nUNIT']
+    if show_code:
+        heads.append('PROJECT \nCODE')
+    heads.append('DEVELOPER')
+    for i, h in enumerate(heads, 1):
         cell(ws, 4, i, h, F(bold=True), fill=HDR)
-    col = 6
+    col = len(heads) + 1
+    first_week_col = col
     for i, snap in enumerate(weeks):
         last = (i == len(weeks) - 1)
         ws.merge_cells(start_row=3, start_column=col, end_row=3, end_column=col + 2)
@@ -226,8 +296,10 @@ def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='jo
         cell(ws, r, 2, p['project'], align=LFT)
         cell(ws, r, 3, apdl_date(p), fmt='DD/MM/YYYY')
         cell(ws, r, 4, units, fmt='#,##0')
-        cell(ws, r, 5, p['developer'], align=LFT)
-        col, prev = 6, None
+        if show_code:
+            cell(ws, r, 5, p.get('code') or '')
+        cell(ws, r, len(heads), p['developer'], align=LFT)
+        col, prev = first_week_col, None
         for i, snap in enumerate(weeks):
             v = lookup.get((tracker, snap, key))
             fill = NEWFILL if i == len(weeks) - 1 else None
@@ -244,20 +316,61 @@ def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='jo
         cell(ws, r, rem_col, remark_for(p, notes.get(key, '')), align=LFT)
         r += 1
 
-    for c, w in [('A', 4), ('B', 26), ('C', 12), ('D', 9), ('E', 22)]:
+    # C is 13, not 12: at 12 Excel is a character short of DD/MM/YYYY and renders
+    # the whole APDL column as #####.
+    widths = [('A', 4), ('B', 26), ('C', 13), ('D', 9)]
+    widths += [('E', 12), ('F', 26)] if show_code else [('E', 22)]
+    for c, w in widths:
         ws.column_dimensions[c].width = w
-    for c in range(6, rem_col):
+    for c in range(first_week_col, rem_col):
         ws.column_dimensions[L(c)].width = 9
     ws.column_dimensions[L(rem_col)].width = 46
-    ws.freeze_panes = 'F5'; ws.row_dimensions[4].height = 30
+    ws.freeze_panes = L(first_week_col) + '5'
+    ws.row_dimensions[4].height = 30
+    return ws
+
+
+def build_grouped(projects, weeks, lookup, notes, report_date, path, tracker='johor',
+                  heading='WEEKLY TEDUH SALES REPORT (JB PROJECTS)'):
+    """One tracker, one workbook -- the Johor and Ukay files."""
+    wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True
+    ws = wb.active; ws.title = report_date.strftime('%d%m%Y')
+    fill_grouped(ws, projects, weeks, lookup, notes, report_date, tracker, heading)
     wb.save(path); return path
 
 
+def build_developers(projects, order, lookup, notes, report_date, path, seeded=()):
+    """All the competitor trackers in one workbook, one sheet per company.
+
+    One file rather than thirteen: thirteen more .xlsx in docs/downloads would
+    bury the four area trackers people actually open, and the Friday cleanup step
+    globs that directory by name.
+    """
+    devs = [(k, name) for k, name in developer_trackers(projects) if k in order]
+    if not devs:
+        return None
+    wb = openpyxl.Workbook(); wb.calculation.fullCalcOnLoad = True
+    wb.remove(wb.active)
+    for key, name in devs:
+        ws = wb.create_sheet(name[:31])
+        fill_grouped(ws, projects, order[key], lookup, notes, report_date,
+                     tracker=key, heading=f'WEEKLY TEDUH SALES REPORT ({name.upper()})',
+                     show_code=True, seeded=key in seeded)
+    wb.save(path)
+    return path
+
+
 if __name__ == '__main__':
-    pcsv, hcsv, outdir = sys.argv[1], sys.argv[2], sys.argv[3]
-    rd = datetime.strptime(sys.argv[4], '%Y-%m-%d') if len(sys.argv) > 4 else datetime.now()
+    flags = [a for a in sys.argv[1:] if a.startswith('--')]
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    # --seed-from=data/teduh_daily.csv gives a brand-new tracker one column from
+    # today's reading instead of an empty sheet. Optional and explicit: without
+    # it this script reads nothing but the history file, as it always has.
+    seed_from = next((f.split('=', 1)[1] for f in flags if f.startswith('--seed-from=')), None)
+    pcsv, hcsv, outdir = args[0], args[1], args[2]
+    rd = datetime.strptime(args[3], '%Y-%m-%d') if len(args) > 3 else datetime.now()
     os.makedirs(outdir, exist_ok=True)
-    projects, order, lookup = load(pcsv, hcsv)
+    projects, order, lookup, seeded = load(pcsv, hcsv, seed_from)
     notes = {}
     for row in csv.DictReader(open(hcsv, encoding='utf-8')):
         n = (row.get('block_note') or '').strip()
@@ -277,3 +390,11 @@ if __name__ == '__main__':
                            os.path.join(outdir, rd.strftime('%Y%m%d') + '_Ukay_Teduh_Weekly_Update.xlsx'),
                            tracker='ukay', heading='WEEKLY TEDUH SALES REPORT (UKAY PROJECTS)')
         print(p4)
+    # Fixed filename, and deliberately "Competitor" rather than "Developer": the
+    # Friday cleanup step globs *Developer*.xlsx to find the dated Klang Valley
+    # workbook, and would copy this straight over it.
+    p5 = build_developers(projects, order, lookup, notes, rd,
+                          os.path.join(outdir, 'TEDUH_Competitor_Trackers.xlsx'),
+                          seeded=seeded)
+    if p5:
+        print(p5)

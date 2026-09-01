@@ -18,7 +18,35 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (BaseDocTemplate, Frame, PageTemplate, Paragraph,
                                 Spacer, Table, TableStyle, PageBreak)
 
-LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
+AREA_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley",
+              "johor": "Johor", "ukay": "Ukay"}
+
+# Kept under the old name in case anything else imports it.
+LABEL = AREA_LABEL
+
+
+def sections(projects, only=None):
+    """[(tracker key, heading)] -- the four area sheets, then the developers A-Z.
+
+    `only` is "areas" or "developers"; None means both. The two are split across
+    separate PDFs because one file carrying four areas plus thirteen competitors
+    runs to dozens of pages, and this report exists to be skimmed and forwarded.
+    """
+    labels, areas, devs = {}, [], []
+    for p in projects:
+        key = (p.get("tracker") or "").strip()
+        if not key or key in labels:
+            continue
+        if key in AREA_LABEL:
+            labels[key] = AREA_LABEL[key]
+            areas.append(key)
+        else:
+            labels[key] = (p.get("tracker_label") or "").strip() or key.title()
+            devs.append(key)
+    areas.sort(key=lambda k: list(AREA_LABEL).index(k))
+    devs.sort(key=lambda k: labels[k].lower())
+    keys = {"areas": areas, "developers": devs}.get(only, areas + devs)
+    return [(k, labels[k]) for k in keys]
 
 BLUE = colors.HexColor("#2a78d6")
 INK = colors.HexColor("#0b0b0b")
@@ -61,7 +89,7 @@ def load(pcsv, hcsv):
     return projects, series, sorted({r["week"] for r in hist})
 
 
-def build(pcsv, hcsv, out, daily=False, periods=4):
+def build(pcsv, hcsv, out, daily=False, periods=4, only=None):
     # Daily columns drop the percentage: it barely moves day to day, and dropping it
     # is what keeps the numbers from colliding at this width.
     show_pct = not daily
@@ -71,6 +99,10 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
         raise SystemExit("no data to report on")
     report_date = all_dates[-1]
     kind = "Daily" if daily else "Weekly"
+    if only == "developers":
+        kind += " developer"
+    elif only == "areas":
+        kind += " area"
     unit_word = "days" if daily else "weeks"
 
     page = landscape(A4)
@@ -101,7 +133,8 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
                        f"Last {periods} recorded {unit_word} only, so this stays short enough to read.", S_SUB),
              Spacer(1, 9)]
 
-    for ti, (key, label) in enumerate(LABEL.items()):
+    todo = sections(projects, only)
+    for ti, (key, label) in enumerate(todo):
         mine = sorted((p for p in projects if p["tracker"] == key),
                       key=lambda x: (x.get("pin", "").strip().lower() not in ("yes", "y", "1", "true")))
         if not mine:
@@ -134,20 +167,25 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
         for d in cols:
             r1 += [fdate(d, True)] + [""] * (per_period - 1)
         heads = ["NEW", "SOLD", "%"] if show_pct else ["NEW", "SOLD"]
-        r2 = ["#", "PROJECT", "DEVELOPER", "LAUNCHED", "UNITS"] + heads * len(cols)
+        r2 = ["#", "PROJECT", "DEVELOPER", "APDL", "UNITS"] + heads * len(cols)
         data = [r1, r2]
         section = None
+        group_rows = set()
         for p in mine:
             if p.get("group") and p["group"] != section:
                 section = p["group"]
+                group_rows.add(len(data))
                 data.append([section] + [""] * (4 + len(cols) * per_period))
             s = series.get((p.get("code") or "").split(",")[0].strip(), {})
             u = num(p.get("total_units")) or 0
-            launched = p.get("launched") or ""
+            # "apdl", with "launched" only as a fallback. projects.csv renamed
+            # this column on 01 Sep 2026 and this script was still reading the
+            # old name, so every row in the PDF was printing an em dash.
+            apdl = (p.get("apdl") or p.get("launched") or "").strip()
             row = [p["no"],
                    Paragraph(p["project"].replace("\n", " ").strip(), S_NAME),
                    Paragraph(p["developer"].replace("\n", " ").strip(), S_DEV),
-                   datetime.strptime(launched, "%Y-%m-%d").strftime("%b %Y") if launched else "–",
+                   datetime.strptime(apdl, "%Y-%m-%d").strftime("%b %Y") if apdl else "–",
                    f"{u:,}"]
             prev = s.get(prior) if prior else None
             for d in cols:
@@ -188,7 +226,10 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
         last0 = 5 + (len(cols) - 1) * per_period
         style.append(("BACKGROUND", (last0, 0), (last0 + per_period - 1, -1), HILITE))
         for r in range(2, len(data)):
-            if isinstance(data[r][1], str) and data[r][1] == "" and data[r][0] in ("Permas Jaya", "JBCC"):
+            # Recorded as the group rows were written, rather than matched
+            # against a hardcoded ("Permas Jaya", "JBCC") -- any other group
+            # name silently lost its heading styling.
+            if r in group_rows:
                 style += [("SPAN", (0, r), (-1, r)),
                           ("BACKGROUND", (0, r), (-1, r), BAND),
                           ("FONT", (0, r), (-1, r), "Helvetica-Bold", 8.5),
@@ -198,7 +239,7 @@ def build(pcsv, hcsv, out, daily=False, periods=4):
         t.setStyle(TableStyle(style))
         story += [t, Spacer(1, 12)]
 
-        if ti < len(LABEL) - 1:
+        if ti < len(todo) - 1:
             story.append(PageBreak())
 
     doc.build(story)
@@ -211,4 +252,7 @@ if __name__ == "__main__":
     daily = "--daily" in flags
     periods = next((int(f.split("=")[1]) for f in flags if f.startswith("--periods=")),
                    5 if daily else 4)
-    build(args[0], args[1], args[2], daily=daily, periods=periods)
+    only = next((f.split("=")[1] for f in flags if f.startswith("--only=")), None)
+    if only not in (None, "areas", "developers"):
+        raise SystemExit("--only= takes 'areas' or 'developers'")
+    build(args[0], args[1], args[2], daily=daily, periods=periods, only=only)

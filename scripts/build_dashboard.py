@@ -6,14 +6,111 @@ one HTML file with no network calls, no CDN, and no build step.
 
 Usage: python3 scripts/build_dashboard.py
 """
-import csv, json, os, html
+import csv, json, os, re, html
 from datetime import datetime, timezone, timedelta
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
 MYT = timezone(timedelta(hours=8))
 
-TRACKER_LABEL = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
+# Two families of tracker. The four area sheets are the ones with their own
+# Excel workbook and their own Friday rhythm; every other tracker in
+# projects.csv is a competitor watch, one per developer. Those are deliberately
+# NOT listed here -- a fourteenth competitor should need rows in projects.csv
+# and no code change at all. Its label comes from the tracker_label column, and
+# failing that from the key itself.
+AREA_TRACKERS = {"seputeh": "Seputeh Hills", "status13": "Klang Valley",
+                 "johor": "Johor", "ukay": "Ukay"}
+
+# Kept as a name so anything still importing it keeps working.
+TRACKER_LABEL = AREA_TRACKERS
+
+
+def tracker_label(key, given=""):
+    if key in AREA_TRACKERS:
+        return AREA_TRACKERS[key]
+    return (given or "").strip() or key.replace("_", " ").replace("-", " ").title()
+
+
+def tracker_kind(key):
+    return "area" if key in AREA_TRACKERS else "developer"
+
+
+# Friendly names for the files the workflow produces. Anything found in
+# docs/downloads that is not listed here still gets a link -- it just gets a
+# label derived from its filename, so a new developer workbook appears on the
+# page the day it is first built rather than the day someone remembers to add
+# it here.
+DOWNLOAD_LABEL = {
+    "TEDUH_Weekly_Report.pdf": "Weekly report, 4 weeks (.pdf)",
+    "TEDUH_Daily_Report.pdf": "Daily report, 5 days (.pdf)",
+    # "Competitor", not "Developer", in both filenames below. The Friday cleanup
+    # step in weekly-teduh.yml globs "*Developer*.xlsx" to find the dated Klang
+    # Valley workbook, so anything else carrying that word in its name gets
+    # copied over the Klang Valley tracker. That collision has already happened
+    # once, with TEDUH_Developers.xlsx.
+    "TEDUH_Competitor_Report.pdf": "Developer trackers, 4 weeks (.pdf)",
+    "Seputeh_Hills_Teduh_Weekly_Update.xlsx": "Seputeh Hills tracker (.xlsx)",
+    "Tduh_Developer_Project_Sales_Status.xlsx": "Klang Valley tracker (.xlsx)",
+    "Johor_Teduh_Weekly_Update.xlsx": "Johor tracker (.xlsx)",
+    "Ukay_Teduh_Weekly_Update.xlsx": "Ukay tracker (.xlsx)",
+    "TEDUH_Competitor_Trackers.xlsx": "Developer trackers, one sheet each (.xlsx)",
+    "TEDUH_Unit_Types.xlsx": "Unit types & unit list (.xlsx)",
+    "Teduh_Daily_Tracker.xlsx": "Daily tracker (.xlsx)",
+}
+
+
+def human_size(n):
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f"{n / 1024:.0f} KB"
+    return f"{n / 1048576:.1f} MB"
+
+
+def downloads():
+    """Every file actually sitting in docs/downloads, newest build wins.
+
+    Built by listing the directory rather than from a hand-kept list, because
+    the hand-kept list is how the Ukay tracker ended up with no download link
+    for three weeks. A link that is on the page is a file that exists.
+
+    This does mean build_dashboard.py has to run AFTER the workbook and PDF
+    steps in the workflow; run before them and the page describes the previous
+    build.
+    """
+    order = list(DOWNLOAD_LABEL)
+
+    def label(name):
+        if name in DOWNLOAD_LABEL:
+            return DOWNLOAD_LABEL[name]
+        stem, ext = os.path.splitext(name)
+        return f"{stem.replace('_', ' ')} ({ext.lstrip('.')})"
+
+    def rank(name):
+        return (order.index(name) if name in order else len(order), name.lower())
+
+    out = []
+    ddir = os.path.join(DOCS, "downloads")
+    if os.path.isdir(ddir):
+        for name in sorted(os.listdir(ddir), key=rank):
+            path = os.path.join(ddir, name)
+            if not os.path.isfile(path) or name.startswith("."):
+                continue
+            # The Friday step keeps four dated archive copies of each workbook
+            # ("20260829_Johor_...xlsx") alongside the stable one it copies them
+            # to. Listing all of them would put sixteen near-identical links on
+            # the page, so anything beginning with a date is skipped and only
+            # the stable copy is offered.
+            if re.match(r"^\d{8}", name):
+                continue
+            out.append({"href": "downloads/" + name, "label": label(name),
+                        "size": human_size(os.path.getsize(path))})
+
+    # The raw CSV is copied into docs/data by the workflow's last step, so it is
+    # linked whether or not it has been copied yet this run.
+    out.append({"href": "data/teduh_daily.csv", "label": "Raw data (.csv)", "size": ""})
+    return out
 
 
 def read(path):
@@ -85,6 +182,12 @@ def build_payload():
                 {"type": r["unit_type"], "units": to_int(r["units"]) or 0, "sold": to_int(r["sold"]) or 0}
             )
 
+    # The newest Friday anywhere in the weekly record. Used to seed trackers
+    # that have no weekly history of their own yet -- see below.
+    known_weeks = {d for s in wser.values() for d in s}
+    week_seed = max(known_weeks) if known_weeks else ""
+    seeded_weeks = set()
+
     out = []
     for p in projects:
         codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
@@ -96,6 +199,19 @@ def build_payload():
         latest = dpts[-1][1] if dpts else None
         prev = dpts[-2][1] if len(dpts) > 1 else None
 
+        # A tracker added since the last Friday run has daily readings but no
+        # weekly record, so every week column would sit empty and the sheet
+        # would look broken rather than new. Seed the newest week from today's
+        # reading: SOLD fills in, NEW stays blank because there is no earlier
+        # week to subtract from. Same idea as the "seeded from existing
+        # tracker" rows already sitting in teduh_history.csv.
+        seeded = False
+        if not wpts and dpts:
+            seed_at = week_seed or dpts[-1][0]
+            wpts = [(seed_at, latest)]
+            seeded_weeks.add(seed_at)
+            seeded = True
+
         merged = {}
         for g in types.get(code, []):
             m = merged.setdefault(g["type"], {"type": g["type"], "units": 0, "sold": 0})
@@ -106,7 +222,8 @@ def build_payload():
         wPrev = wpts[-2][1] if len(wpts) > 1 else None
         out.append({
             "tracker": p["tracker"],
-            "trackerLabel": TRACKER_LABEL.get(p["tracker"], p["tracker"]),
+            "trackerLabel": tracker_label(p["tracker"], p.get("tracker_label", "")),
+            "trackerKind": tracker_kind(p["tracker"]),
             "no": to_int(p.get("no")),
             "name": (p.get("project") or "").replace("\n", " ").strip(),
             "code": code,
@@ -131,8 +248,13 @@ def build_payload():
             "wSold": wLast,
             "wNew": (wLast - wPrev) if (wLast is not None and wPrev is not None) else None,
             "wPct": (wLast / units) if (wLast is not None and units) else None,
+            "seeded": seeded,
             "todaySold": latest,
-            "todayNew": (latest - wLast) if (latest is not None and wLast is not None) else None,
+            # A seeded row has wLast == latest by construction, so the honest
+            # answer to "how much has moved since the weekly record" is not
+            # zero, it is "no weekly record to compare against".
+            "todayNew": None if seeded else
+                        ((latest - wLast) if (latest is not None and wLast is not None) else None),
             "types": sorted(merged.values(), key=lambda x: -x["units"]),
         })
 
@@ -155,9 +277,25 @@ def build_payload():
             "sold": [[got.get((w, t["key"])) for t in meta.get("types", [])] for w in wks],
         })
 
-    weeks = sorted({d for s in wser.values() for d in s})
+    weeks = sorted(known_weeks | seeded_weeks)
     days = sorted({d for s in dser.values() for d in s})
+
+    # Tracker order drives the switcher: the four area sheets first, in the
+    # order they are written above, then the developers alphabetically so the
+    # row does not reshuffle every time projects.csv is re-sorted.
+    seen, areas, devs = {}, [], []
+    for p in out:
+        if p["tracker"] in seen:
+            continue
+        seen[p["tracker"]] = True
+        entry = {"key": p["tracker"], "label": p["trackerLabel"], "kind": p["trackerKind"]}
+        (areas if entry["kind"] == "area" else devs).append(entry)
+    areas.sort(key=lambda t: list(AREA_TRACKERS).index(t["key"]))
+    devs.sort(key=lambda t: t["label"].lower())
+
     return {
+        "trackers": areas + devs,
+        "downloads": downloads(),
         "generated": datetime.now(MYT).strftime("%d %b %Y, %-I:%M %p") + " MYT",
         "latestDate": days[-1] if days else "",
         "prevDate": days[-2] if len(days) > 1 else "",
@@ -255,6 +393,9 @@ th.l,td.l{text-align:left}
 td.nm{font-weight:700;color:var(--ink)}
 .grpcell{background:var(--sunk);font-weight:800;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);border-right:0}
 .wk{border-left:2px solid var(--rule)}
+/* Seeded figures are dotted-underlined so a stand-in never reads as a real
+   Friday reading, without shouting louder than the live column. */
+td.seed{text-decoration:underline dotted var(--ink-2);text-underline-offset:3px;cursor:help}
 .new{background:var(--hl)}
 .live{background:rgba(235,104,52,.10)}
 html[data-theme="dark"] .live{background:rgba(217,89,38,.18)}
@@ -299,8 +440,11 @@ tbody tr.pinned:hover td{background:var(--pinbg)}
 tr.pinned td.nm::after{content:" \2605";color:var(--blue)}
 .stick{left:0;width:38px;min-width:38px}
 .stick2{left:38px;width:196px;min-width:196px;max-width:196px;white-space:normal;line-height:1.32}
-.stick3{left:234px;width:78px;min-width:78px;max-width:78px}
-.stick4{left:312px;width:64px;min-width:64px;max-width:64px;border-right:2px solid var(--rule)}
+/* 116px, not 78px. The widest date this column can hold is a May one -- "01 May
+   2026" measures 94px at this weight -- and the cell spends 22px of its width on
+   padding, so it needs 116. At 78 the year was clipped off every row. */
+.stick3{left:234px;width:116px;min-width:116px;max-width:116px}
+.stick4{left:350px;width:64px;min-width:64px;max-width:64px;border-right:2px solid var(--rule)}
 th.stick3,th.stick2,th.stick4{white-space:normal;line-height:1.25}
 th.stick,th.stick2,th.stick3,th.stick4{z-index:4;background:var(--sunk)}
 tbody tr:hover .stick,tbody tr:hover .stick2,tbody tr:hover .stick3,
@@ -320,14 +464,42 @@ tr:last-child td{border-bottom:0}
 .sel{display:none;width:100%;font:inherit;font-weight:650;color:var(--ink);background:var(--surface);
   border:1.5px solid var(--border);border-radius:10px;padding:11px 12px;min-height:44px;margin:2px 0 14px}
 .compact .opt{display:none}
+/* DEVELOPER is the only free-width column, so the table handed it every spare
+   pixel and pushed TODAY underneath the pinned Remarks column. Cap it and let
+   it wrap instead -- the figures are what the page is for. */
+.dev{max-width:250px;white-space:normal;line-height:1.3}
 .tbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .bar button{flex:1 1 auto;min-width:150px}
+/* Seventeen trackers in one flat row pushed the table below the fold, so they
+   are split into a labelled Areas row and a labelled Developers row. The label
+   sits in a fixed gutter so both rows of buttons start on the same line. */
+.nav{margin-bottom:16px}
+.navrow{display:flex;align-items:flex-start;gap:12px}
+.navrow+.navrow{margin-top:9px;padding-top:9px;border-top:1.5px solid var(--rule)}
+.navlab{flex:none;width:74px;padding-top:12px;font-size:10.5px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.navbtns{flex:1;display:flex;gap:8px;flex-wrap:wrap}
+.navbtns button{flex:0 1 auto;min-width:118px}
+/* The area sheets are the daily drivers, so their row gets the wider buttons. */
+.navrow.areas .navbtns button{flex:1 1 auto;min-width:150px}
+@media(max-width:640px){
+  .navrow{display:block}
+  .navlab{width:auto;padding:0 0 7px}
+  .navbtns button{flex:1 1 auto;min-width:calc(50% - 4px)}
+  /* Thirteen developers two-up pushed the table most of a screen down the
+     page, so on phones they go three-up and lose a little padding. The four
+     area sheets stay two-up -- they are the ones tapped every morning. */
+  .navrow.devs .navbtns button{min-width:calc(33.333% - 6px);
+    font-size:12.5px;padding:8px 5px;min-height:36px}
+}
 #pickedName{margin:2px 0 13px}
 #pickedName .pn{display:block;font-size:19px;font-weight:750;letter-spacing:-.015em}
 #pickedName .pd{display:block;font-size:13px;font-weight:650;color:var(--muted);margin-top:2px}
 .dl{display:flex;gap:10px;flex-wrap:wrap}
-.dl a{text-decoration:none;display:inline-flex;align-items:center}
+.dl a{text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.dlsz{font-size:11px;font-weight:700;color:var(--ink-2);opacity:.75;
+  font-variant-numeric:tabular-nums}
 .foot{color:var(--muted);font-size:12.5px;margin-top:22px;line-height:1.7;font-weight:500}
 .hide{display:none!important}
 
@@ -376,7 +548,7 @@ tr:last-child td{border-bottom:0}
   <button class="ghost" id="theme">Dark</button>
 </header>
 
-<div class="bar" id="ftrack"></div>
+<div class="nav" id="ftrack"></div>
 
 <div class="card">
   <h2>Weekly tracker</h2>
@@ -439,17 +611,8 @@ tr:last-child td{border-bottom:0}
 
 <div class="card">
   <h2>Download</h2>
-  <p class="note">The two PDFs are table-only summaries meant for forwarding. The weekly PDF and the two Excel trackers are rebuilt every Friday; the daily PDF and daily workbook are rebuilt every morning.</p>
-  <div class="dl">
-    <a class="ghost" href="downloads/TEDUH_Weekly_Report.pdf" download>Weekly report, 4 weeks (.pdf)</a>
-    <a class="ghost" href="downloads/TEDUH_Daily_Report.pdf" download>Daily report, 5 days (.pdf)</a>
-    <a class="ghost" href="downloads/Seputeh_Hills_Teduh_Weekly_Update.xlsx" download>Seputeh Hills tracker (.xlsx)</a>
-    <a class="ghost" href="downloads/Tduh_Developer_Project_Sales_Status.xlsx" download>Klang Valley tracker (.xlsx)</a>
-    <a class="ghost" href="downloads/Johor_Teduh_Weekly_Update.xlsx" download>Johor tracker (.xlsx)</a>
-    <a class="ghost" href="downloads/TEDUH_Unit_Types.xlsx" download>Unit types &amp; unit list (.xlsx)</a>
-    <a class="ghost" href="downloads/Teduh_Daily_Tracker.xlsx" download>Daily tracker (.xlsx)</a>
-    <a class="ghost" href="data/teduh_daily.csv" download>Raw data (.csv)</a>
-  </div>
+  <p class="note">The PDFs are table-only summaries meant for forwarding. The weekly PDFs and every Excel tracker — the four areas and the thirteen developers — are rebuilt each Friday; the daily PDF and the daily workbook are rebuilt every morning. This list is generated from the files that are actually on disk, so nothing here is a dead link.</p>
+  <div class="dl" id="dl"></div>
 </div>
 
 <div class="foot" id="foot"></div>
@@ -495,8 +658,13 @@ const hideTip = () => { tip.style.opacity = '0'; };
 addEventListener('scroll', hideTip, true);
 
 const ALL = DATA.projects;
-const TRACKERS = [];
-ALL.forEach(p => { if (!TRACKERS.some(t => t.key === p.tracker)) TRACKERS.push({ key: p.tracker, label: p.trackerLabel }); });
+/* Order and grouping are decided in Python now, so the switcher does not have
+   to infer them from whatever order projects.csv happens to be in. */
+const TRACKERS = DATA.trackers && DATA.trackers.length ? DATA.trackers : (() => {
+  const t = [];
+  ALL.forEach(p => { if (!t.some(x => x.key === p.tracker)) t.push({ key: p.tracker, label: p.trackerLabel, kind: p.trackerKind || 'area' }); });
+  return t;
+})();
 let tracker = TRACKERS.length ? TRACKERS[0].key : '';
 let picked = 0;
 /* Pinned projects lead their tracker and stay visible while the table scrolls. */
@@ -505,11 +673,19 @@ const vis = () => ALL.filter(p => p.tracker === tracker)
 
 function trackerBar() {
   const host = $('#ftrack'); host.textContent = '';
-  TRACKERS.forEach(t => {
-    const b = el('button', 'ghost', t.label);
-    b.setAttribute('aria-pressed', String(t.key === tracker));
-    b.onclick = () => { tracker = t.key; picked = 0; render(); };
-    host.appendChild(b);
+  [['area', 'Areas'], ['developer', 'Developers']].forEach(([kind, label]) => {
+    const mine = TRACKERS.filter(t => (t.kind || 'area') === kind);
+    if (!mine.length) return;                       // no developers loaded yet
+    const row = el('div', 'navrow ' + (kind === 'area' ? 'areas' : 'devs'));
+    row.appendChild(el('div', 'navlab', label));
+    const btns = el('div', 'navbtns');
+    mine.forEach(t => {
+      const b = el('button', 'ghost', t.label);
+      b.setAttribute('aria-pressed', String(t.key === tracker));
+      b.onclick = () => { tracker = t.key; picked = 0; render(); };
+      btns.appendChild(b);
+    });
+    row.appendChild(btns); host.appendChild(row);
   });
 }
 
@@ -519,16 +695,21 @@ function table() {
   const weeks = DATA.weeks.slice().reverse();      // newest first
   /* Today only earns a column when it is not already the newest Friday. */
   const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
-  $('#tblnote').textContent = live
+  const nSeed = vis().filter(p => p.seeded).length;
+  $('#tblnote').textContent = (live
     ? 'The orange column is today, updated every morning. Everything after it is the weekly record that feeds your Excel sheets, newest week first.'
-    : 'Newest week first, matching your Excel sheets. Scroll sideways for earlier weeks.';
+    : 'Newest week first, matching your Excel sheets. Scroll sideways for earlier weeks.')
+    + (nSeed ? ' ' + nSeed + (nSeed === 1 ? ' project is' : ' projects are')
+             + ' new to the tracker, so the newest week is seeded from today’s reading (dotted underline) and has no NEW figure yet.' : '');
 
   const tb = el('table');
   const r1 = el('tr'), r2 = el('tr');
   const fixed = [['#', 'stick'], ['PROJECT', 'stick2'], ['APDL DATE', 'stick3'],
-                 ['TOTAL UNITS', 'stick4'], ['CODE', 'opt'], ['DEVELOPER', 'opt']];
+                 ['TOTAL UNITS', 'stick4'], ['CODE', 'opt'], ['DEVELOPER', 'opt dev']];
   fixed.forEach(([label, cls], i) => {
-    const th = el('th', (cls ? cls + ' ' : '') + (i < 5 ? 'l' : ''), label);
+    /* i < 6, not i < 5: DEVELOPER's cells are left-aligned, so its header was
+       the one column heading sitting over the wrong edge of its own column. */
+    const th = el('th', (cls ? cls + ' ' : '') + (i < 6 ? 'l' : ''), label);
     th.rowSpan = 2; r1.appendChild(th);
   });
   if (live) {
@@ -572,7 +753,7 @@ function table() {
     tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
     tr.appendChild(el('td', 'stick4', nf(p.units)));
     tr.appendChild(el('td', 'l opt', p.code || '–'));
-    tr.appendChild(el('td', 'l opt', p.developer));
+    tr.appendChild(el('td', 'l opt dev', p.developer));
 
     const map = {}; p.weekly.forEach(s => map[s.d] = s.v);
     const delta = {}; let prev = null;
@@ -590,7 +771,15 @@ function table() {
       const n = i === 0 ? ' new' : '';
       const v = map[d] === undefined ? null : map[d];
       tr.appendChild(el('td', 'wk' + n, delta[d] === undefined ? '' : sgn(delta[d])));
-      tr.appendChild(el('td', n, v === null ? '' : nf(v)));
+      const sold = el('td', n, v === null ? '' : nf(v));
+      /* A seeded figure is today's reading standing in for a weekly record
+         this tracker has not produced yet. Marked so it is never mistaken for
+         a real Friday number. */
+      if (p.seeded && v !== null) {
+        sold.classList.add('seed');
+        sold.title = 'Seeded from today’s reading — this tracker has no weekly record yet.';
+      }
+      tr.appendChild(sold);
       tr.appendChild(el('td', n, (v === null || !p.units) ? '' : pf(v / p.units)));
     });
     const rem = el('td', 'l rem', p.remarks || '');
@@ -997,6 +1186,22 @@ document.querySelectorAll('[data-tbl]').forEach(b => {
     b.textContent = open ? 'Show as table' : 'Hide table';
   };
 });
+
+/* Download links come from the build, not from hand-written markup, so the
+   list can never drift from what the workflow actually produced. */
+(function downloadList() {
+  const host = $('#dl'); if (!host) return;
+  const items = DATA.downloads || [];
+  host.textContent = '';
+  if (!items.length) { host.appendChild(el('div', 'note', 'No files built yet.')); return; }
+  items.forEach(d => {
+    const a = el('a', 'ghost');
+    a.href = d.href; a.setAttribute('download', '');
+    a.appendChild(el('span', '', d.label));
+    if (d.size) { const s = el('span', 'dlsz', d.size); a.appendChild(s); }
+    host.appendChild(a);
+  });
+})();
 
 $('#asat').textContent = fdate(DATA.latestDate);
 $('#foot').textContent = 'Generated ' + DATA.generated +

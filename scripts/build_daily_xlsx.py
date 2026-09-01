@@ -13,7 +13,30 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter as L
 
-TRACKER_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley", "johor": "Johor", "ukay": "Ukay"}
+# The four area sheets, in the order they should appear in the workbook.
+# Everything else in projects.csv is a developer tracker and gets a sheet of the
+# same shape, named from its tracker_label column -- so a new competitor needs
+# rows in projects.csv and nothing here.
+AREA_SHEET = {"seputeh": "Seputeh Hills", "status13": "Klang Valley",
+              "johor": "Johor", "ukay": "Ukay"}
+
+
+def sheet_order(projects):
+    """[(tracker key, sheet title)] -- areas first, then developers A-Z."""
+    labels, areas, devs = {}, [], []
+    for p in projects:
+        key = (p.get("tracker") or "").strip()
+        if not key or key in labels:
+            continue
+        if key in AREA_SHEET:
+            labels[key] = AREA_SHEET[key]
+            areas.append(key)
+        else:
+            labels[key] = (p.get("tracker_label") or "").strip() or key.title()
+            devs.append(key)
+    areas.sort(key=lambda k: list(AREA_SHEET).index(k))
+    devs.sort(key=lambda k: labels[k].lower())
+    return [(k, labels[k]) for k in areas + devs]
 
 
 def F(**k):
@@ -61,7 +84,7 @@ def main():
     wb.calculation.fullCalcOnLoad = True
     wb.remove(wb.active)
 
-    for key, title in TRACKER_SHEET.items():
+    for key, title in sheet_order(projects):
         mine = sorted((p for p in projects if p["tracker"] == key),
                       key=lambda x: (x.get("pin", "").strip().lower() not in ("yes", "y", "1", "true")))
         if not mine:
@@ -116,7 +139,9 @@ def main():
                     pc.value = f"={L(col + 1)}{r}/$D${r}"
                 col += 3
 
-        for c, w in [("A", 4), ("B", 26), ("C", 12), ("D", 8), ("E", 10), ("F", 30)]:
+        # C is 13, not 12: DD/MM/YYYY plus the cell's own padding needs it, and
+        # at 12 Excel renders the whole APDL column as ##### instead.
+        for c, w in [("A", 4), ("B", 26), ("C", 13), ("D", 8), ("E", 10), ("F", 30)]:
             ws.column_dimensions[c].width = w
         for c in range(7, col):
             ws.column_dimensions[L(c)].width = 9
