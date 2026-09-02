@@ -97,9 +97,10 @@ jobs:
       # New-launch watch: probes one code past each tracked developer's highest
       # known phase, and re-checks registered-but-unlicensed codes (Ukay Spring)
       # for a permit. Finds land in data/teduh_watch.csv and show on the website
-      # as a +N badge on that developer's tracker button for a few days, plus a
-      # note above the table. No email and no tracker changes: adding a found
-      # project to projects.csv stays a decision, not an automation.
+      # as a +N badge on that developer's tracker button for two days, plus a
+      # note above the table. A find that holds a sales permit is appended to
+      # its DEVELOPER tracker in projects.csv automatically; the four area
+      # trackers are never touched. No email either way.
       - name: Watch for new developer launches
         if: always()
         continue-on-error: true

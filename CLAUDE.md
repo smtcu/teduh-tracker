@@ -226,10 +226,13 @@ and the network manners are imported from fill_apdl.py.
 
 Finds go to `data/teduh_watch.csv`. The website then shows a **+N badge** on
 that developer's tracker button and an orange note above the table, for
-`BADGE_DAYS` (7) from `first_seen` -- after that the badge quietly drops off,
-and it drops immediately if the code is added to projects.csv. **Nothing is
-emailed and no tracker changes**: she preferred a notice on the site, and
-adding a project stays her decision.
+`BADGE_DAYS` (2 -- her call, down from 7) from `first_seen`. **A find that
+already holds a sales permit is appended to its developer tracker in
+projects.csv automatically** (registered TEDUH name, SPV, TEDUH unit count),
+so the note reports something that happened; a permitless find waits and joins
+the day its permit is issued. The four **area trackers are never written to**
+-- which projects belong to Seputeh, Klang Valley, Johor or Ukay stays her
+curation -- and nothing is emailed either way.
 
 `data/teduh_watch_extra.csv` (`value,label,trackers`) lists what projects.csv
 cannot imply: a dormant code to watch for a permit (`8763-2`), or a bare

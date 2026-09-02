@@ -8,19 +8,22 @@ projects.csv is watched. Each run probes one code past the developer's highest
 known phase -- new registrations always take the next -N under the same
 developer code, which is exactly how MAIA arrived as 30141-2 and Binastra
 Cochrane as 31332-1. A hit is recorded in data/teduh_watch.csv and shows up on
-the website as a +1 badge on that developer's tracker button for a few days
-(BADGE_DAYS in build_dashboard.py). Nothing is emailed and no tracker changes:
-adding the project to projects.csv stays a decision, not an automation.
+the website as a +1 badge on that developer's tracker button for a couple of
+days (BADGE_DAYS in build_dashboard.py).
 
-Two further cases ride along:
+A find that already holds a sales permit is APPENDED to projects.csv
+automatically -- to the developer tracker only, under its registered TEDUH
+name, SPV and unit count -- so the notice on the site reports something that
+happened, not homework. The four area trackers are never touched: which
+projects belong to Seputeh, Klang Valley, Johor or Ukay stays Samantha's
+curation, and the badge tells her a candidate exists. A find with no permit
+waits, is re-checked every run, and joins the day its permit is issued.
 
-- A find with no permit yet (registered but not licensed -- Ukay Spring sat
-  like this for months as 8763-2) is re-checked every run, and badges again
-  the day its permit is issued.
-- data/teduh_watch_extra.csv lists things to watch that projects.csv cannot
-  imply: a dormant code (`8763-2`) to watch for a permit, or a bare developer
-  code to watch for new phases. Columns: value,label,trackers -- trackers is a
-  semicolon list of tracker keys whose button should carry the badge.
+data/teduh_watch_extra.csv lists things to watch that projects.csv cannot
+imply: a dormant code (`8763-2`, Ukay Spring) to watch for a permit, or a bare
+developer code to watch for new phases. Columns: value,label,trackers --
+trackers is a semicolon list of tracker keys whose button should carry the
+badge.
 
 Known phases come from projects.csv, data/projects_index.csv (the full-register
 snapshot) and the watch file itself, so nothing is probed twice. The network
@@ -41,6 +44,56 @@ INDEX = os.path.join(ROOT, "data", "projects_index.csv")
 FIELDS = ["first_seen", "kind", "kod_projek", "kod_pemaju", "nama", "pemaju",
           "units", "permit_mula", "trackers", "label"]
 MAX_NEW_PER_DEV = 3        # cap the walk upward, in case a developer lands several at once
+# The four area sheets are curated by hand and the watch never writes to them.
+AREA_TRACKERS = {"seputeh", "status13", "johor", "ukay"}
+
+
+def auto_add(rows_to_add, pcsv):
+    """Append permit-holding finds to their developer tracker in projects.csv.
+
+    Same read/write shape as fill_apdl.py, which rewrites this file daily, so
+    the formatting stays canonical. Returns the codes actually added.
+    """
+    if not rows_to_add:
+        return []
+    import shutil
+    with open(pcsv, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        cols = list(reader.fieldnames or [])
+        rows = list(reader)
+    have = {c.strip() for r in rows for c in (r.get("code") or "").split(",") if c.strip()}
+    by_tracker = {}
+    for r in rows:
+        by_tracker.setdefault((r.get("tracker") or "").strip(), []).append(r)
+    added = []
+    for find in rows_to_add:
+        if find["kod_projek"] in have:
+            continue
+        targets = sorted(t for t in (find.get("trackers") or "").split(";")
+                         if t and t not in AREA_TRACKERS and t in by_tracker)
+        if not targets:
+            continue                    # developer only lives in area trackers
+        t = targets[0]
+        sib = by_tracker[t]
+        nos = [int(r["no"]) for r in sib if str(r.get("no") or "").strip().isdigit()]
+        row = {c: "" for c in cols}
+        row.update(tracker=t, tracker_label=(sib[0].get("tracker_label") or "").strip(),
+                   no=str(max(nos, default=0) + 1), project=find["nama"],
+                   code=find["kod_projek"], developer=find["pemaju"],
+                   apdl=find["permit_mula"], total_units=str(find["units"]))
+        rows.append(row)
+        sib.append(row)
+        have.add(find["kod_projek"])
+        added.append((find["kod_projek"], t))
+    if added:
+        shutil.copyfile(pcsv, pcsv + ".bak")
+        with open(pcsv, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=cols)
+            w.writeheader()
+            w.writerows(rows)
+        for code, t in added:
+            print(f"ADDED {code} to the '{t}' tracker in projects.csv")
+    return [c for c, _ in added]
 
 
 def read(path):
@@ -165,6 +218,15 @@ def main():
             r.update(permit_mula=fresh["permit_mula"], units=fresh["units"] or r.get("units", ""),
                      first_seen=today, kind="permit-issued")
             updated += 1
+
+    # A find that already holds a permit joins its developer tracker now;
+    # everything else waits in the watch file and is re-checked each run.
+    licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()]
+    licensed += [r for r in state if r.get("kind") == "permit-issued"]
+    added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"))
+    for r in finds + state:
+        if r["kod_projek"] in added:
+            r["kind"] = "added"
 
     rows = state + [f for f in finds if f["kod_projek"] not in seen_codes]
     rows.sort(key=lambda r: (r.get("first_seen") or "", r["kod_projek"]), reverse=True)

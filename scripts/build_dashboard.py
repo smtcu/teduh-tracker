@@ -37,9 +37,9 @@ def tracker_kind(key):
 
 
 # How long a new TEDUH find (from scripts/watch_developers.py) keeps its +N
-# badge on the tracker bar. Long enough to survive a weekend away, short
-# enough that the bar is not permanently decorated.
-BADGE_DAYS = 7
+# badge on the tracker bar. Two mornings: enough to be seen, gone before it
+# turns into decoration. Her call, down from an initial 7.
+BADGE_DAYS = 2
 
 
 def code_range(codes):
@@ -383,9 +383,10 @@ def build_payload():
     devs.sort(key=lambda t: t["label"].lower())
 
     # New TEDUH registrations from scripts/watch_developers.py, mapped to the
-    # tracker buttons whose developer they belong to. Only recent finds badge
-    # (BADGE_DAYS); a find whose code has since been added to projects.csv
-    # stops showing the moment it is tracked.
+    # tracker buttons whose developer they belong to. Recent finds badge for
+    # BADGE_DAYS. `tracked` says whether the watch has already added the code
+    # to projects.csv (it does this itself for developer trackers, once the
+    # permit exists) -- the note reads differently for the two states.
     from datetime import timedelta
     cutoff = (datetime.now(MYT).date() - timedelta(days=BADGE_DAYS)).isoformat()
     tracked_codes = {c.strip() for p in projects
@@ -393,7 +394,7 @@ def build_payload():
     watch = {}
     for r in read("data/teduh_watch.csv"):
         seen = (r.get("first_seen") or "").strip()
-        if not seen or seen < cutoff or (r.get("kod_projek") or "").strip() in tracked_codes:
+        if not seen or seen < cutoff:
             continue
         for tkey in (r.get("trackers") or "").split(";"):
             tkey = tkey.strip()
@@ -404,6 +405,7 @@ def build_payload():
                     "pemaju": (r.get("pemaju") or "").strip(),
                     "units": to_int(r.get("units")),
                     "permit": (r.get("permit_mula") or "").strip(),
+                    "tracked": (r.get("kod_projek") or "").strip() in tracked_codes,
                     "seen": seen,
                 })
 
@@ -845,11 +847,15 @@ function table() {
   const finds = (DATA.watch || {})[tracker] || [];
   const wn = $('#watchnote'); wn.textContent = '';
   finds.forEach(f => {
+    const tail = f.tracked
+      ? '. Added to its developer tracker automatically — figures appear from the next morning\u2019s run.'
+      : (f.permit
+        ? '. This developer has no developer tracker of its own, so nothing was added — the area sheets stay hand-picked.'
+        : '. Registered but not licensed yet — it joins its developer tracker automatically the day its permit is issued.');
     wn.appendChild(el('div', 'wnrow', 'New on TEDUH: ' + f.name + ' (' + f.code + ')'
       + (f.units ? ' — ' + nf(f.units) + ' units' : '')
       + (f.permit ? ', permit from ' + fdate(f.permit) : ', no sales permit yet')
-      + (f.pemaju ? ' — ' + f.pemaju : '')
-      + '. Not in this tracker yet — add its code to projects.csv to start tracking it.'));
+      + (f.pemaju ? ' — ' + f.pemaju : '') + tail));
   });
   wn.hidden = !finds.length;
 
