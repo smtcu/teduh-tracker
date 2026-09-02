@@ -36,6 +36,46 @@ def tracker_kind(key):
     return "area" if key in AREA_TRACKERS else "developer"
 
 
+# How long a new TEDUH find (from scripts/watch_developers.py) keeps its +N
+# badge on the tracker bar. Long enough to survive a weekend away, short
+# enough that the bar is not permanently decorated.
+BADGE_DAYS = 7
+
+
+def code_range(codes):
+    """['10279-5'..'10279-8'] -> '10279-5 ~ 8', so multi-code projects fit their cell.
+
+    Runs of consecutive phases under one developer code are compressed; anything
+    that does not chain stays written out in full. Sierra Hijauan's seven codes
+    become '10296-3 ~ 9' instead of a string wider than the table.
+    """
+    out, run = [], []
+
+    def flush():
+        if not run:
+            return
+        if len(run) == 1:
+            out.append("%s-%d" % run[0])
+        else:
+            out.append("%s-%d ~ %d" % (run[0][0], run[0][1], run[-1][1]))
+        run.clear()
+
+    for c in codes:
+        c = (c or "").strip()
+        kod, _, ph = c.rpartition("-")
+        if not (kod.isdigit() and ph.isdigit()):
+            flush()
+            if c:
+                out.append(c)
+            continue
+        item = (kod, int(ph))
+        if run and (run[-1][0] != kod or item[1] != run[-1][1] + 1):
+            flush()
+        run.append(item)
+    flush()
+    return ", ".join(out)
+
+
 # Friendly names for the files the workflow produces. Anything found in
 # docs/downloads that is not listed here still gets a link -- it just gets a
 # label derived from its filename, so a new developer workbook appears on the
@@ -128,7 +168,31 @@ def to_int(v):
         return None
 
 
-def remark_for(project, generated):
+# Remarks that describe a state the data can outgrow. When the facts say
+# otherwise -- MAIA's "Not yet launched" once it has recorded sales, "No TEDUH
+# code" once a code is in the row -- the remark is suppressed at build time
+# rather than edited in projects.csv, so the file stays exactly as Samantha
+# wrote it and the note simply stops printing everywhere at once. Matched on
+# the WHOLE remark (lowercased, trailing full stop ignored), never substring:
+# a longer remark that merely contains one of these phrases is left alone.
+STALE_WHEN_SELLING = {"not yet launched", "not launched yet", "no launch yet"}
+STALE_WHEN_CODED = {"no teduh code", "not on teduh", "no info on teduh"}
+
+
+def stale_remark(project, sold=None):
+    """True when the row's remark describes a state the project has left behind."""
+    r = (project.get("remarks") or "").strip().rstrip(".").lower()
+    if not r:
+        return False
+    has_code = bool((project.get("code") or "").strip())
+    if r in STALE_WHEN_SELLING and has_code and sold:
+        return True
+    if r in STALE_WHEN_CODED and has_code:
+        return True
+    return False
+
+
+def remark_for(project, generated, sold=None):
     """Remarks text: either a fixed override, or a standing caveat plus live numbers.
 
     `remarks` still wins outright, which is what Seputeh's unit-size notes and
@@ -136,10 +200,11 @@ def remark_for(project, generated):
     caveat that has to survive every rebuild while the block numbers after it
     keep updating -- Causewayz's unreleased Block C is the case that matters,
     because without it 1,421 of 3,692 reads as weak sales when 833 of those
-    units are simply not on the market.
+    units are simply not on the market. A remark the data has outgrown (see
+    stale_remark) is skipped, and the caveat + generated note shows instead.
     """
     override = (project.get("remarks") or "").strip()
-    if override:
+    if override and not stale_remark(project, sold):
         return override
     caveat = (project.get("note_prefix") or "").strip()
     return " ".join(part for part in (caveat, generated) if part)
@@ -172,6 +237,15 @@ def build_payload():
         n = (r.get("block_note") or "").strip()
         if n:
             notes[r.get("code", "")] = n
+
+    # Newest registered TEDUH name per code. The search box matches these too,
+    # because the licence name and the marketing name rarely agree -- Trinity
+    # Sensoria is BAYU CERIA on TEDUH, Dawn KLCC is MENARA SENJA.
+    tnames = {}
+    for r in sorted(weekly + daily, key=lambda x: x.get("week", "")):
+        n = (r.get("teduh_name") or "").strip()
+        if n:
+            tnames[r.get("code", "")] = n
 
     wser, dser = series_of(weekly), series_of(daily)
 
@@ -232,6 +306,8 @@ def build_payload():
             "no": to_int(p.get("no")),
             "name": (p.get("project") or "").replace("\n", " ").strip(),
             "code": code,
+            "codeDisp": code_range(codes),
+            "teduhName": tnames.get(code, ""),
             "developer": (p.get("developer") or "").strip(),
             "apdl": p.get("apdl") or "",
             "units": units,
@@ -243,7 +319,7 @@ def build_payload():
             # code silently lost its note (The Eclipse). build_trackers.py has
             # always used the NOCODE key, which is why the Excel kept the note
             # while the website dropped it.
-            "remarks": remark_for(p, notes.get(key, "")),
+            "remarks": remark_for(p, notes.get(key, ""), latest),
             "pin": (p.get("pin") or "").strip().lower() in ("yes", "y", "1", "true"),
             "weekly": [{"d": d, "v": v} for d, v in wpts],
             "series": [{"d": d, "v": v} for d, v in dpts],
@@ -306,8 +382,34 @@ def build_payload():
     areas.sort(key=lambda t: list(AREA_TRACKERS).index(t["key"]))
     devs.sort(key=lambda t: t["label"].lower())
 
+    # New TEDUH registrations from scripts/watch_developers.py, mapped to the
+    # tracker buttons whose developer they belong to. Only recent finds badge
+    # (BADGE_DAYS); a find whose code has since been added to projects.csv
+    # stops showing the moment it is tracked.
+    from datetime import timedelta
+    cutoff = (datetime.now(MYT).date() - timedelta(days=BADGE_DAYS)).isoformat()
+    tracked_codes = {c.strip() for p in projects
+                     for c in (p.get("code") or "").split(",") if c.strip()}
+    watch = {}
+    for r in read("data/teduh_watch.csv"):
+        seen = (r.get("first_seen") or "").strip()
+        if not seen or seen < cutoff or (r.get("kod_projek") or "").strip() in tracked_codes:
+            continue
+        for tkey in (r.get("trackers") or "").split(";"):
+            tkey = tkey.strip()
+            if tkey:
+                watch.setdefault(tkey, []).append({
+                    "code": r.get("kod_projek", ""),
+                    "name": (r.get("nama") or "").strip() or r.get("kod_projek", ""),
+                    "pemaju": (r.get("pemaju") or "").strip(),
+                    "units": to_int(r.get("units")),
+                    "permit": (r.get("permit_mula") or "").strip(),
+                    "seen": seen,
+                })
+
     return {
         "trackers": areas + devs,
+        "watch": watch,
         "downloads": downloads(),
         "generated": datetime.now(MYT).strftime("%d %b %Y, %-I:%M %p") + " MYT",
         "latestDate": days[-1] if days else "",
@@ -373,6 +475,22 @@ button,.btn{font:inherit;color:inherit;cursor:pointer}
 .chip{background:var(--sunk);border:1.5px solid transparent;border-radius:9px;padding:8px 12px;font-size:13px;font-weight:650;color:var(--ink-2);min-height:38px}
 .chip[aria-pressed="true"]{background:var(--blue);color:#fff}
 .chips .lbl{width:100%;font-size:11.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -2px}
+.plus{display:inline-block;background:var(--orange);color:#fff;border-radius:999px;font-size:10.5px;font-weight:750;padding:1px 7px;margin-left:7px;vertical-align:1px}
+.ghost[aria-pressed="true"] .plus{background:#fff;color:var(--orange)}
+.searchwrap{position:relative;margin:0 0 14px;max-width:520px}
+#q{width:100%;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 13px;min-height:40px;box-sizing:border-box}
+#q::placeholder{color:var(--muted)}
+#q:focus{outline:2px solid var(--blue);outline-offset:1px}
+.qr{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:40;overflow:hidden}
+.qrow{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--grid);padding:9px 13px;font:inherit;cursor:pointer;color:var(--ink)}
+.qrow:last-child{border-bottom:0}
+.qrow:hover,.qrow:focus-visible{background:var(--hl)}
+.qn{display:block;font-size:13.5px;font-weight:700}
+.qd{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:1px}
+.qnone{padding:10px 13px;font-size:12.5px;color:var(--muted);font-weight:600}
+.watchnote{margin:0 0 12px;display:flex;flex-direction:column;gap:6px}
+.watchnote[hidden]{display:none}
+.wnrow{border-left:4px solid var(--orange);background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow)}
@@ -563,9 +681,16 @@ tr:last-child td{border-bottom:0}
 
 <div class="nav" id="ftrack"></div>
 
+<div class="searchwrap">
+  <input id="q" type="search" placeholder="Search a project, TEDUH name, code or developer…"
+         autocomplete="off" spellcheck="false" aria-label="Search projects">
+  <div class="qr" id="qr" hidden></div>
+</div>
+
 <div class="card">
   <h2>Weekly tracker</h2>
   <p class="note" id="tblnote"></p>
+  <div class="watchnote" id="watchnote" hidden></div>
   <div class="tbar"><button class="ghost" id="cols">Show all columns</button></div>
   <div class="scroll tall" id="table"></div>
 </div>
@@ -694,6 +819,8 @@ function trackerBar() {
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
       const b = el('button', 'ghost', t.label);
+      const nw = ((DATA.watch || {})[t.key] || []).length;
+      if (nw) b.appendChild(el('span', 'plus', '+' + nw));
       b.setAttribute('aria-pressed', String(t.key === tracker));
       b.onclick = () => { tracker = t.key; picked = 0; render(); };
       btns.appendChild(b);
@@ -714,6 +841,17 @@ function table() {
     : 'Newest week first, matching your Excel sheets. Scroll sideways for earlier weeks.')
     + (nSeed ? ' ' + nSeed + (nSeed === 1 ? ' project is' : ' projects are')
              + ' new to the tracker, so the newest week is seeded from today’s reading (dotted underline) and has no NEW figure yet.' : '');
+
+  const finds = (DATA.watch || {})[tracker] || [];
+  const wn = $('#watchnote'); wn.textContent = '';
+  finds.forEach(f => {
+    wn.appendChild(el('div', 'wnrow', 'New on TEDUH: ' + f.name + ' (' + f.code + ')'
+      + (f.units ? ' — ' + nf(f.units) + ' units' : '')
+      + (f.permit ? ', permit from ' + fdate(f.permit) : ', no sales permit yet')
+      + (f.pemaju ? ' — ' + f.pemaju : '')
+      + '. Not in this tracker yet — add its code to projects.csv to start tracking it.'));
+  });
+  wn.hidden = !finds.length;
 
   const tb = el('table');
   const r1 = el('tr'), r2 = el('tr');
@@ -765,7 +903,7 @@ function table() {
     tr.appendChild(el('td', 'l stick2 nm', p.name));
     tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
     tr.appendChild(el('td', 'stick4', nf(p.units)));
-    tr.appendChild(el('td', 'l opt', p.code || '–'));
+    tr.appendChild(el('td', 'l opt', p.codeDisp || p.code || '–'));
     tr.appendChild(el('td', 'l opt dev', p.developer));
 
     const map = {}; p.weekly.forEach(s => map[s.d] = s.v);
@@ -970,7 +1108,7 @@ function weekly() {
   const cap = $('#pickedName');
   cap.textContent = '';
   cap.appendChild(el('span', 'pn', p.name));
-  cap.appendChild(el('span', 'pd', p.developer + (p.code ? '  ·  ' + p.code : '')));
+  cap.appendChild(el('span', 'pd', p.developer + (p.codeDisp || p.code ? '  ·  ' + (p.codeDisp || p.code) : '')));
   const host = $('#weekly'); host.textContent = '';
   const pts = weeklyPoints(p, 4);
   pkpis(p, pts);
@@ -1104,7 +1242,7 @@ function movers() {
   const bd = el('tbody');
   vis().slice().sort((a, b) => (b.newSales || 0) - (a.newSales || 0)).forEach(p => {
     const tr = el('tr');
-    [[p.name, 'l nm'], [p.code || '–', 'l'], [p.newSales === null ? '–' : sgn(p.newSales), ''],
+    [[p.name, 'l nm'], [p.codeDisp || p.code || '–', 'l'], [p.newSales === null ? '–' : sgn(p.newSales), ''],
      [nf(p.sold), ''], [nf(p.units), ''], [pf(p.pct), '']].forEach(([v, c]) => tr.appendChild(el('td', c, v)));
     bd.appendChild(tr);
   });
@@ -1226,6 +1364,50 @@ $('#asat').textContent = fdate(DATA.latestDate);
 $('#foot').textContent = 'Generated ' + DATA.generated +
   ' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my)';
 function render() { trackerBar(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); }
+
+/* ---------- search: marketing names, registered TEDUH names, codes ----------
+   The two name worlds rarely agree (Trinity Sensoria is BAYU CERIA on TEDUH,
+   Dawn KLCC is MENARA SENJA), so both are in the haystack along with every
+   code and the developer. Picking a result switches to its tracker and puts
+   it in the project picker. */
+(() => {
+  const q = $('#q'), box = $('#qr');
+  if (!q || !box) return;
+  const hay = p => (p.name + ' ' + (p.teduhName || '') + ' ' + (p.codes || []).join(' ') + ' '
+                    + (p.developer || '') + ' ' + (p.trackerLabel || '')).toLowerCase();
+  const jump = p => {
+    tracker = p.tracker;
+    picked = Math.max(0, vis().indexOf(p));
+    q.value = ''; box.hidden = true; render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const show = () => {
+    const s = q.value.trim().toLowerCase();
+    box.textContent = '';
+    if (s.length < 2) { box.hidden = true; return; }
+    const hits = ALL.filter(p => hay(p).includes(s)).slice(0, 8);
+    hits.forEach(p => {
+      const b = el('button', 'qrow');
+      b.appendChild(el('span', 'qn', p.name));
+      b.appendChild(el('span', 'qd',
+        [(p.teduhName && p.teduhName.toLowerCase() !== p.name.toLowerCase()) ? p.teduhName : '',
+         p.codeDisp || p.code, p.trackerLabel].filter(Boolean).join('  ·  ')));
+      b.onclick = () => jump(p);
+      box.appendChild(b);
+    });
+    if (!hits.length) box.appendChild(el('div', 'qnone', 'Nothing matches — registered TEDUH names are searched too.'));
+    box.hidden = false;
+  };
+  q.addEventListener('input', show);
+  q.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { const f = box.querySelector('.qrow'); if (f) f.click(); }
+    if (e.key === 'Escape') { q.value = ''; box.hidden = true; }
+  });
+  document.addEventListener('click', e => {
+    if (!box.hidden && !box.contains(e.target) && e.target !== q) box.hidden = true;
+  });
+})();
+
 render();
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { weekly(); movers(); sellthru(); bytype(); }, 160); });
 </script>

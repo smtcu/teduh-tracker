@@ -65,6 +65,9 @@ scripts/build_daily_xlsx.py      builds the daily workbook
 scripts/build_pdf.py             weekly and daily PDF reports (landscape A4)
 scripts/build_unit_workbook.py   unit-type and unit-list workbook
 scripts/weekly_summary.py        the summary text used in the email and WhatsApp
+scripts/watch_developers.py      new-launch watch -- see its own section below
+data/teduh_watch.csv             what the watch has found (and is still waiting on)
+data/teduh_watch_extra.csv       extra things to watch that projects.csv cannot imply
 scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
@@ -179,6 +182,21 @@ columns would leave nothing for the figures.
 
 ### remarks vs note_prefix — two different jobs
 
+A third rule sits on top since 02 Sep 2026: a remark the data has **outgrown**
+is suppressed at build time -- everywhere at once, projects.csv untouched.
+Exactly two families, matched against the whole remark only (lowercased,
+trailing full stop ignored), never as a substring:
+
+- "Not yet launched" (and variants) stops printing once the row has a code
+  **and** recorded sales. MAIA's first sold unit is what prompted this.
+- "No TEDUH code" (and variants) stops printing once the row has a code.
+
+The rule lives as `stale_remark()` in both build_trackers.py and
+build_dashboard.py, kept identical, and selftest.py checks the two copies
+agree. A remark that merely *contains* one of the phrases is left alone --
+"No unit found on TEDUH" (20Trees) is not in the list and still prints,
+because it stays true.
+
 Both feed the Remarks column, and picking the wrong one loses information.
 
 - **`remarks` replaces the generated note outright.** Use it when the text is the
@@ -194,6 +212,44 @@ A generated note overwrites a seeded one whenever it is non-empty, so a caveat
 left only in `data/teduh_history.csv` *will* be lost on the next scrape. That is
 exactly how Causewayz's "Block C is not opened yet" disappeared. Anything that
 must survive belongs in one of these two columns.
+
+## The new-launch watch
+
+`scripts/watch_developers.py` runs in the daily pipeline and answers "did a
+developer I track register something new on TEDUH?". It probes one code past
+each tracked developer's highest known phase (new registrations always take
+the next `-N` -- MAIA arrived as 30141-2, Binastra Cochrane as 31332-1), and
+re-checks registered-but-unlicensed codes for a permit; Ukay Spring sat that
+way as 8763-2 for months. Known phases come from projects.csv,
+data/projects_index.csv and the watch file itself, so nothing is probed twice,
+and the network manners are imported from fill_apdl.py.
+
+Finds go to `data/teduh_watch.csv`. The website then shows a **+N badge** on
+that developer's tracker button and an orange note above the table, for
+`BADGE_DAYS` (7) from `first_seen` -- after that the badge quietly drops off,
+and it drops immediately if the code is added to projects.csv. **Nothing is
+emailed and no tracker changes**: she preferred a notice on the site, and
+adding a project stays her decision.
+
+`data/teduh_watch_extra.csv` (`value,label,trackers`) lists what projects.csv
+cannot imply: a dormant code to watch for a permit (`8763-2`), or a bare
+developer code to watch for phases. `trackers` is a semicolon list of tracker
+keys whose button should carry the badge.
+
+The step is `continue-on-error` and the script swallows its own failures --
+a missed probe is caught the next morning, and the watch must never cost the
+day's sales figures. Sabah, Vietnam and industrial projects can never appear
+here: they are outside TEDUH entirely.
+
+## Website search, badges and code ranges
+
+- The search box matches the marketing name, the **registered TEDUH name**
+  (`teduh_name` from the scrape -- Trinity Sensoria is BAYU CERIA, Dawn KLCC
+  is MENARA SENJA), every code, and the developer. Picking a result switches
+  tracker and selects the project.
+- Multi-code projects display as a compressed range: `10279-5 ~ 8`, via
+  `code_range()` in build_dashboard.py. projects.csv still stores every code
+  in full -- only the display is compressed.
 
 ## block_groups.json
 
