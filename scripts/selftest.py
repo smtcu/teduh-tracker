@@ -55,7 +55,8 @@ section("cross-module API: names one script calls on another")
 # scrape_teduh.py calls all of these. A hand-pasted unit_types.py that drops any
 # of them fails here in seconds instead of part-way through a live scrape.
 have = {}
-for fn in ["block_of", "regroup", "note_for", "classify", "tally", "block_groups", "config"]:
+for fn in ["block_of", "regroup", "note_for", "classify", "tally", "block_groups", "config",
+           "per_code"]:
     have[fn] = callable(getattr(UT, fn, None))
     ck(have[fn], f"unit_types.{fn}() exists")
 
@@ -174,6 +175,18 @@ if projects and have["block_groups"]:
         if code.startswith("_"):                # documentation keys
             continue
         ck(code in tracked, f"block_groups.json key {code!r} matches a tracked project code")
+        # A per_code entry replaces block parsing with one figure per phase
+        # (Ferringhi). Its inner keys must be that same project's codes, or a
+        # phase would silently drop out of the note.
+        spec = UT.block_groups().get(code)
+        pc = spec.get("per_code") if isinstance(spec, dict) else None
+        if pc:
+            own = next(([c.strip() for c in (p.get("code") or "").split(",")]
+                        for p in projects
+                        if (p.get("code") or "").split(",")[0].strip() == code), [])
+            stray = [k for k in pc if k not in own]
+            ck(not stray, f"per_code keys for {code} are that project's own codes"
+                          f"{'' if not stray else f' (stray: {stray})'}")
 
 # unit_types keys named in projects.csv must exist in unit_types.json
 if projects and have["config"]:

@@ -6,7 +6,10 @@
     "  label  : word placed before the name. Defaults to 'Block '. Use \"\" when the",
     "           group name already reads as a whole label, e.g. 'Phase 1'.",
     "Any block not listed is reported unchanged, so a new block appearing on TEDUH",
-    "shows up under its own name rather than being silently folded into another."
+    "shows up under its own name rather than being silently folded into another.",
+    "  per_code : report one figure per phase CODE instead of parsing unit",
+    "             numbers at all -- for projects whose numbers invent blocks",
+    "             (Ferringhi's landed lots). Maps code -> display name."
   ],
 
   "30635-1": {
@@ -16,6 +19,14 @@
       "1B": "Phase 1",
       "2A": "Phase 2",
       "2B": "Phase 2"
+    }
+  },
+
+  "12324-1": {
+    "label": "",
+    "per_code": {
+      "12324-1": "Ferringhi Residence 1",
+      "12324-2": "Ferringhi Residence 2"
     }
   },
 
