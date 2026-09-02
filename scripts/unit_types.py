@@ -158,6 +158,21 @@ def regroup(sold_by_block, code):
     return rolled, spec.get("label", "Block ")
 
 
+def per_code(code):
+    """The per-phase note config from block_groups.json, or None.
+
+    Ferringhi Residence is the case that forced this: its landed lot numbers
+    parse into twenty pseudo-blocks (A..T plus a stray quote), so the block
+    breakdown was 400 characters of noise. A "per_code" entry replaces it with
+    one figure per phase code, named the way Samantha reports the phases.
+    Returns {"names": {code: display name}, "label": ...} or None.
+    """
+    spec = block_groups().get(code or "")
+    if not spec or "per_code" not in spec:
+        return None
+    return {"names": dict(spec["per_code"]), "label": spec.get("label", "")}
+
+
 def note_for(sold_by_block, prefix="Latest sales", label="Block ", unit_word=" units"):
     """'Latest sales - Block A: 187 units, Block B: 104 units'
 

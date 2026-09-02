@@ -490,6 +490,11 @@ button,.btn{font:inherit;color:inherit;cursor:pointer}
 .qn{display:block;font-size:13.5px;font-weight:700}
 .qd{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:1px}
 .qnone{padding:10px 13px;font-size:12.5px;color:var(--muted);font-weight:600}
+@keyframes rowglow{0%{background:rgba(42,120,214,.34)}70%{background:rgba(42,120,214,.18)}100%{background:transparent}}
+tr.found td{animation:rowglow 2.4s ease-out}
+html[data-theme="dark"] tr.found td{animation-name:rowglowd}
+@keyframes rowglowd{0%{background:rgba(57,135,229,.45)}70%{background:rgba(57,135,229,.22)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){tr.found td{animation:none;background:var(--hl)}}
 .watchnote{margin:0 0 12px;display:flex;flex-direction:column;gap:6px}
 .watchnote[hidden]{display:none}
 .wnrow{border-left:4px solid var(--orange);background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
@@ -905,6 +910,7 @@ function table() {
       gr.appendChild(gc); bd.appendChild(gr);
     }
     const tr = el('tr', p.pin ? 'pinned' : '');
+    tr.dataset.proj = p.code || ('NOCODE-' + p.name);
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
     tr.appendChild(el('td', 'l stick2 nm', p.name));
     tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
@@ -1385,7 +1391,27 @@ function render() { trackerBar(); table(); insight(); picker(); weekly(); kpis()
     tracker = p.tracker;
     picked = Math.max(0, vis().indexOf(p));
     q.value = ''; box.hidden = true; render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    /* Land on the row itself, not just the tracker: centre it and let it glow
+       for a couple of seconds so there is no hunting. Instant scroll, not
+       smooth -- smooth scrollIntoView silently does nothing on some engines,
+       and the glow is what draws the eye anyway. */
+    const key = (p.code || ('NOCODE-' + p.name)).replace(/"/g, '\\"');
+    const row = document.querySelector('#table tr[data-proj="' + key + '"]');
+    if (row) {
+      row.scrollIntoView({ block: 'center' });
+      /* Belt and braces: centre it in the window explicitly too, because the
+         sections around the table can settle a few pixels after render(). */
+      const fix = () => {
+        if (!innerHeight) return;        // zero in hidden panes; trust scrollIntoView
+        const rr = row.getBoundingClientRect();
+        window.scrollBy(0, rr.top + rr.height / 2 - innerHeight / 2);
+      };
+      fix(); setTimeout(fix, 120);
+      row.classList.add('found');
+      setTimeout(() => row.classList.remove('found'), 2400);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
   const show = () => {
     const s = q.value.trim().toLowerCase();

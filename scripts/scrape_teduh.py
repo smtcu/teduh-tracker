@@ -124,17 +124,28 @@ def main():
         expected = int(p["total_units"]) if str(p.get("total_units", "")).strip().isdigit() else None
         flag = "" if expected in (None, total) else f"unit count on TEDUH is {total}, tracker says {expected}"
 
-        # Block breakdown for the Remarks column, read straight off the unit numbers.
-        by_block = {}
-        for _, units in all_units:
-            for u, is_sold in units:
-                if not is_sold:
-                    continue
-                b = UT.block_of(u)
-                if b:
-                    by_block[b] = by_block.get(b, 0) + 1
-        grouped, label = UT.regroup(by_block, codes[0])
-        note = UT.note_for(grouped, label=label)
+        # Block breakdown for the Remarks column, read straight off the unit
+        # numbers -- unless block_groups.json says to report per phase instead.
+        # Ferringhi's landed lots parse into twenty pseudo-blocks, so its note
+        # is one figure per code: phase 1 and phase 2, named as she reports them.
+        pc = UT.per_code(codes[0])
+        if pc:
+            grouped = {}
+            for code, units in all_units:
+                nm_ = pc["names"].get(code, code)
+                grouped[nm_] = grouped.get(nm_, 0) + sum(1 for _, s in units if s)
+            note = UT.note_for(grouped, label=pc["label"])
+        else:
+            by_block = {}
+            for _, units in all_units:
+                for u, is_sold in units:
+                    if not is_sold:
+                        continue
+                    b = UT.block_of(u)
+                    if b:
+                        by_block[b] = by_block.get(b, 0) + 1
+            grouped, label = UT.regroup(by_block, codes[0])
+            note = UT.note_for(grouped, label=label)
         if note and sum(grouped.values()) != sold:
             print(f"WARN {p['project']}: block note sums to {sum(grouped.values())}, "
                   f"total sold is {sold}")
