@@ -59,12 +59,34 @@ def cell(ws, r, c, v=None, font=None, align=CTR, fill=None, fmt=None):
     return x
 
 
-def remark_for(project, generated):
+# Remarks that describe a state the data can outgrow -- suppressed at build
+# time once the facts say otherwise, so projects.csv stays exactly as written.
+# Whole-remark match only (lowercased, trailing full stop ignored). Kept in
+# step with build_dashboard.py.
+STALE_WHEN_SELLING = {'not yet launched', 'not launched yet', 'no launch yet'}
+STALE_WHEN_CODED = {'no teduh code', 'not on teduh', 'no info on teduh'}
+
+
+def stale_remark(project, sold=None):
+    """True when the row's remark describes a state the project has left behind."""
+    r = (project.get('remarks') or '').strip().rstrip('.').lower()
+    if not r:
+        return False
+    has_code = bool((project.get('code') or '').strip())
+    if r in STALE_WHEN_SELLING and has_code and sold:
+        return True
+    if r in STALE_WHEN_CODED and has_code:
+        return True
+    return False
+
+
+def remark_for(project, generated, sold=None):
     """Same rule as the website: `remarks` overrides outright, `note_prefix` is a
-    standing caveat that keeps the live block numbers after it. Kept in step with
+    standing caveat that keeps the live block numbers after it. A remark the
+    data has outgrown (see stale_remark) is skipped. Kept in step with
     build_dashboard.remark_for so the Excel and the site never disagree."""
     override = (project.get('remarks') or '').strip()
-    if override:
+    if override and not stale_remark(project, sold):
         return override
     caveat = (project.get('note_prefix') or '').strip()
     return ' '.join(part for part in (caveat, generated) if part)
@@ -172,9 +194,11 @@ def build_seputeh(projects, weeks, lookup, report_date, path):
         cell(ws, r, 4, int(p['total_units']), fmt='#,##0')
         cell(ws, r, 5, p['code'])
         cell(ws, r, 6, p['developer'], align=LFT)
-        col, prev = 7, None
+        col, prev, last_v = 7, None, None
         for i, snap in enumerate(weeks):
             v = lookup.get(('seputeh', snap, p['code']))
+            if v is not None:
+                last_v = v
             fill = NEWFILL if i == len(weeks) - 1 else None
             n, t, pc = cell(ws, r, col, fmt='#,##0', fill=fill), cell(ws, r, col+1, fmt='#,##0', fill=fill), cell(ws, r, col+2, fmt='0.0%', fill=fill)
             if v is not None:
@@ -183,7 +207,7 @@ def build_seputeh(projects, weeks, lookup, report_date, path):
                 pc.value = f'={L(col+1)}{r}/$D${r}'
                 prev = L(col+1)
             col += 3
-        cell(ws, r, rem, p['remarks'], align=LFT)
+        cell(ws, r, rem, remark_for(p, '', last_v), align=LFT)
 
     for c, w in [('A',4),('B',26),('C',12),('D',8),('E',10),('F',28)]:
         ws.column_dimensions[c].width = w
@@ -299,7 +323,7 @@ def fill_grouped(ws, projects, weeks, lookup, notes, report_date, tracker='johor
         if show_code:
             cell(ws, r, 5, p.get('code') or '')
         cell(ws, r, len(heads), p['developer'], align=LFT)
-        col, prev = first_week_col, None
+        col, prev, last_v = first_week_col, None, None
         for i, snap in enumerate(weeks):
             v = lookup.get((tracker, snap, key))
             fill = NEWFILL if i == len(weeks) - 1 else None
@@ -307,13 +331,14 @@ def fill_grouped(ws, projects, weeks, lookup, notes, report_date, tracker='johor
             t = cell(ws, r, col + 1, fmt='#,##0', fill=fill)
             pc = cell(ws, r, col + 2, fmt='0.0%', fill=fill)
             if v is not None:
+                last_v = v
                 t.value = v
                 if prev:
                     n.value = f'={L(col + 1)}{r}-{prev}{r}'
                 pc.value = f'={L(col + 1)}{r}/$D${r}'
                 prev = L(col + 1)
             col += 3
-        cell(ws, r, rem_col, remark_for(p, notes.get(key, '')), align=LFT)
+        cell(ws, r, rem_col, remark_for(p, notes.get(key, ''), last_v), align=LFT)
         r += 1
 
     # C is 13, not 12: at 12 Excel is a character short of DD/MM/YYYY and renders

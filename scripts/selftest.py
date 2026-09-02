@@ -36,7 +36,8 @@ section("modules import cleanly")
 # --------------------------------------------------------------------------
 mods = {}
 for name in ["unit_types", "scrape_teduh", "build_dashboard", "build_trackers",
-             "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary"]:
+             "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary",
+             "fill_apdl", "watch_developers"]:
     try:
         mods[name] = __import__(name)
         ck(True, name)
@@ -128,6 +129,27 @@ if projects:
     bad = [p["project"] for p in projects
            if str(p.get("total_units", "")).strip() and not str(p["total_units"]).strip().isdigit()]
     ck(not bad, f"total_units is numeric everywhere{'' if not bad else f' (bad: {bad})'}")
+
+# The stale-remark rule: a remark the data has outgrown stops printing, and the
+# two copies of the rule (website, Excel) must answer identically. Whole-remark
+# match only -- a longer remark merely containing the phrase is left alone.
+BD, BT = mods.get("build_dashboard"), mods.get("build_trackers")
+if BD and BT and hasattr(BD, "stale_remark") and hasattr(BT, "stale_remark"):
+    cases = [
+        ({"remarks": "Not yet launched", "code": "1-1"}, 5, ""),
+        ({"remarks": "Not yet launched", "code": "1-1"}, 0, "Not yet launched"),
+        ({"remarks": "Not yet launched", "code": ""}, 5, "Not yet launched"),
+        ({"remarks": "No TEDUH code", "code": "1-1"}, None, ""),
+        ({"remarks": "No TEDUH code", "code": ""}, None, "No TEDUH code"),
+        ({"remarks": "Big unit (not yet launched wing)", "code": "1-1"}, 5,
+         "Big unit (not yet launched wing)"),
+    ]
+    for proj, sold, want in cases:
+        a, b = BD.remark_for(proj, "", sold), BT.remark_for(proj, "", sold)
+        ck(a == want and b == want,
+           f"stale remark: {proj['remarks']!r} sold={sold} code={'yes' if proj['code'] else 'no'} -> {want!r}")
+else:
+    ck(False, "stale_remark exists in both build_dashboard and build_trackers")
 
 for fname in ["unit_types.json", "block_groups.json"]:
     path = os.path.join(ROOT, fname)
