@@ -31,7 +31,7 @@ manners -- pacing, Retry-After, backoff -- are imported from fill_apdl.py so
 the two stay identical. Errors never fail the run: a missed probe is caught on
 the next morning's run.
 """
-import csv, os, sys
+import csv, json, os, sys, urllib.parse, urllib.request
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -44,6 +44,30 @@ INDEX = os.path.join(ROOT, "data", "projects_index.csv")
 FIELDS = ["first_seen", "kind", "kod_projek", "kod_pemaju", "nama", "pemaju",
           "units", "permit_mula", "trackers", "label"]
 MAX_NEW_PER_DEV = 3        # cap the walk upward, in case a developer lands several at once
+# Words too generic to search TEDUH by. The name watch below picks the most
+# distinctive word of a code-less project's name instead.
+GENERIC = {"taman", "residensi", "residence", "residences", "the", "at", "apartment",
+           "pangsapuri", "kondominium", "condominium", "bandar", "kota", "baru",
+           "hill", "hills", "park", "city", "one", "new", "phase", "fasa"}
+
+
+def name_token(project):
+    """The most distinctive word of a marketing name, for a q= search."""
+    words = [w.strip("()@,.'\"-") for w in (project or "").lower().split()]
+    words = [w for w in words if len(w) >= 4 and w not in GENERIC and not w.isdigit()]
+    return max(words, key=len) if words else ""
+
+
+def name_search(token):
+    """TEDUH's q= search: registered project names containing the token."""
+    url = ("https://teduh.kpkt.gov.my/api/projek-swasta?q="
+           + urllib.parse.quote(token))
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (compatible; teduh-tracker/1.0)",
+        "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        d = json.loads(r.read().decode("utf-8"))
+    return (d.get("projects") or {}).get("data") or []
 # The four area sheets are curated by hand and the watch never writes to them.
 AREA_TRACKERS = {"seputeh", "status13", "johor", "ukay"}
 
@@ -193,7 +217,39 @@ def main():
             finds.append(row)
             phase += 1
 
-    # --- 2. re-check anything known but still unlicensed ---
+    # --- 2. a name watch for every project tracked WITHOUT a code ---
+    # Aetas Taman Desa, Chin Hin Ulu Kelang: no code, and possibly no known
+    # SPV, so the phase walk above cannot see them. Search TEDUH's registered
+    # names for each one's most distinctive word; a hit that is not already
+    # tracked or known becomes a name-match notice (never auto-added -- the
+    # match is a guess for her to confirm).
+    register_codes = {r.get("kod_projek") for r in read(INDEX)}
+    for p in projects:
+        if (p.get("code") or "").strip():
+            continue
+        token = name_token(p.get("project"))
+        if not token:
+            continue
+        try:
+            hits = name_search(token)
+        except Exception:
+            continue
+        for h in hits:
+            hid = (h.get("id") or "").strip()
+            if (not hid or hid in tracked_codes or hid in seen_codes
+                    or hid in register_codes
+                    or hid in {f["kod_projek"] for f in finds}):
+                continue
+            detail, reached = fetch(hid, net)
+            if not reached or detail is None:
+                continue
+            row = detail_row(hid, detail)
+            row.update(first_seen=today, kind="name-match",
+                       trackers=(p.get("tracker") or "").strip(),
+                       label=(p.get("project") or "").strip())
+            finds.append(row)
+
+    # --- 3. re-check anything known but still unlicensed ---
     pending = [x for x in extra if split_code(x.get("value"))
                and (x.get("value") or "").strip() not in seen_codes]
     for x in pending:
@@ -221,7 +277,8 @@ def main():
 
     # A find that already holds a permit joins its developer tracker now;
     # everything else waits in the watch file and is re-checked each run.
-    licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()]
+    licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()
+                and f.get("kind") != "name-match"]
     licensed += [r for r in state if r.get("kind") == "permit-issued"]
     added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"))
     for r in finds + state:

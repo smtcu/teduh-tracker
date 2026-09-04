@@ -239,6 +239,16 @@ cannot imply: a dormant code to watch for a permit (`8763-2`), or a bare
 developer code to watch for phases. `trackers` is a semicolon list of tracker
 keys whose button should carry the badge.
 
+Since 04 Sep 2026 there is also a **name watch**: every projects.csv row with
+a blank code gets a TEDUH `q=` search on the most distinctive word of its
+marketing name (generic words -- taman, residensi, park -- are skipped). A hit
+that is not already tracked, in the register snapshot, or in the watch file
+becomes a `name-match` notice: badge plus a "possible TEDUH match for X" note.
+Name matches are **never auto-added** -- registered names rarely resemble
+marketing names, so the match is a guess for her to confirm. This is how a
+code eventually surfaces for Aetas Taman Desa, Chin Hin Ulu Kelang and
+Villaria without anyone re-searching by hand.
+
 The step is `continue-on-error` and the script swallows its own failures --
 a missed probe is caught the next morning, and the watch must never cost the
 day's sales figures. Sabah, Vietnam and industrial projects can never appear
@@ -334,6 +344,17 @@ beat the general rule — that is what separates `A-6-3` (A2) from `A-7-3` (A).
   02 Jul 2026) was added to Klang Valley as row 14 on 16 Aug 2026. Its 139 sold was
   seeded into `data/teduh_history.csv` dated 2026-08-14 as a baseline, so its first
   NEW SALES window is 5 days rather than 7. Deliberate, and she agreed to it.
+
+- **Embun / Emery @ Kemensah (ukay tracker), settled 04 Sep 2026.** Titijaya's
+  phase 1 is Embun, 12369-1, 51 units, completed Dec 2016. Phase 2 is
+  **Emery**: its first 16 units are TEDUH's `12369-2` (registered as "EMBUN",
+  APDL 2014-06-25, all sold), and the remaining 36 units are **not on TEDUH**
+  -- no 12369-3 exists. Emery's tracker row carries total_units 52 on her
+  instruction; the phase walk will catch 12369-3 when it registers.
+- **Aetas naming (avaland tracker), 04 Sep 2026.** `20017-1` (Residensi Aetas
+  Damansara) is **Aetas Damansara** -- it was mislabelled "Aetas Taman Desa" in
+  an earlier sheet. Aetas Taman Desa is a separate, not-yet-launched Avaland
+  project tracked with a blank code; the name watch searches for it daily.
 
 ## Verification habits that have paid off
 
