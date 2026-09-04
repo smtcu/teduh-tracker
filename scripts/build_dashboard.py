@@ -405,6 +405,8 @@ def build_payload():
                     "pemaju": (r.get("pemaju") or "").strip(),
                     "units": to_int(r.get("units")),
                     "permit": (r.get("permit_mula") or "").strip(),
+                    "kind": (r.get("kind") or "").strip(),
+                    "label": (r.get("label") or "").strip(),
                     "tracked": (r.get("kod_projek") or "").strip() in tracked_codes,
                     "seen": seen,
                 })
@@ -852,7 +854,9 @@ function table() {
   const finds = (DATA.watch || {})[tracker] || [];
   const wn = $('#watchnote'); wn.textContent = '';
   finds.forEach(f => {
-    const tail = f.tracked
+    const tail = f.kind === 'name-match'
+      ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, and put the code in projects.csv if it’s the one.'
+      : f.tracked
       ? '. Added to its developer tracker automatically — figures appear from the next morning\u2019s run.'
       : (f.permit
         ? '. This developer has no developer tracker of its own, so nothing was added — the area sheets stay hand-picked.'
