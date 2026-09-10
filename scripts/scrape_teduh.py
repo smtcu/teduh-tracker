@@ -129,7 +129,9 @@ def main():
         # Ferringhi's landed lots parse into twenty pseudo-blocks, so its note
         # is one figure per code: phase 1 and phase 2, named as she reports them.
         pc = UT.per_code(codes[0])
-        if pc:
+        if UT.suppressed(codes[0]):
+            grouped, note = {}, ""
+        elif pc:
             grouped = {}
             for code, units in all_units:
                 nm_ = pc["names"].get(code, code)
@@ -144,6 +146,11 @@ def main():
                     b = UT.block_of(u)
                     if b:
                         by_block[b] = by_block.get(b, 0) + 1
+            # FLOOR-UNIT-TYPE numbering (EcoWorld: GF-01-Ab) parses every
+            # storey into a "block"; a floor-shaped set means a single tower,
+            # which gets no note.
+            if UT.is_floor_set(by_block):
+                by_block = {}
             grouped, label = UT.regroup(by_block, codes[0])
             note = UT.note_for(grouped, label=label)
         if note and sum(grouped.values()) != sold:

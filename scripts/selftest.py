@@ -56,7 +56,7 @@ section("cross-module API: names one script calls on another")
 # of them fails here in seconds instead of part-way through a live scrape.
 have = {}
 for fn in ["block_of", "regroup", "note_for", "classify", "tally", "block_groups", "config",
-           "per_code"]:
+           "per_code", "is_floor_set", "suppressed"]:
     have[fn] = callable(getattr(UT, fn, None))
     ck(have[fn], f"unit_types.{fn}() exists")
 
@@ -80,6 +80,36 @@ else:
     for u, want in [("A-08-03", "A"), ("A-08-03A", "A"), ("1A-07-01", "1A"),
                     ("D1-12-01", "D1"), ("A- 01-02", "A")]:
         ck(UT.block_of(u) == want, f"{u!r} -> {want!r}")
+
+# --------------------------------------------------------------------------
+section("is_floor_set(): floors dressed up as blocks get no note")
+# --------------------------------------------------------------------------
+# EcoWorld numbers single towers FLOOR-UNIT-TYPE (GF-01-Ab), which block_of()
+# reads as one "block" per storey. The guard blanks those; every genuine
+# tower set on the trackers must pass through untouched.
+if not have["is_floor_set"]:
+    ck(False, "is_floor_set() missing - skipping its checks")
+else:
+    ck(UT.is_floor_set({"GF": 10, "01": 3, "02": 3}), "GF among prefixes -> floors")
+    ck(UT.is_floor_set({"UG": 9} | {f"{i:02d}": 21 for i in range(1, 25)}),
+       "UG plus a storey run -> floors")
+    ck(UT.is_floor_set({f"{i:02d}": 8 for i in range(1, 33)}),
+       "32 numeric prefixes -> floors")
+    ck(not UT.is_floor_set({"M": 387, "U": 616}), "Astrum towers M/U are blocks, not mezzanine")
+    ck(not UT.is_floor_set({"1A": 327, "1B": 340, "2A": 215, "2B": 176}),
+       "Parkland 1A/1B/2A/2B are blocks")
+    ck(not UT.is_floor_set({"B1": 231, "B2": 285, "D1": 168, "D2": 288}),
+       "Causewayz B1/B2/D1/D2 are blocks")
+    ck(not UT.is_floor_set({"1": 63, "2": 124, "3": 22, "5": 32, "A": 112}),
+       "Templer's townhouse blocks 1/2/3/5 + tower A are blocks")
+    ck(not UT.is_floor_set({}), "empty set is not floors")
+
+if not have["suppressed"]:
+    ck(False, "suppressed() missing - skipping its checks")
+else:
+    ck(UT.suppressed("14331-7"), "Setia Eco Templer 1B note is hand-suppressed")
+    ck(not UT.suppressed("30635-1"), "Parkland is not suppressed")
+    ck(not UT.suppressed(""), "blank code is not suppressed")
 
 # --------------------------------------------------------------------------
 section("regroup(): roll-ups never change the arithmetic")

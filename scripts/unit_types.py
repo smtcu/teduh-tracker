@@ -64,6 +64,47 @@ def block_of(unit):
     return head or None
 
 
+FLOOR_TOKENS = {"GF", "UG", "LG", "PH"}
+
+
+def is_floor_set(blocks):
+    """True when the parsed "block" prefixes are really floors.
+
+    EcoWorld's serviced apartments number units FLOOR-UNIT-TYPE (GF-01-Ab,
+    UG-06-A1, 12-08-B): three segments, so block_of() reads the floor as a
+    block and a single tower gets one bogus "Block" per storey. Real projects
+    have a handful of towers; floor sets betray themselves two ways, and
+    either one decides:
+
+      - a ground/upper-ground/lower-ground/penthouse label (GF/UG/LG/PH), or
+      - more than 8 prefixes with at least 80% purely numeric (storeys run
+        01..33; no tracked estate has ever had nine numeric towers).
+
+    Astrum Ampang's genuine towers M/U/R/T, Parkland's 1A/1B, Causewayz's
+    B1/B2 and Setia Eco Templer's townhouse blocks 1/2/3/5 all stay below
+    both bars. A bare "M" is NOT treated as mezzanine for that reason.
+    """
+    names = [str(b).strip().upper() for b in blocks if b and b != OTHER]
+    if not names:
+        return False
+    if any(n in FLOOR_TOKENS for n in names):
+        return True
+    numeric = sum(1 for n in names if n.isdigit())
+    return len(names) > 8 and numeric >= 0.8 * len(names)
+
+
+def suppressed(code):
+    """True when block_groups.json says this code's note is hand-suppressed.
+
+    Setia Eco Templer Fasa 1B (14331-7) is the case that forced it: one
+    licence mixing terrace lots ("1275"), townhouses ("1-1-1") and a condo
+    tower ("A-1-1"). The parsed blocks are genuine but the mixed note reads
+    wrong and the landed lots cannot be filed anywhere, so she chose no note.
+    """
+    spec = block_groups().get(code or "")
+    return bool(spec and spec.get("suppress"))
+
+
 def block_counts(units):
     """units: iterable of (unit_number, is_sold) -> {block: sold count}.
 

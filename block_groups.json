@@ -9,8 +9,15 @@
     "shows up under its own name rather than being silently folded into another.",
     "  per_code : report one figure per phase CODE instead of parsing unit",
     "             numbers at all -- for projects whose numbers invent blocks",
-    "             (Ferringhi's landed lots). Maps code -> display name."
+    "             (Ferringhi's landed lots). Maps code -> display name.",
+    "  suppress : true means no block note at all for this code -- for one",
+    "             licence mixing landed lots, townhouses and a tower, where",
+    "             a block breakdown cannot read right (Setia Eco Templer 1B)."
   ],
+
+  "14331-7": {
+    "suppress": true
+  },
 
   "30635-1": {
     "label": "",
