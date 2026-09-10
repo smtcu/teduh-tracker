@@ -2557,6 +2557,8 @@ chinhin,,2026-09-10,30907-1,221,231,BUKIT BOTANIKA,,
 chinhin,,2026-09-10,30629-2,477,492,MENARA SENJA,,
 exsim,,2026-09-10,30784-1,268,269,BRANNIGANZ SUITES @ BUKIT BINTANG,,Latest sales - Block B: 268 units
 exsim,,2026-09-10,20011-3,593,593,DATARAN SENTRAL (D'CLOVER RESIDENCES),,Latest sales - Block A: 593 units
+exsim,,2026-09-10,31064-1,51,440,D'EVIA RESIDENCES @ KWASA DAMANSARA,,
+exsim,,2026-09-10,31064-2,1,492,D'NURI RESIDENCES @ KWASA DAMANSARA,,
 exsim,,2026-09-10,20011-2,767,767,DATARAN SENTRAL (D'TERRA RESIDENCES),,Latest sales - Block B: 767 units
 exsim,,2026-09-10,20011-4,664,671,DATARAN SENTRAL (D'TESSERA RESIDENCES),,Latest sales - Block C: 664 units
 exsim,,2026-09-10,13666-2,98,98,MENARA SUTERA INDAH (HANAZ SUITES @ KL CITY CENTRE),,
@@ -2660,7 +2662,6 @@ lbs,,2026-09-10,11482-12,312,608,PANGSAPURI SKYRIA,,Latest sales - Block A: 312 
 lbs,,2026-09-10,11482-11,0,79,AULICA,,
 lbs,,2026-09-10,20162-1,638,725,PRESTIGE RESIDENCE,,Latest sales - Block A: 638 units
 lbs,,2026-09-10,20162-2,638,725,PRESTIGE RESIDENCE (BLOCK B),,Latest sales - Block B: 638 units
-lbs,,2026-09-10,19533-5,812,817,KITA BESTARI,,Latest sales - Block KBS: 812 units
 lbs,,2026-09-10,11482-8,52,52,D' ISLAND RESIDENCE,"unit count on TEDUH is 52, tracker says 56",
 lbs,,2026-09-10,11482-7,314,314,D' ISLAND RESIDENCE,"unit count on TEDUH is 314, tracker says 352","Latest sales - Block T1: 177 units, Block T2: 137 units"
 lbs,,2026-09-10,11482-5,84,84,D' ISLAND RESIDENCES,"unit count on TEDUH is 84, tracker says 115",
@@ -2739,7 +2740,6 @@ sks,,2026-09-10,12381-1,853,853,M CONDOMINIUM @ LARKIN,"unit count on TEDUH is 8
 sks,,2026-09-10,13203-1,234,234,PANGSAPURI SERI KENCANA SETIA(SKS),"unit count on TEDUH is 234, tracker says 598",
 sks,,2026-09-10,12381-2,445,445,LARKIN MUTIARA,"unit count on TEDUH is 445, tracker says 646","Latest sales - Block A: 229 units, Block B: 216 units"
 sks,,2026-09-10,19757-1,375,458,TWIN TOWER,,Latest sales - Block L: 375 units
-sks,,2026-09-10,12327-2,224,224,TRI TOWER,"unit count on TEDUH is 224, tracker says 360","Latest sales - Block A: 113 units, Block B: 111 units"
 sks,,2026-09-10,12327-4,175,175,SKY HABITAT@MELDRUM HILL,"unit count on TEDUH is 175, tracker says 184","Latest sales - Block A: 1 units, Block L: 174 units"
 sks,,2026-09-10,12327-1,282,282,PANDAN RESIDENT,"unit count on TEDUH is 282, tracker says 283",Latest sales - Block R1: 282 units
 sks,,2026-09-10,12327-3,180,180,PANDAN RESIDENCE II,"unit count on TEDUH is 180, tracker says 182","Latest sales - Block A: 92 units, Block B: 87 units"
@@ -2939,7 +2939,7 @@ scientex,,2026-09-10,19794-15,253,254,TAMAN PULAI MUTIARA 2,,
 scientex,,2026-09-10,19794-16,256,256,TAMAN PULAI MUTIARA 2,,
 scientex,,2026-09-10,6575-38,212,215,TAMAN BUKIT TAMBUN PERDANA 2,,
 scientex,,2026-09-10,19794-14,306,309,CLOVER 3,,
-scientex,,2026-09-10,6575-18,1147,1187,SCIENTEX DURIAN TUNGGAL 2,,
+scientex,,2026-09-10,6575-18,730,757,SCIENTEX DURIAN TUNGGAL 2,,
 scientex,,2026-09-10,9294-51,122,150,RUMAH BANDAR TAMAN SCIENTEX KULAI 2,,
 scientex,,2026-09-10,9294-52,361,420,PANGSAPURI PULAI MUTIARA 2,,"Latest sales - Block A: 182 units, Block B: 179 units"
 scientex,,2026-09-10,9294-53,278,278,TAMAN CHEPOR IDAMAN,"unit count on TEDUH is 278, tracker says 288",
@@ -2978,6 +2978,7 @@ simedarby,,2026-09-10,13017-51,19,70,ELMINA HIJAUAN 8-2 (FASA B),,
 simedarby,,2026-09-10,14358-4,0,56,HARMONI PERMAI 2,,
 simedarby,,2026-09-10,20060-1,508,520,JENDELA RESIDENSI,,"Latest sales - Block A: 256 units, Block B: 252 units"
 simedarby,,2026-09-10,20171-2,22,59,TIARA RESIDENCES 1,,
+simedarby,,2026-09-10,20171-3,0,112,TIARA RESIDENCES 2,,
 simedarby,,2026-09-10,30500-1,134,150,RESIDENSI OPERA,,"Latest sales - Block 1A: 12 units, Block 1B: 8 units, Block 2A: 7 units, Block 2B: 5 units, Block 3A: 2 units, Block 3B: 3 units, Block A1: 15 units, Block A2: 19 units, Block B1: 12 units, Block B2: 15 units, Block C1: 19 units, Block C2: 17 units"
 simedarby,,2026-09-10,3780-6,956,961,RESIDENSI RIA,,"Latest sales - Block A: 200 units, Block B: 224 units, Block C: 258 units, Block D: 274 units"
 simedarby,,2026-09-10,3780-7,0,998,RESIDENSI MERIAH,,
@@ -3209,7 +3210,6 @@ ksl,,2026-09-10,7777-15,124,221,TAMAN BANANG JAYA,,
 ksl,,2026-09-10,7777-16,58,237,TAMAN MENGKIBOL,,
 ksl,,2026-09-10,7777-17,107,176,TAMAN BANANG JAYA,,
 ksl,,2026-09-10,7777-18,821,1148,RESIDENSI KOMERSIAL ALMA IDAMAN,,"Latest sales - Block A: 331 units, Block B: 490 units"
-ksl,,2026-09-10,31063-1,592,760,BANDAR WAWARI,"unit count on TEDUH is 760, tracker says 440",
 ksl,,2026-09-10,3390-73,394,476,PANGSAPURI KSL BUKIT GEMILANG,,"Latest sales - Block A: 199 units, Block B: 195 units"
 ksl,,2026-09-10,3390-64,754,1276,RESIDENSI KSL KANGKAR TEBRAU (KSL RESIDENCES 2),,"Latest sales - Block A: 115 units, Block B: 163 units, Block C: 55 units"
 johor,,2026-09-10,31366-1,0,621,RESIDENSI PARAGON MAPEL,,
@@ -3227,4 +3227,3 @@ simedarby,,2026-09-10,597-15,6,61,RESIDENSI VISTA TIMUR,,
 ksl,,2026-09-10,4205-10,7,60,TAMAN MUTIARA GADING,,
 ksl,,2026-09-10,4205-11,0,52,TAMAN MUTIARA GADING,,
 ksl,,2026-09-10,4205-12,5,60,TAMAN MUTIARA GADING,,
-simedarby,,2026-09-10,20171-3,0,112,TIARA RESIDENCES 2,,

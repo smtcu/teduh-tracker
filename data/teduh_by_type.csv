@@ -4865,6 +4865,8 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,chinhin,30629-2,0,Pangsapuri Servis,492,477
 2026-09-10,exsim,30784-1,0,Pangsapuri Servis,269,268
 2026-09-10,exsim,20011-3,0,Pangsapuri Servis,593,593
+2026-09-10,exsim,31064-1,0,Pangsapuri Servis,440,51
+2026-09-10,exsim,31064-2,0,Pangsapuri Servis,492,1
 2026-09-10,exsim,20011-2,0,Pangsapuri Servis,767,767
 2026-09-10,exsim,20011-4,0,Pangsapuri Servis,671,664
 2026-09-10,exsim,13666-2,0,Pangsapuri Servis,98,98
@@ -5079,10 +5081,6 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,lbs,20162-1,0,Pangsapuri Servis,725,638
 2026-09-10,lbs,20162-2,0,Pangsapuri Servis,580,493
 2026-09-10,lbs,20162-2,1,Pangsapuri Servis,145,145
-2026-09-10,lbs,19533-5,0,Rumah Teres,317,317
-2026-09-10,lbs,19533-5,1,Rumah Teres,96,96
-2026-09-10,lbs,19533-5,2,Rumah Teres,76,76
-2026-09-10,lbs,19533-5,3,Rumah Bandar,328,323
 2026-09-10,lbs,11482-8,0,Rumah Berkembar,20,20
 2026-09-10,lbs,11482-8,1,Rumah Berkembar,14,14
 2026-09-10,lbs,11482-8,2,Rumah Berkembar,18,18
@@ -5266,8 +5264,6 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,sks,13203-1,1,Pangsapuri Servis,3,3
 2026-09-10,sks,12381-2,0,Pangsapuri Servis,445,445
 2026-09-10,sks,19757-1,0,Pangsapuri Servis,458,375
-2026-09-10,sks,12327-2,0,Rumah Pangsa/Kondo,114,114
-2026-09-10,sks,12327-2,1,Rumah Pangsa/Kondo,110,110
 2026-09-10,sks,12327-4,0,Pangsapuri Servis,175,175
 2026-09-10,sks,12327-1,0,Rumah Pangsa/Kondo,282,282
 2026-09-10,sks,12327-3,0,Pangsapuri Servis,93,93
@@ -5713,9 +5709,7 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,scientex,19794-14,2,Rumah Teres,28,28
 2026-09-10,scientex,6575-18,0,Rumah Teres,234,231
 2026-09-10,scientex,6575-18,1,Rumah Teres,331,307
-2026-09-10,scientex,6575-18,2,Rumah Teres,159,149
-2026-09-10,scientex,6575-18,3,Rumah Teres,192,192
-2026-09-10,scientex,6575-18,4,Rumah Teres,271,268
+2026-09-10,scientex,6575-18,2,Rumah Teres,192,192
 2026-09-10,scientex,9294-51,0,Rumah Bandar,150,122
 2026-09-10,scientex,9294-52,0,Rumah Pangsa/Kondo,210,182
 2026-09-10,scientex,9294-52,1,Rumah Pangsa/Kondo,210,179
@@ -5793,6 +5787,8 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,simedarby,20060-1,1,Pangsapuri Servis,254,252
 2026-09-10,simedarby,20171-2,0,Rumah Teres,30,9
 2026-09-10,simedarby,20171-2,1,Rumah Teres,29,13
+2026-09-10,simedarby,20171-3,0,Rumah Teres,64,0
+2026-09-10,simedarby,20171-3,1,Rumah Teres,48,0
 2026-09-10,simedarby,30500-1,0,Rumah Pangsa/Kondo,62,54
 2026-09-10,simedarby,30500-1,1,Rumah Pangsa/Kondo,46,39
 2026-09-10,simedarby,30500-1,2,Rumah Pangsa/Kondo,42,41
@@ -6259,10 +6255,6 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,ksl,7777-17,1,Rumah Teres,104,63
 2026-09-10,ksl,7777-18,0,Pangsapuri Servis,482,331
 2026-09-10,ksl,7777-18,1,Pangsapuri Servis,666,490
-2026-09-10,ksl,31063-1,0,Rumah Kluster,228,61
-2026-09-10,ksl,31063-1,1,Rumah Berkembar,2,1
-2026-09-10,ksl,31063-1,2,Rumah Teres,265,265
-2026-09-10,ksl,31063-1,3,Rumah Teres,265,265
 2026-09-10,ksl,3390-73,0,Rumah Pangsa/Kondo,238,199
 2026-09-10,ksl,3390-73,1,Rumah Pangsa/Kondo,238,195
 2026-09-10,ksl,3390-64,0,Pangsapuri Servis,440,271
@@ -6285,5 +6277,3 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-09-10,ksl,4205-10,0,Rumah Teres,60,7
 2026-09-10,ksl,4205-11,0,Rumah Teres,52,0
 2026-09-10,ksl,4205-12,0,Rumah Teres,60,5
-2026-09-10,simedarby,20171-3,0,Rumah Teres,64,0
-2026-09-10,simedarby,20171-3,1,Rumah Teres,48,0
