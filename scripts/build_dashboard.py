@@ -254,9 +254,18 @@ def build_payload():
         tdates = {r["week"] for r in bytype}
         wlatest = max((d for s_ in wser.values() for d in s_), default="")
         types_date = wlatest if wlatest in tdates else max(tdates)
+        # A project listed in two trackers (Johor + its developer tracker) is
+        # scraped once per tracker row, so its type rows appear twice for the
+        # same date. Dedupe on (code, group_idx) or the Sold-and-unsold bars
+        # double-count exactly those projects.
+        seen_groups = set()
         for r in bytype:
             if r["week"] != types_date:
                 continue
+            gkey = (r["code"], r.get("group_idx", ""))
+            if gkey in seen_groups:
+                continue
+            seen_groups.add(gkey)
             types.setdefault(r["code"], []).append(
                 {"type": r["unit_type"], "units": to_int(r["units"]) or 0, "sold": to_int(r["sold"]) or 0}
             )
