@@ -50,14 +50,18 @@ def code_range(codes):
     become '10296-3 ~ 9' instead of a string wider than the table.
     """
     out, run = [], []
+    state = {"dev": None}   # developer code already shown once in this cell
 
     def flush():
         if not run:
             return
+        dev = run[0][0]
+        head = ("%d" % run[0][1]) if dev == state["dev"] else ("%s-%d" % (dev, run[0][1]))
         if len(run) == 1:
-            out.append("%s-%d" % run[0])
+            out.append(head)
         else:
-            out.append("%s-%d ~ %d" % (run[0][0], run[0][1], run[-1][1]))
+            out.append("%s ~ %d" % (head, run[-1][1]))
+        state["dev"] = dev
         run.clear()
 
     for c in codes:
@@ -67,6 +71,7 @@ def code_range(codes):
             flush()
             if c:
                 out.append(c)
+                state["dev"] = None
             continue
         item = (kod, int(ph))
         if run and (run[-1][0] != kod or item[1] != run[-1][1] + 1):
@@ -697,13 +702,13 @@ tr:last-child td{border-bottom:0}
   <button class="ghost" id="theme">Dark</button>
 </header>
 
-<div class="nav" id="ftrack"></div>
-
 <div class="searchwrap">
   <input id="q" type="search" placeholder="Search a project, TEDUH name, code or developer…"
          autocomplete="off" spellcheck="false" aria-label="Search projects">
   <div class="qr" id="qr" hidden></div>
 </div>
+
+<div class="nav" id="ftrack"></div>
 
 <div class="card">
   <h2>Weekly tracker</h2>
