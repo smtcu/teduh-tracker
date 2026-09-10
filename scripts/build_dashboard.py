@@ -305,11 +305,11 @@ def build_payload():
             seeded_weeks.add(seed_at)
             seeded = True
 
-        merged = {}
-        for g in types.get(code, []):
-            m = merged.setdefault(g["type"], {"type": g["type"], "units": 0, "sold": 0})
-            m["units"] += g["units"]
-            m["sold"] += g["sold"]
+        # One bar per project on the Sold-and-unsold card. The per-unit-type
+        # split produced several near-identical truncated labels for one
+        # project, which read as duplicates, so all groups are summed.
+        t_units = sum(g["units"] for g in types.get(code, []))
+        t_sold = sum(g["sold"] for g in types.get(code, []))
 
         wLast = wpts[-1][1] if wpts else None
         wPrev = wpts[-2][1] if len(wpts) > 1 else None
@@ -350,7 +350,7 @@ def build_payload():
             # zero, it is "no weekly record to compare against".
             "todayNew": None if seeded else
                         ((latest - wLast) if (latest is not None and wLast is not None) else None),
-            "types": sorted(merged.values(), key=lambda x: -x["units"]),
+            "types": [{"type": "", "units": t_units, "sold": t_sold}] if t_units else [],
         })
 
     # Unit-type tables, laid out like the Project Sales Insight pages of the report.
@@ -1298,18 +1298,18 @@ function bytype() {
   const btLive = DATA.typesDate && DATA.typesDate !== DATA.weekLatest;
   $('#btcard').classList.toggle('live-card', !!btLive);
   $('#btnote').textContent = (btLive ? 'Live figures for today, ' : 'Weekly record, ')
-    + fdate(DATA.typesDate) + ' — split by unit type. Projects listing several blocks of the same type are combined.'
+    + fdate(DATA.typesDate) + ' — one bar per project.'
     + (btLive ? ' These will match the weekly numbers again from the next Friday run.' : '');
   const rows = [];
   vis().forEach(p => (p.types || []).forEach(t => rows.push({ p, t })));
   if (!rows.length) { $('#bytype').textContent = ''; $('#bytype').appendChild(el('p', 'note', 'Unit-type data appears after the first scheduled run.')); return; }
   const maxU = Math.max(...rows.map(r => r.t.units));
   hbars($('#bytype'), rows.map(r => ({
-    label: r.p.types.length > 1 ? r.p.name + ' · ' + r.t.type : r.p.name,
+    label: r.p.name,
     frac: r.t.units / maxU, value: nf(r.t.sold) + ' / ' + nf(r.t.units),
     inner: r.t.sold / r.t.units,
     tip: [{ value: nf(r.t.sold) + ' sold', label: 'of ' + nf(r.t.units) + ' units', color: 'var(--blue)' },
-          { value: nf(r.t.units - r.t.sold) + ' unsold', label: r.t.type }],
+          { value: nf(r.t.units - r.t.sold) + ' unsold', label: 'still unsold' }],
   })), { rw: 96, stacked: true });
   /* repaint the sold portion inside each total-units bar */
   const svg = $('#bytype').querySelector('svg');
