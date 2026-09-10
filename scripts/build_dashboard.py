@@ -254,7 +254,7 @@ def build_payload():
 
     wser, dser = series_of(weekly), series_of(daily)
 
-    types, types_date = {}, ""
+    types, types_date, types_newer = {}, "", 0
     if bytype:
         tdates = {r["week"] for r in bytype}
         wlatest = max((d for s_ in wser.values() for d in s_), default="")
@@ -264,16 +264,32 @@ def build_payload():
         # same date. Dedupe on (code, group_idx) or the Sold-and-unsold bars
         # double-count exactly those projects.
         seen_groups = set()
-        for r in bytype:
-            if r["week"] != types_date:
-                continue
+
+        def add_type_row(r):
             gkey = (r["code"], r.get("group_idx", ""))
             if gkey in seen_groups:
-                continue
+                return
             seen_groups.add(gkey)
             types.setdefault(r["code"], []).append(
                 {"type": r["unit_type"], "units": to_int(r["units"]) or 0, "sold": to_int(r["sold"]) or 0}
             )
+
+        for r in bytype:
+            if r["week"] == types_date:
+                add_type_row(r)
+        # A tracker added after the last Friday has no rows at the weekly
+        # record yet, which left its whole Sold-and-unsold card blank until
+        # the next Friday run. Fall back to each missing code's newest
+        # reading instead.
+        latest_by_code = {}
+        for r in bytype:
+            if r["code"] not in types:
+                if r["week"] > latest_by_code.get(r["code"], ""):
+                    latest_by_code[r["code"]] = r["week"]
+        for r in bytype:
+            if r["week"] == latest_by_code.get(r["code"], None):
+                add_type_row(r)
+        types_newer = len(latest_by_code)
 
     # The newest Friday anywhere in the weekly record. Used to seed trackers
     # that have no weekly history of their own yet -- see below.
@@ -436,6 +452,7 @@ def build_payload():
         "weeks": weeks,
         "weekLatest": weeks[-1] if weeks else "",
         "typesDate": types_date,
+        "typesNewer": types_newer,
         "todayDate": days[-1] if days else "",
         "projects": out,
         "insight": insight,
@@ -657,6 +674,37 @@ tr:last-child td{border-bottom:0}
 .foot{color:var(--muted);font-size:12.5px;margin-top:22px;line-height:1.7;font-weight:500}
 .hide{display:none!important}
 
+/* Sold-out rows stay in the table, greyed and tagged; the charts drop them. */
+tr.soldout td{color:var(--muted)}
+.sotag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:20px;background:var(--sunk);
+  border:1px solid var(--rule);color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.05em;
+  text-transform:uppercase;vertical-align:1px;white-space:nowrap}
+
+/* Sticky section shortcuts under the tracker buttons. */
+.secnav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:4px;margin:10px -4px 0;
+  padding:7px 4px;background:var(--plane);overflow-x:auto;white-space:nowrap;
+  border-bottom:1.5px solid var(--rule);-webkit-overflow-scrolling:touch}
+.secnav a{flex:0 0 auto;padding:6px 11px;border-radius:8px;font-size:12.5px;font-weight:700;
+  color:var(--ink-2);text-decoration:none}
+.secnav a:hover{background:var(--sunk)}
+.secnav .sotoggle{flex:0 0 auto;margin-left:auto}
+
+/* A picked search result is outlined in every section until cleared. */
+.fbar{stroke:var(--orange);stroke-width:2.5}
+.flab{fill:var(--orange);font-weight:800}
+.smc.focused{border-color:var(--orange);box-shadow:0 0 0 1.5px var(--orange) inset}
+tr.focused td.stick{border-left:3px solid var(--orange)}
+.fchip{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:60;display:flex;align-items:center;gap:9px;
+  background:var(--surface);border:1.5px solid var(--orange);border-radius:22px;padding:8px 10px 8px 14px;
+  font-size:13px;font-weight:700;color:var(--ink);box-shadow:0 6px 22px rgba(0,0,0,.16);max-width:88vw}
+.fchip .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fchip .dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex:0 0 auto}
+.fchip button{border:0;background:var(--sunk);border-radius:50%;width:22px;height:22px;font:inherit;
+  cursor:pointer;color:var(--ink-2);line-height:1;flex:0 0 auto}
+
+/* Big trackers swap the chip wall for a searchable dropdown. */
+.sel.force{display:block;max-width:520px;margin:2px 0 16px}
+
 @media(max-width:640px){
   .wrap{padding:14px 11px 52px}
   h1{font-size:19px} h2{font-size:16px}
@@ -710,7 +758,9 @@ tr:last-child td{border-bottom:0}
 
 <div class="nav" id="ftrack"></div>
 
-<div class="card">
+<div class="secnav" id="secnav" hidden></div>
+
+<div class="card" id="sec-table">
   <h2>Weekly tracker</h2>
   <p class="note" id="tblnote"></p>
   <div class="watchnote" id="watchnote" hidden></div>
@@ -718,7 +768,7 @@ tr:last-child td{border-bottom:0}
   <div class="scroll tall" id="table"></div>
 </div>
 
-<div class="card">
+<div class="card" id="sec-weekly">
   <h2>Weekly sales by project</h2>
   <p class="note">Weekly figures only, exactly as they appear in your Excel sheets — today's live number is not mixed in. Bars are units sold in that week; the line is the project's four-week average pace, so a bar above the line means it beat its recent run rate.</p>
   <select class="sel" id="pickSel" aria-label="Choose a project"></select>
@@ -750,7 +800,7 @@ tr:last-child td{border-bottom:0}
 <p class="note" id="kpinote"></p>
 <div class="kpis" id="kpis"></div>
 
-<div class="card live-card">
+<div class="card live-card" id="sec-movers">
   <h2>Movement since the last weekly record</h2>
   <p class="note" id="mvnote"></p>
   <div id="movers"></div>
@@ -758,19 +808,19 @@ tr:last-child td{border-bottom:0}
   <div id="movers-t" style="display:none;margin-top:12px"></div>
 </div>
 
-<div class="card">
+<div class="card" id="sec-sellthru">
   <h2>Sell-through</h2>
   <p class="note" id="stnote"></p>
   <div id="sellthru"></div>
 </div>
 
-<div class="card">
+<div class="card" id="sec-trends">
   <h2>Cumulative units sold over time</h2>
   <p class="note">One panel per project. A steep line means fast selling, a flat line means nothing is moving. Each panel has its own scale, so read the numbers, not the height. A sharp dip to zero is a gap in the imported history, not a real reversal.</p>
   <div class="sm" id="trends"></div>
 </div>
 
-<div class="card">
+<div class="card" id="sec-dl">
   <h2>Download</h2>
   <p class="note">The PDFs are table-only summaries meant for forwarding. The weekly PDFs and every Excel tracker — the four areas and the thirteen developers — are rebuilt each Friday; the daily PDF and the daily workbook are rebuilt every morning. This list is generated from the files that are actually on disk, so nothing here is a dead link.</p>
   <div class="dl" id="dl"></div>
@@ -780,6 +830,7 @@ tr:last-child td{border-bottom:0}
 </div>
 
 <div class="tip" id="tip" role="status" aria-live="polite"></div>
+<div class="fchip" id="fchip" hidden></div>
 
 <script id="data" type="application/json">__DATA__</script>
 <script>
@@ -827,10 +878,20 @@ const TRACKERS = DATA.trackers && DATA.trackers.length ? DATA.trackers : (() => 
   return t;
 })();
 let tracker = TRACKERS.length ? TRACKERS[0].key : '';
-let picked = 0;
 /* Pinned projects lead their tracker and stay visible while the table scrolls. */
 const vis = () => ALL.filter(p => p.tracker === tracker)
                      .sort((a, b) => (b.pin === true) - (a.pin === true));
+
+/* Sold-out projects stay in the table (greyed, tagged) but leave every chart
+   until the secnav toggle brings them back. A searched project is always let
+   through so search never lands on nothing. */
+const pkey = p => p.code || ('NOCODE-' + p.name);
+const soldOut = p => !!p.units && p.todaySold !== null && p.todaySold !== undefined && p.todaySold >= p.units;
+let showSold = false;
+let FOCUS = null;              /* pkey of a picked search result, shown in every section */
+let pickedKey = null;          /* weekly-chart selection, by key so filters can't shift it */
+const act = () => vis().filter(p => showSold || !soldOut(p) || pkey(p) === FOCUS);
+const pickList = () => vis().filter(p => showSold || !soldOut(p) || pkey(p) === pickedKey);
 
 function trackerBar() {
   const host = $('#ftrack'); host.textContent = '';
@@ -845,7 +906,7 @@ function trackerBar() {
       const nw = ((DATA.watch || {})[t.key] || []).length;
       if (nw) b.appendChild(el('span', 'plus', '+' + nw));
       b.setAttribute('aria-pressed', String(t.key === tracker));
-      b.onclick = () => { tracker = t.key; picked = 0; render(); };
+      b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; render(); };
       btns.appendChild(b);
     });
     row.appendChild(btns); host.appendChild(row);
@@ -929,8 +990,12 @@ function table() {
     }
     const tr = el('tr', p.pin ? 'pinned' : '');
     tr.dataset.proj = p.code || ('NOCODE-' + p.name);
+    if (soldOut(p)) tr.classList.add('soldout');
+    if (FOCUS && pkey(p) === FOCUS) tr.classList.add('focused');
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
-    tr.appendChild(el('td', 'l stick2 nm', p.name));
+    const nm = el('td', 'l stick2 nm', p.name);
+    if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
+    tr.appendChild(nm);
     tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
     tr.appendChild(el('td', 'stick4', nf(p.units)));
     tr.appendChild(el('td', 'l opt', p.codeDisp || p.code || '–'));
@@ -1085,23 +1150,30 @@ function insight() {
 }
 
 function picker() {
-  const list = vis();
-  if (picked >= list.length) picked = 0;
+  const list = pickList();
+  if (!list.some(p => pkey(p) === pickedKey)) pickedKey = list.length ? pkey(list[0]) : null;
+  /* A wall of 90 chips is unreadable and full of identical truncated names,
+     so big trackers get the dropdown (with codes to tell twins apart). */
+  const many = list.length > 20;
   const host = $('#picker'); host.textContent = '';
-  list.forEach((p, i) => {
+  host.classList.toggle('hide', many);
+  if (!many) list.forEach(p => {
     const b = el('button', 'chip', trunc(p.name, 26));
     b.title = p.name + ' — ' + p.developer;
-    b.setAttribute('aria-pressed', String(i === picked));
-    b.onclick = () => { picked = i; picker(); weekly(); };
+    b.setAttribute('aria-pressed', String(pkey(p) === pickedKey));
+    b.onclick = () => { pickedKey = pkey(p); picker(); weekly(); };
     host.appendChild(b);
   });
   const sel = $('#pickSel'); sel.textContent = '';
-  list.forEach((p, i) => {
-    const o = el('option', '', p.name); o.value = String(i);
-    if (i === picked) o.selected = true;
+  sel.classList.toggle('force', many);
+  list.forEach(p => {
+    const code = p.codeDisp || p.code;
+    const o = el('option', '', p.name + (many && code ? '  ·  ' + code : ''));
+    o.value = pkey(p);
+    if (pkey(p) === pickedKey) o.selected = true;
     sel.appendChild(o);
   });
-  sel.onchange = () => { picked = Number(sel.value); picker(); weekly(); };
+  sel.onchange = () => { pickedKey = sel.value; picker(); weekly(); };
 }
 
 /* ---------- weekly bars + average-pace line ---------- */
@@ -1132,8 +1204,8 @@ function pkpis(p, pts) {
 }
 
 function weekly() {
-  const list = vis();
-  const p = list[picked] || list[0];
+  const list = pickList();
+  const p = list.find(x => pkey(x) === pickedKey) || list[0];
   if (!p) return;
   const cap = $('#pickedName');
   cap.textContent = '';
@@ -1235,11 +1307,12 @@ function hbars(host, rows, opts) {
   const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${H}`, role: 'img' });
   rows.forEach((r, i) => {
     const y = i * (BH + GAP) + 3;
-    const lab = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' });
+    const foc = FOCUS && r.key === FOCUS;
+    const lab = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' + (foc ? ' flab' : '') });
     lab.textContent = trunc(r.label, narrow ? 16 : 34); svg.appendChild(lab);
-    if (opts.track) svg.appendChild(sv('rect', { x: LW, y, width: PW, height: BH, rx: 4, fill: 'var(--track)' }));
+    if (opts.track) svg.appendChild(sv('rect', { x: LW, y, width: PW, height: BH, rx: 4, fill: 'var(--track)', class: foc ? 'fbar' : '' }));
     const w = Math.max(2, r.frac * PW);
-    svg.appendChild(sv('rect', { x: LW, y, width: opts.track ? Math.max(2, w - 2) : w, height: BH, rx: 4, fill: 'var(--blue)', class: 'mark' }));
+    svg.appendChild(sv('rect', { x: LW, y, width: opts.track ? Math.max(2, w - 2) : w, height: BH, rx: 4, fill: 'var(--blue)', class: 'mark' + (foc && !opts.track ? ' fbar' : '') }));
     const v = sv('text', { x: LW + (opts.track ? PW : w) + 8, y: y + BH / 2 + 4, class: 'vlab' });
     v.textContent = r.value; svg.appendChild(v);
     const hit = sv('rect', { x: 0, y: y - GAP / 2, width: W, height: BH + GAP, class: 'hit' });
@@ -1257,10 +1330,10 @@ function movers() {
     ? 'Today (' + fdate(DATA.todayDate) + ') against the last weekly record (' + fdate(DATA.weekLatest) +
       '). This is the only section using live daily numbers — everything else on the page is weekly.'
     : 'Today is the latest weekly record, so there is nothing newer to compare against.';
-  const rows = isLive ? vis().filter(p => p.todayNew).sort((a, b) => b.todayNew - a.todayNew) : [];
+  const rows = isLive ? act().filter(p => p.todayNew).sort((a, b) => b.todayNew - a.todayNew) : [];
   const max = rows.length ? rows[0].todayNew : 1;
   hbars($('#movers'), rows.map(p => ({
-    label: p.name, frac: p.todayNew / max, value: sgn(p.todayNew),
+    key: pkey(p), label: p.name, frac: p.todayNew / max, value: sgn(p.todayNew),
     tip: [{ value: sgn(p.todayNew) + ' units', label: 'since ' + fdate(DATA.weekLatest), color: 'var(--blue)' },
           { value: nf(p.todaySold) + ' / ' + nf(p.units), label: 'sold today (' + pf(p.todaySold / p.units) + ')' }],
   })), { empty: isLive ? 'Nothing has moved since the last weekly record.' : 'No live data to show today.' });
@@ -1270,7 +1343,7 @@ function movers() {
   ['Project', 'Code', 'New', 'Total sold', 'Units', '%'].forEach((c, i) => hr.appendChild(el('th', i < 2 ? 'l' : '', c)));
   tb.appendChild(el('thead')).appendChild(hr);
   const bd = el('tbody');
-  vis().slice().sort((a, b) => (b.newSales || 0) - (a.newSales || 0)).forEach(p => {
+  act().slice().sort((a, b) => (b.newSales || 0) - (a.newSales || 0)).forEach(p => {
     const tr = el('tr');
     [[p.name, 'l nm'], [p.codeDisp || p.code || '–', 'l'], [p.newSales === null ? '–' : sgn(p.newSales), ''],
      [nf(p.sold), ''], [nf(p.units), ''], [pf(p.pct), '']].forEach(([v, c]) => tr.appendChild(el('td', c, v)));
@@ -1281,11 +1354,13 @@ function movers() {
 }
 
 function sellthru() {
-  const rows = vis().filter(p => p.wPct !== null && p.wPct !== undefined).sort((a, b) => b.wPct - a.wPct);
+  const rows = act().filter(p => p.wPct !== null && p.wPct !== undefined).sort((a, b) => b.wPct - a.wPct);
+  const nHid = vis().length - act().length;
   $('#stnote').textContent = 'Share of total units sold as at ' + fdate(DATA.weekLatest) +
-    ' — the weekly record. The pale bar is what is still unsold.';
+    ' — the weekly record. The pale bar is what is still unsold.' +
+    (nHid ? ' ' + nHid + ' sold-out project' + (nHid > 1 ? 's are' : ' is') + ' hidden — use the toggle in the section bar above.' : '');
   hbars($('#sellthru'), rows.map(p => ({
-    label: p.name, frac: p.wPct, value: pf(p.wPct),
+    key: pkey(p), label: p.name, frac: p.wPct, value: pf(p.wPct),
     tip: [{ value: pf(p.wPct), label: 'sold', color: 'var(--blue)' },
           { value: nf(p.wSold) + ' of ' + nf(p.units), label: 'units' },
           { value: nf(p.units - p.wSold), label: 'still unsold' }],
@@ -1299,13 +1374,14 @@ function bytype() {
   $('#btcard').classList.toggle('live-card', !!btLive);
   $('#btnote').textContent = (btLive ? 'Live figures for today, ' : 'Weekly record, ')
     + fdate(DATA.typesDate) + ' — one bar per project.'
-    + (btLive ? ' These will match the weekly numbers again from the next Friday run.' : '');
+    + (btLive ? ' These will match the weekly numbers again from the next Friday run.' : '')
+    + (DATA.typesNewer ? ' Projects added since then show their newest reading.' : '');
   const rows = [];
-  vis().forEach(p => (p.types || []).forEach(t => rows.push({ p, t })));
+  act().forEach(p => (p.types || []).forEach(t => rows.push({ p, t })));
   if (!rows.length) { $('#bytype').textContent = ''; $('#bytype').appendChild(el('p', 'note', 'Unit-type data appears after the first scheduled run.')); return; }
   const maxU = Math.max(...rows.map(r => r.t.units));
   hbars($('#bytype'), rows.map(r => ({
-    label: r.p.name,
+    key: pkey(r.p), label: r.p.name,
     frac: r.t.units / maxU, value: nf(r.t.sold) + ' / ' + nf(r.t.units),
     inner: r.t.sold / r.t.units,
     tip: [{ value: nf(r.t.sold) + ' sold', label: 'of ' + nf(r.t.units) + ' units', color: 'var(--blue)' },
@@ -1330,9 +1406,9 @@ function bytype() {
 
 function trends() {
   const host = $('#trends'); host.textContent = '';
-  vis().forEach(p => {
+  act().forEach(p => {
     const pts = p.weekly;
-    const card = el('div', 'smc');
+    const card = el('div', 'smc' + (FOCUS && pkey(p) === FOCUS ? ' focused' : ''));
     const t = el('div', 't', p.name); t.title = p.name; card.appendChild(t);
     const last = pts.length ? pts[pts.length - 1].v : null;
     const first = pts.length ? pts[0].v : null;
@@ -1393,7 +1469,44 @@ document.querySelectorAll('[data-tbl]').forEach(b => {
 $('#asat').textContent = fdate(DATA.latestDate);
 $('#foot').textContent = 'Generated ' + DATA.generated +
   ' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my)';
-function render() { trackerBar(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); }
+/* Sticky shortcuts to each section, with the sold-out toggle on the right.
+   The pages run 8,000px tall on the big developer trackers; nobody scrolls that. */
+function secnav() {
+  const host = $('#secnav'); if (!host) return;
+  host.textContent = '';
+  [['#sec-table', 'Table'], ['#sec-weekly', 'Weekly sales'], ['#btcard', 'Sold/unsold'],
+   ['#sec-movers', 'Movement'], ['#sec-sellthru', 'Sell-through'], ['#sec-trends', 'Trends'],
+   ['#sec-dl', 'Downloads']].forEach(([id, label]) => {
+    const a = el('a', '', label);
+    a.href = id;
+    a.onclick = e => { e.preventDefault(); const t = $(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    host.appendChild(a);
+  });
+  const nSo = vis().filter(soldOut).length;
+  if (nSo) {
+    const b = el('button', 'ghost sotoggle', (showSold ? 'Hide' : 'Show') + ' sold-out (' + nSo + ')');
+    b.onclick = () => { showSold = !showSold; render(); };
+    host.appendChild(b);
+  }
+  host.hidden = false;
+}
+
+/* Floating chip naming the focused project, with a clear button. */
+function fchip() {
+  const host = $('#fchip'); if (!host) return;
+  host.textContent = '';
+  const p = FOCUS ? ALL.find(x => pkey(x) === FOCUS) : null;
+  host.hidden = !p;
+  if (!p) return;
+  host.appendChild(el('span', 'dot'));
+  host.appendChild(el('span', 'fn', p.name));
+  const x = el('button', '', '×');
+  x.title = 'Clear the highlighted project';
+  x.onclick = () => { FOCUS = null; render(); };
+  host.appendChild(x);
+}
+
+function render() { trackerBar(); secnav(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip(); }
 
 /* ---------- search: marketing names, registered TEDUH names, codes ----------
    The two name worlds rarely agree (Trinity Sensoria is BAYU CERIA on TEDUH,
@@ -1407,7 +1520,11 @@ function render() { trackerBar(); table(); insight(); picker(); weekly(); kpis()
                     + (p.developer || '') + ' ' + (p.trackerLabel || '')).toLowerCase();
   const jump = p => {
     tracker = p.tracker;
-    picked = Math.max(0, vis().indexOf(p));
+    /* Focus follows the pick through every section: the table row glows, the
+       weekly chart switches to it, and its bars and trend panel are outlined
+       until the floating chip clears it. */
+    FOCUS = pkey(p);
+    pickedKey = pkey(p);
     q.value = ''; box.hidden = true; render();
     /* Land on the row itself, not just the tracker: centre it and let it glow
        for a couple of seconds so there is no hunting. Instant scroll, not
