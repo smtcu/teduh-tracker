@@ -92,6 +92,10 @@ def main():
 
     hist_rows, type_rows, failures = [], [], []
     unit_rows, byunit_rows = [], []
+    # A project listed in two trackers (Johor + its developer tracker) used to
+    # be fetched once per row. Cache successful fetches so each code hits
+    # TEDUH once per run -- both listings then show identical figures too.
+    fetched = {}
 
     for p in projects:
         codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
@@ -105,14 +109,18 @@ def main():
         all_units = []
         failed = False
         for code in codes:
-            time.sleep(PAUSE)          # gentle by default, slower if TEDUH pushes back
-            try:
-                nm, t, s_, g, units = tally(fetch(code))
-            except Exception as e:
-                failures.append(f"{code} ({p['project']}): {e}")
-                print(f"FAIL  {code}: {e}", file=sys.stderr)
-                failed = True
-                continue
+            if code in fetched:
+                nm, t, s_, g, units = fetched[code]
+            else:
+                time.sleep(PAUSE)      # gentle by default, slower if TEDUH pushes back
+                try:
+                    nm, t, s_, g, units = tally(fetch(code))
+                except Exception as e:
+                    failures.append(f"{code} ({p['project']}): {e}")
+                    print(f"FAIL  {code}: {e}", file=sys.stderr)
+                    failed = True
+                    continue
+                fetched[code] = (nm, t, s_, g, units)
             name = name or nm
             total += t
             sold += s_
@@ -146,6 +154,9 @@ def main():
                     b = UT.block_of(u)
                     if b:
                         by_block[b] = by_block.get(b, 0) + 1
+            # PHASE/BLOCK prefixes (The Glades: HT5T4(I)/A) come off first so
+            # a prefixed floor set is still recognisable as floors below.
+            by_block = UT.strip_block_prefix(by_block)
             # FLOOR-UNIT-TYPE numbering (EcoWorld: GF-01-Ab) parses every
             # storey into a "block"; a floor-shaped set means a single tower,
             # which gets no note.

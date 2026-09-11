@@ -224,6 +224,17 @@ def main():
     # tracked or known becomes a name-match notice (never auto-added -- the
     # match is a guess for her to confirm).
     register_codes = {r.get("kod_projek") for r in read(INDEX)}
+    # A hit whose SPV visibly carries another tracked developer's name is that
+    # developer's launch, not a match for this no-code project. D'NURI @ KWASA
+    # DAMANSARA (EXSIM MX4 SDN. BHD.) was offered to BRDB's "Damansara
+    # Heights" purely on the word Damansara. The SPV sweep and phase walk are
+    # how those developers' launches surface.
+    dev_labels = {}
+    for pr in projects:
+        t = (pr.get("tracker") or "").strip()
+        lbl = (pr.get("tracker_label") or "").strip().upper()
+        if t and len(lbl) >= 3:
+            dev_labels[t] = lbl
     for p in projects:
         if (p.get("code") or "").strip():
             continue
@@ -244,8 +255,12 @@ def main():
             if not reached or detail is None:
                 continue
             row = detail_row(hid, detail)
+            pemaju = (row.get("pemaju") or "").upper()
+            own = (p.get("tracker") or "").strip()
+            if any(lbl in pemaju for t, lbl in dev_labels.items() if t != own):
+                continue
             row.update(first_seen=today, kind="name-match",
-                       trackers=(p.get("tracker") or "").strip(),
+                       trackers=own,
                        label=(p.get("project") or "").strip())
             finds.append(row)
 

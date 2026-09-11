@@ -426,6 +426,13 @@ def build_payload():
         seen = (r.get("first_seen") or "").strip()
         if not seen or seen < cutoff:
             continue
+        # A name-match is a guess for her to confirm. Once its code is in
+        # projects.csv -- she accepted it, or it turned out to belong to
+        # another tracker (D'Nuri was EXSIM, not BRDB) -- the question is
+        # answered and the banner comes down without waiting out BADGE_DAYS.
+        if (r.get("kind") or "").strip() == "name-match" \
+                and (r.get("kod_projek") or "").strip() in tracked_codes:
+            continue
         for tkey in (r.get("trackers") or "").split(";"):
             tkey = tkey.strip()
             if tkey:

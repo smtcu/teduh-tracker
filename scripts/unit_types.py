@@ -93,6 +93,38 @@ def is_floor_set(blocks):
     return len(names) > 8 and numeric >= 0.8 * len(names)
 
 
+def strip_block_prefix(sold_by_block):
+    """Drop a shared phase prefix from parsed block names.
+
+    TEDUH sometimes numbers units PHASE/BLOCK-FLOOR-UNIT, so every "block"
+    repeats the phase code: The Glades is HT5T4(I)/A..HT5T4(I)/E, Pavilion
+    Damansara is RA/N and RA/S. When every named block shares a prefix that
+    reaches a separator ('/' or space), the note reads better without it --
+    Block A..E, not Block HT5T4(I)/A..HT5T4(I)/E.
+
+    Only the part up to the LAST separator inside the common prefix is
+    dropped. A lone block, or names with no separator in the shared part
+    (A1/A2, Astrum's M/U), are left alone. Called on RAW parsed names only,
+    before regroup() -- grouped display names like 'Phase 1'/'Phase 2' share
+    'Phase ' and must never come through here.
+    """
+    names = [b for b in sold_by_block if b != OTHER]
+    if len(names) < 2:
+        return sold_by_block
+    pref = names[0]
+    for n in names[1:]:
+        while pref and not n.startswith(pref):
+            pref = pref[:-1]
+    cut = max(pref.rfind("/"), pref.rfind(" ")) + 1
+    if cut <= 0 or any(len(b) <= cut for b in names):
+        return sold_by_block
+    out = {}
+    for b, v in sold_by_block.items():
+        nb = b[cut:] if b != OTHER else b
+        out[nb] = out.get(nb, 0) + v
+    return out
+
+
 def suppressed(code):
     """True when block_groups.json says this code's note is hand-suppressed.
 

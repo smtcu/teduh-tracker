@@ -56,7 +56,7 @@ section("cross-module API: names one script calls on another")
 # of them fails here in seconds instead of part-way through a live scrape.
 have = {}
 for fn in ["block_of", "regroup", "note_for", "classify", "tally", "block_groups", "config",
-           "per_code", "is_floor_set", "suppressed"]:
+           "per_code", "is_floor_set", "suppressed", "strip_block_prefix"]:
     have[fn] = callable(getattr(UT, fn, None))
     ck(have[fn], f"unit_types.{fn}() exists")
 
@@ -103,6 +103,27 @@ else:
     ck(not UT.is_floor_set({"1": 63, "2": 124, "3": 22, "5": 32, "A": 112}),
        "Templer's townhouse blocks 1/2/3/5 + tower A are blocks")
     ck(not UT.is_floor_set({}), "empty set is not floors")
+
+if not have["strip_block_prefix"]:
+    ck(False, "strip_block_prefix() missing - skipping its checks")
+else:
+    g = UT.strip_block_prefix({"HT5T4(I)/A": 16, "HT5T4(I)/B": 30, "HT5T4(I)/C": 32})
+    ck(set(g) == {"A", "B", "C"} and g["A"] == 16, f"The Glades phase prefix dropped -> {sorted(g)}")
+    g = UT.strip_block_prefix({"RA/N": 63, "RA/S": 41})
+    ck(set(g) == {"N", "S"}, f"Pavilion RA/ prefix dropped -> {sorted(g)}")
+    g = UT.strip_block_prefix({"PT 26/A": 5, "PT 26/B": 6})
+    ck(set(g) == {"A", "B"}, "space inside the prefix still strips at the last '/'")
+    ck(UT.strip_block_prefix({"A1": 3, "A2": 4}) == {"A1": 3, "A2": 4},
+       "A1/A2 share 'A' but no separator - untouched")
+    ck(UT.strip_block_prefix({"M": 387, "U": 616}) == {"M": 387, "U": 616},
+       "Astrum towers untouched")
+    ck(UT.strip_block_prefix({"1A": 1, "1B": 2, "2A": 3, "2B": 4})
+       == {"1A": 1, "1B": 2, "2A": 3, "2B": 4}, "Parkland blocks untouched")
+    ck(UT.strip_block_prefix({"HT5T4(I)/A": 1}) == {"HT5T4(I)/A": 1},
+       "a lone block keeps its full name")
+    g = UT.strip_block_prefix({"X/A": 1, "X/B": 2, UT.OTHER: 3})
+    ck(g.get(UT.OTHER) == 3 and set(g) == {"A", "B", UT.OTHER},
+       "Other passes through a strip unrenamed")
 
 if not have["suppressed"]:
     ck(False, "suppressed() missing - skipping its checks")
