@@ -366,7 +366,11 @@ def build_payload():
             # zero, it is "no weekly record to compare against".
             "todayNew": None if seeded else
                         ((latest - wLast) if (latest is not None and wLast is not None) else None),
-            "types": [{"type": "", "units": t_units, "sold": t_sold}] if t_units else [],
+            # Sold from TEDUH's listing, total from HER tracker figure -- the
+            # same rule as the table and Sell-through. TEDUH's own unit count
+            # under-reports completed projects (unsold units vanish from the
+            # listing), which made TriTower read 224/224 instead of 224/360.
+            "types": [{"type": "", "units": units or t_units, "sold": t_sold}] if t_units else [],
         })
 
     # Unit-type tables, laid out like the Project Sales Insight pages of the report.
@@ -1405,7 +1409,8 @@ function bytype() {
     const bar = bars[i]; if (!bar) return;
     const full = parseFloat(bar.getAttribute('width'));
     bar.setAttribute('fill', 'var(--track)');
-    const sold = r.t.units ? (r.t.sold / r.t.units) * full : 0;
+    /* Clamped: a tracker total below TEDUH's sold count must not overflow the bar. */
+    const sold = r.t.units ? Math.min(1, r.t.sold / r.t.units) * full : 0;
     if (sold > 2) {
       const s = sv('rect', { x: bar.getAttribute('x'), y: bar.getAttribute('y'), width: Math.max(2, sold - 2),
                              height: bar.getAttribute('height'), rx: 4, fill: 'var(--blue)', class: 'mark' });
