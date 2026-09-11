@@ -133,6 +133,28 @@ else:
     ck(not UT.suppressed(""), "blank code is not suppressed")
 
 # --------------------------------------------------------------------------
+section("new-SPV sweep: family patterns resolve to the right tracker")
+# --------------------------------------------------------------------------
+# The sweep flags a fresh SPV whose name carries a tracked developer's family
+# name. Longest pattern wins, so SETIA AWAN never lands on S P Setia.
+try:
+    import watch_developers as WD
+    fams = WD.family_patterns()
+    ck(len(fams) >= 20, f"developer_families.csv loads ({len(fams)} patterns)")
+    for pemaju, want in [("EXSIM MX4 SDN. BHD.", "exsim"),
+                         ("SETIA AWAN HOLDINGS SDN. BHD.", "setiaawan"),
+                         ("S P SETIA BERHAD", "spsetia"),
+                         ("SCIENTEX QUATARI SDN. BHD.", "scientex"),
+                         ("KHOO SOON LEE REALTY SDN. BHD.", "ksl"),
+                         ("JXL KARANGAN DEVELOPMENT SDN. BHD.", "")]:
+        got = WD.family_match(pemaju, fams)
+        ck(got == want, f"{pemaju[:34]!r} -> {got or 'no match'!r}")
+    ck(not WD.family_match("ECOLOGY SDN. BHD.", fams),
+       "ECO matches whole words only, not ECOLOGY")
+except Exception as e:                                     # noqa: BLE001
+    ck(False, f"family-pattern checks failed to run ({e})")
+
+# --------------------------------------------------------------------------
 section("regroup(): roll-ups never change the arithmetic")
 # --------------------------------------------------------------------------
 # Guarded rather than assumed: when regroup() went missing the point was to get a

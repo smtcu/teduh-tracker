@@ -31,7 +31,7 @@ manners -- pacing, Retry-After, backoff -- are imported from fill_apdl.py so
 the two stay identical. Errors never fail the run: a missed probe is caught on
 the next morning's run.
 """
-import csv, json, os, sys, urllib.parse, urllib.request
+import csv, json, os, re, sys, time, urllib.parse, urllib.request
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +41,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WATCH = os.path.join(ROOT, "data", "teduh_watch.csv")
 EXTRA = os.path.join(ROOT, "data", "teduh_watch_extra.csv")
 INDEX = os.path.join(ROOT, "data", "projects_index.csv")
+FAMILIES = os.path.join(ROOT, "data", "developer_families.csv")
+# TEDUH's register listing is sorted by developer code descending, so the
+# first pages are the newest SPVs -- exactly what the phase walk cannot see.
+# 5 pages = the 100 newest developer codes, several weeks of registrations.
+SWEEP_PAGES = 5
 FIELDS = ["first_seen", "kind", "kod_projek", "kod_pemaju", "nama", "pemaju",
           "units", "permit_mula", "trackers", "label"]
 MAX_NEW_PER_DEV = 3        # cap the walk upward, in case a developer lands several at once
@@ -70,6 +75,56 @@ def name_search(token):
     return (d.get("projects") or {}).get("data") or []
 # The four area sheets are curated by hand and the watch never writes to them.
 AREA_TRACKERS = {"seputeh", "status13", "johor", "ukay"}
+
+
+def newest_registrations(pages=SWEEP_PAGES):
+    """The first `pages` of TEDUH's register listing, newest SPVs first.
+
+    Each row carries id (the project code), kod_pemaju, nama and pemaju.nama,
+    so matching costs one request per page -- detail is only fetched for hits.
+    """
+    out = []
+    for n in range(1, pages + 1):
+        url = "https://teduh.kpkt.gov.my/api/projek-swasta?page=%d" % n
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; teduh-tracker/1.0)",
+            "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            d = json.loads(r.read().decode("utf-8"))
+        out.extend((d.get("projects") or {}).get("data") or [])
+        time.sleep(1.0)
+    return out
+
+
+def family_patterns():
+    """data/developer_families.csv rows as (tracker, PATTERN) pairs.
+
+    The file is hers to edit: one line per family name an SPV might carry
+    (EXSIM, SCIENTEX, KHOO SOON LEE). Patterns under 3 characters are ignored.
+    """
+    out = []
+    for r in read(FAMILIES):
+        t = (r.get("tracker") or "").strip()
+        pat = (r.get("pattern") or "").strip().upper()
+        if t and len(pat) >= 3:
+            out.append((t, pat))
+    return out
+
+
+def family_match(pemaju, families):
+    """The tracker whose family name appears (whole words) in an SPV name.
+
+    The longest matching pattern wins, so SETIA AWAN HOLDINGS lands on
+    setiaawan even though SETIA alone would also match for S P Setia.
+    Returns '' when nothing matches.
+    """
+    hay = " " + re.sub(r"[^A-Z0-9]+", " ", (pemaju or "").upper()) + " "
+    best_t, best_p = "", ""
+    for t, pat in families:
+        needle = " " + re.sub(r"[^A-Z0-9]+", " ", pat) + " "
+        if needle in hay and len(pat) > len(best_p):
+            best_t, best_p = t, pat
+    return best_t
 
 
 def auto_add(rows_to_add, pcsv):
@@ -217,13 +272,55 @@ def main():
             finds.append(row)
             phase += 1
 
+    # --- 1b. sweep the newest registrations for family-named new SPVs ---
+    # The phase walk only sees developer codes already in the tracker; a
+    # brand-new SPV (EXSIM MX4 registering D'Nuri) has a fresh code and is
+    # invisible to it. The register listing is newest-code-first, so a few
+    # pages cover weeks of new SPVs; one whose name carries a tracked
+    # developer's family name raises a new-spv notice -- never auto-added,
+    # because a new SPV's tracker assignment is her call. Whatever the sweep
+    # sees also tops up projects_index.csv, keeping the snapshot fresh.
+    register_codes = {r.get("kod_projek") for r in read(INDEX)}
+    families = family_patterns()
+    index_new = []
+    try:
+        sweep = newest_registrations()
+    except Exception as e:                             # noqa: BLE001
+        print(f"sweep skipped ({e})")
+        sweep = []
+    for it in sweep:
+        hid = (it.get("id") or "").strip()
+        pem = it.get("pemaju") or {}
+        pem_name = (pem.get("nama") if isinstance(pem, dict) else str(pem or "")).strip()
+        if not hid:
+            continue
+        if hid not in register_codes:
+            index_new.append({"kod_projek": hid,
+                              "kod_pemaju": (str(it.get("kod_pemaju") or "")).strip(),
+                              "nama_pemaju": pem_name,
+                              "projek_nama": (it.get("nama") or "").strip()})
+        if (hid in tracked_codes or hid in seen_codes or hid in register_codes
+                or hid in {f["kod_projek"] for f in finds}):
+            continue
+        sp = split_code(hid)
+        if sp and sp[0] in dev_trackers:
+            continue                    # the phase walk owns known developer codes
+        t = family_match(pem_name, families)
+        if not t or t in AREA_TRACKERS:
+            continue
+        detail, reached = fetch(hid, net)
+        if not reached or detail is None:
+            continue
+        row = detail_row(hid, detail)
+        row.update(first_seen=today, kind="new-spv", trackers=t, label=pem_name)
+        finds.append(row)
+
     # --- 2. a name watch for every project tracked WITHOUT a code ---
     # Aetas Taman Desa, Chin Hin Ulu Kelang: no code, and possibly no known
     # SPV, so the phase walk above cannot see them. Search TEDUH's registered
     # names for each one's most distinctive word; a hit that is not already
     # tracked or known becomes a name-match notice (never auto-added -- the
     # match is a guess for her to confirm).
-    register_codes = {r.get("kod_projek") for r in read(INDEX)}
     # A hit whose SPV visibly carries another tracked developer's name is that
     # developer's launch, not a match for this no-code project. D'NURI @ KWASA
     # DAMANSARA (EXSIM MX4 SDN. BHD.) was offered to BRDB's "Damansara
@@ -292,8 +389,9 @@ def main():
 
     # A find that already holds a permit joins its developer tracker now;
     # everything else waits in the watch file and is re-checked each run.
+    # name-match and new-spv are guesses for her to confirm -- never added.
     licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()
-                and f.get("kind") != "name-match"]
+                and f.get("kind") not in ("name-match", "new-spv")]
     licensed += [r for r in state if r.get("kind") == "permit-issued"]
     added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"))
     for r in finds + state:
@@ -321,6 +419,15 @@ def main():
         for r in rows:
             w.writerow({k: r.get(k, "") for k in FIELDS})
     print("wrote", os.path.relpath(WATCH, ROOT), f"({len(rows)} rows)")
+
+    if index_new and os.path.exists(INDEX):
+        with open(INDEX, newline="", encoding="utf-8") as f:
+            idx_fields = next(csv.reader(f))
+        with open(INDEX, "a", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=idx_fields, lineterminator="\n")
+            for r in index_new:
+                w.writerow({k: r.get(k, "") for k in idx_fields})
+        print("index topped up with", len(index_new), "new registrations")
 
 
 if __name__ == "__main__":

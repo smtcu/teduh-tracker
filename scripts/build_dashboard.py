@@ -426,11 +426,12 @@ def build_payload():
         seen = (r.get("first_seen") or "").strip()
         if not seen or seen < cutoff:
             continue
-        # A name-match is a guess for her to confirm. Once its code is in
-        # projects.csv -- she accepted it, or it turned out to belong to
-        # another tracker (D'Nuri was EXSIM, not BRDB) -- the question is
-        # answered and the banner comes down without waiting out BADGE_DAYS.
-        if (r.get("kind") or "").strip() == "name-match" \
+        # A name-match or new-SPV notice is a guess for her to confirm. Once
+        # its code is in projects.csv -- she accepted it, or it turned out to
+        # belong to another tracker (D'Nuri was EXSIM, not BRDB) -- the
+        # question is answered and the banner comes down without waiting out
+        # BADGE_DAYS.
+        if (r.get("kind") or "").strip() in ("name-match", "new-spv") \
                 and (r.get("kod_projek") or "").strip() in tracked_codes:
             continue
         for tkey in (r.get("trackers") or "").split(";"):
@@ -938,6 +939,8 @@ function table() {
   finds.forEach(f => {
     const tail = f.kind === 'name-match'
       ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, and put the code in projects.csv if it’s the one.'
+      : f.kind === 'new-spv'
+      ? '. Looks like a new SPV of this developer — check it, and add the code to projects.csv if it’s theirs.'
       : f.tracked
       ? '. Added to its developer tracker automatically — figures appear from the next morning\u2019s run.'
       : (f.permit
