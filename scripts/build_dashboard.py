@@ -542,7 +542,11 @@ html[data-theme="dark"] tr.found td{animation-name:rowglowd}
 @media (prefers-reduced-motion:reduce){tr.found td{animation:none;background:var(--hl)}}
 .watchnote{margin:0 0 12px;display:flex;flex-direction:column;gap:6px}
 .watchnote[hidden]{display:none}
+/* Orange edge = a find that needs her judgment (name-match, new SPV).
+   Blue edge = handled automatically or purely informational. */
 .wnrow{border-left:4px solid var(--orange);background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.wnrow.auto{border-left-color:var(--blue)}
+.wnrow b{font-weight:750}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow)}
@@ -950,10 +954,15 @@ function table() {
       : (f.permit
         ? '. This developer has no developer tracker of its own, so nothing was added — the area sheets stay hand-picked.'
         : '. Registered but not licensed yet — it joins its developer tracker automatically the day its permit is issued.');
-    wn.appendChild(el('div', 'wnrow', 'New on TEDUH: ' + f.name + ' (' + f.code + ')'
+    /* Orange edge: her judgment needed. Blue edge: automatic / informational. */
+    const needsHer = f.kind === 'name-match' || f.kind === 'new-spv';
+    const row = el('div', 'wnrow' + (needsHer ? '' : ' auto'));
+    row.appendChild(el('b', '', needsHer ? 'Check: ' : 'Auto: '));
+    row.appendChild(document.createTextNode('New on TEDUH: ' + f.name + ' (' + f.code + ')'
       + (f.units ? ' — ' + nf(f.units) + ' units' : '')
       + (f.permit ? ', permit from ' + fdate(f.permit) : ', no sales permit yet')
       + (f.pemaju ? ' — ' + f.pemaju : '') + tail));
+    wn.appendChild(row);
   });
   wn.hidden = !finds.length;
 
