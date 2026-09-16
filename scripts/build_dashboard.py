@@ -457,7 +457,11 @@ def build_payload():
         "trackers": areas + devs,
         "watch": watch,
         "downloads": downloads(),
-        "generated": datetime.now(MYT).strftime("%d %b %Y, %-I:%M %p") + " MYT",
+        # %-I (no-leading-zero hour) is Unix-only; strip the zero by hand so the
+        # build also runs on Windows.
+        "generated": datetime.now(MYT).strftime("%d %b %Y, ")
+                     + (datetime.now(MYT).strftime("%I").lstrip("0") or "12")
+                     + datetime.now(MYT).strftime(":%M %p") + " MYT",
         "latestDate": days[-1] if days else "",
         "prevDate": days[-2] if len(days) > 1 else "",
         "dates": days,
@@ -800,7 +804,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 </div>
 
 <div class="card hide" id="inscard">
-  <h2>Project sales insight (Permas Jaya)</h2>
+  <h2>Project sales insight</h2>
   <p class="note">Sold units by type, newest week first. The underlying unit-by-unit working is in the downloadable unit-type workbook.</p>
   <div class="ins" id="insight"></div>
 </div>

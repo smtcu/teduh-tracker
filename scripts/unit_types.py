@@ -31,14 +31,23 @@ def block_groups():
 
 
 def split(unit):
-    """'1A-07-01' -> ('1A', 7, 1). Returns None if it doesn't look like a unit number."""
+    """'1A-07-01' -> ('1A', 7, 1). Returns None if it doesn't look like a unit number.
+
+    Floor and unit segments that aren't plain numbers stay as strings, because
+    projects that skip 4 use segments like '3A', '13A' and '23A' — Ceros
+    (7777-18) has floor 13A as well as unit 13A. '01' still normalises to 1.
+    """
     parts = str(unit).strip().upper().split("-")
-    if len(parts) < 3:
+    if len(parts) < 3 or not all(parts[:3]):
         return None
-    try:
-        return parts[0], int(parts[1]), int(parts[2])
-    except ValueError:
-        return None
+
+    def seg(s):
+        try:
+            return int(s)
+        except ValueError:
+            return s
+
+    return parts[0], seg(parts[1]), seg(parts[2])
 
 
 OTHER = "Other"
@@ -177,6 +186,8 @@ def classify(project_key, unit):
         if rule.get("tower") and rule["tower"].upper() != tower:
             continue
         lo, hi = rule.get("floors") or (None, None)
+        if (lo is not None or hi is not None) and not isinstance(floor, int):
+            continue                       # lettered floor (13A) never fits a numeric band
         if lo is not None and floor < int(lo):
             continue
         if hi is not None and floor > int(hi):
