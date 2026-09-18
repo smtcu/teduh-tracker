@@ -299,7 +299,12 @@ def main():
                               "kod_pemaju": (str(it.get("kod_pemaju") or "")).strip(),
                               "nama_pemaju": pem_name,
                               "projek_nama": (it.get("nama") or "").strip()})
-        if (hid in tracked_codes or hid in seen_codes or hid in register_codes
+        # Being in projects_index.csv must NOT suppress the family match: the
+        # bulk discovery crawl indexes everything it sees without matching
+        # anything, and Skyawani Cassia (31282-1, a fresh SKYWORLD SPV) sat
+        # masked behind it for months. The watch file is the "already
+        # noticed" memory; the index only tells us what to top up below.
+        if (hid in tracked_codes or hid in seen_codes
                 or hid in {f["kod_projek"] for f in finds}):
             continue
         sp = split_code(hid)
