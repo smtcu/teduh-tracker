@@ -391,6 +391,18 @@ def build_payload():
             continue
         wks = sorted({r["week"] for r in rows_})
         got = {(r["week"], r["unit_type"]): to_int(r["sold"]) for r in rows_}
+        # Today's classification as a live row above the weekly record, the way
+        # the main tables carry a Today column. Only when the daily run is
+        # newer than the last Friday; a seeded block IS today's run already.
+        today_row = None
+        if not seeded:
+            drows = [r for r in utypes_daily if r.get("project_key") == pkey]
+            if drows:
+                d = max(r["week"] for r in drows)
+                if d > wks[-1]:
+                    dgot = {r["unit_type"]: to_int(r["sold"]) for r in drows if r["week"] == d}
+                    today_row = {"date": d,
+                                 "sold": [dgot.get(t["key"]) for t in meta.get("types", [])]}
         insight.append({
             "key": pkey,
             "label": meta.get("label", pkey),
@@ -398,6 +410,7 @@ def build_payload():
             "weeks": wks,
             "sold": [[got.get((w, t["key"])) for t in meta.get("types", [])] for w in wks],
             "seeded": seeded,
+            "today": today_row,
         })
 
     weeks = sorted(known_weeks | seeded_weeks)
@@ -620,6 +633,10 @@ tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins tr.newweek td{background:var(--hl)}
 .ins tr.newweek td.lbl{font-weight:750}
 .ins tr.newweek.sep td{border-top:2px solid var(--blue)}
+.ins tr.today td{background:rgba(235,104,52,.10)}
+html[data-theme="dark"] .ins tr.today td{background:rgba(217,89,38,.18)}
+.ins tr.today td.lbl{font-weight:750}
+.ins tr.today.sep td{border-top:2px solid var(--orange)}
 .ins tr.older td{background:var(--surface)}
 td.live-card{border-left:4px solid var(--orange)}
 tbody tr:hover td:not(.stick){background:var(--sunk)}
@@ -1131,6 +1148,27 @@ function insight() {
     b.types.forEach(t => totRow.appendChild(el('td', '', nf(t.total))));
     totRow.appendChild(el('td', '', nf(total)));
     bd.appendChild(totRow);
+
+    if (b.today) {
+      /* Live rows for today, above the weekly record — same idea as the main
+         table's TODAY column. New-sales deltas are against the newest week. */
+      const trow = b.today.sold;
+      const tsum = trow.reduce((a, v) => a + (v || 0), 0);
+      const lastWk = b.sold[b.sold.length - 1] || [];
+      const lsum = lastWk.reduce((a, v) => a + (v || 0), 0);
+      const mkT = (label, vals, tot, cls) => {
+        const tr = el('tr', 'today ' + (cls || ''));
+        tr.appendChild(el('td', 'lbl', label));
+        vals.forEach(v => tr.appendChild(el('td', '', v)));
+        tr.appendChild(el('td', '', tot));
+        bd.appendChild(tr);
+      };
+      mkT('Today · ' + fdate(b.today.date),
+          trow.map((v, j) => sgn((v || 0) - (lastWk[j] || 0))), sgn(tsum - lsum), 'sep');
+      mkT('Total sold', trow.map(v => nf(v)), nf(tsum));
+      mkT('Total %', trow.map((v, j) => b.types[j].total ? pf((v || 0) / b.types[j].total) : '–'),
+          total ? pf(tsum / total) : '–');
+    }
 
     const order = b.weeks.slice().reverse();       // newest first
     const SHOWN = 4;                               // older weeks stay collapsed
