@@ -14,12 +14,11 @@ GH_OWNER = "smtcu"
 GH_REPO = "teduh-tracker"
 GH_WORKFLOW_FILE = "weekly-teduh.yml"
 GH_REF = "main"
-# Which site may call the suggest-a-project endpoints from the browser.
-# The form has no passphrase, so this origin check plus PR-merge approval are
-# the only gates -- keep it pinned to the dashboard's own origin, not "*".
-ALLOWED_ORIGIN = "https://smtcu.github.io"
-
-# GITHUB_TOKEN is NOT set here on purpose -- it's a secret, added separately with
-# `npx wrangler secret put GITHUB_TOKEN` so it never gets written to a file or
-# git. It needs Contents: read/write AND Pull requests: read/write on the repo
-# (the old dispatch-only token may lack those scopes).
+# Secrets are NOT set here on purpose -- they're added separately with
+# `npx wrangler secret put <NAME>` so they never get written to a file or git.
+#   GITHUB_TOKEN    needs Contents: read/write AND Pull requests: read/write on
+#                   the repo (the old dispatch-only token may lack those scopes).
+#   ALLOWED_ORIGIN  the dashboard's own origin, which stays out of this repo.
+#                   The form has no passphrase, so this origin check plus
+#                   PR-merge approval are the only gates. Unset falls back to
+#                   "*" (any site may call the endpoints).
