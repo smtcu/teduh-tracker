@@ -27,7 +27,7 @@ TRACKER_LABEL = AREA_TRACKERS
 
 # The Cloudflare Worker that serves the "Suggest a project" form (see
 # cloudflare-worker/). Leave empty to hide the form entirely.
-SUGGEST_URL = "https://teduh-workflow-trigger.smtcu.workers.dev"
+SUGGEST_URL = "https://teduh-workflow-trigger.smt998.workers.dev"
 
 
 def tracker_label(key, given=""):
