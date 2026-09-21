@@ -261,8 +261,10 @@ def build_payload():
     types, types_date, types_newer = {}, "", 0
     if bytype:
         tdates = {r["week"] for r in bytype}
-        wlatest = max((d for s_ in wser.values() for d in s_), default="")
-        types_date = wlatest if wlatest in tdates else max(tdates)
+        # Always the newest reading, so Sold-and-unsold agrees with the live
+        # movers figures between Fridays; on a Friday the newest reading IS
+        # the weekly record and the card drops back to its weekly label.
+        types_date = max(tdates)
         # A project listed in two trackers (Johor + its developer tracker) is
         # scraped once per tracker row, so its type rows appear twice for the
         # same date. Dedupe on (code, group_idx) or the Sold-and-unsold bars
@@ -1428,7 +1430,7 @@ function movers() {
   const isLive = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
   $('#mvnote').textContent = isLive
     ? 'Today (' + fdate(DATA.todayDate) + ') against the last weekly record (' + fdate(DATA.weekLatest) +
-      '). This is the only section using live daily numbers — everything else on the page is weekly.'
+      '). Bars and the table below use the same window; the Sold and unsold card carries the same live figures.'
     : 'Today is the latest weekly record, so there is nothing newer to compare against.';
   const rows = isLive ? act().filter(p => p.todayNew).sort((a, b) => b.todayNew - a.todayNew) : [];
   const max = rows.length ? rows[0].todayNew : 1;
@@ -1443,9 +1445,13 @@ function movers() {
   ['Project', 'Code', 'New', 'Total sold', 'Units', '%'].forEach((c, i) => hr.appendChild(el('th', i < 2 ? 'l' : '', c)));
   tb.appendChild(el('thead')).appendChild(hr);
   const bd = el('tbody');
-  act().slice().sort((a, b) => (b.newSales || 0) - (a.newSales || 0)).forEach(p => {
+  /* Same window as the bars above: today against the last weekly record,
+     not day-on-day — the two disagreeing was read as a data error. */
+  const nw = p => (isLive ? p.todayNew : null);
+  act().slice().sort((a, b) => (nw(b) || 0) - (nw(a) || 0)).forEach(p => {
     const tr = el('tr');
-    [[p.name, 'l nm'], [p.codeDisp || p.code || '–', 'l'], [p.newSales === null ? '–' : sgn(p.newSales), ''],
+    [[p.name, 'l nm'], [p.codeDisp || p.code || '–', 'l'],
+     [nw(p) === null || nw(p) === undefined ? '–' : sgn(nw(p)), ''],
      [nf(p.sold), ''], [nf(p.units), ''], [pf(p.pct), '']].forEach(([v, c]) => tr.appendChild(el('td', c, v)));
     bd.appendChild(tr);
   });
