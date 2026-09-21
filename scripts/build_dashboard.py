@@ -651,9 +651,9 @@ tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins tr.newweek td{background:var(--hl)}
 .ins tr.newweek td.lbl{font-weight:750}
 .ins tr.newweek.sep td{border-top:2px solid var(--blue)}
-.ins tr.today td{background:rgba(235,104,52,.10)}
-html[data-theme="dark"] .ins tr.today td{background:rgba(217,89,38,.18)}
-.ins tr.today td.lbl{font-weight:750}
+.ins tr.today td,#weekly-t tr.today td{background:rgba(235,104,52,.10)}
+html[data-theme="dark"] .ins tr.today td,html[data-theme="dark"] #weekly-t tr.today td{background:rgba(217,89,38,.18)}
+.ins tr.today td.lbl,#weekly-t tr.today td.l{font-weight:750}
 .ins tr.today.sep td{border-top:2px solid var(--orange)}
 .ins tr.older td{background:var(--surface)}
 td.live-card{border-left:4px solid var(--orange)}
@@ -825,7 +825,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 
 <div class="card" id="sec-weekly">
   <h2>Weekly sales by project</h2>
-  <p class="note">Weekly figures only, exactly as they appear in your Excel sheets — today's live number is not mixed in. Bars are units sold in that week; the line is the project's four-week average pace, so a bar above the line means it beat its recent run rate.</p>
+  <p class="note">Blue bars are units sold in each recorded week, exactly as they appear in your Excel sheets; the orange bar is today — units sold since the last weekly record, still accumulating until Friday. The line is the project's four-week average pace, so a bar above the line means it beat its recent run rate.</p>
   <select class="sel" id="pickSel" aria-label="Choose a project"></select>
   <div class="chips" id="picker"></div>
   <div id="pickedName"></div>
@@ -1299,11 +1299,13 @@ function pkpis(p, pts) {
     c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v));
     if (d) c.appendChild(el('div', 'd', d)); box.appendChild(c);
   };
-  /* The hero stays the weekly figure (it captions the weekly chart below);
-     the standing totals use today's live reading between Fridays. */
+  /* The hero captions the chart's newest bar — today's partial week when
+     live, the latest recorded week otherwise. */
   const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
   const ts = live ? p.todaySold : p.wSold;
-  add('Sold this week', last ? sgn(last.v) : '–', last ? 'week of ' + fdate(last.d) : '', true);
+  add(last && last.live ? 'Sold since ' + fdate(DATA.weekLatest) : 'Sold this week',
+      last ? sgn(last.v) : '–',
+      last ? (last.live ? 'as at today, ' + fdate(last.d) : 'week of ' + fdate(last.d)) : '', true);
   add('Total sold', nf(ts), 'of ' + nf(p.units) + ' units');
   add('Sell-through', pf(live ? p.pct : p.wPct),
       'this project alone, at ' + fdate(live ? DATA.todayDate : DATA.weekLatest));
@@ -1320,6 +1322,13 @@ function weekly() {
   cap.appendChild(el('span', 'pd', p.developer + (p.codeDisp || p.code ? '  ·  ' + (p.codeDisp || p.code) : '')));
   const host = $('#weekly'); host.textContent = '';
   const pts = weeklyPoints(p, 4);
+  /* Today's live reading joins as a partial, orange bar: sold since the last
+     weekly record, no 4-week average because the week is not over. */
+  const liveWk = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
+  if (liveWk && p.todayNew !== null && p.todayNew !== undefined
+      && (!pts.length || pts[pts.length - 1].d < DATA.todayDate)) {
+    pts.push({ d: DATA.todayDate, v: p.todayNew, total: p.todaySold, avg: null, live: true });
+  }
   pkpis(p, pts);
   if (!pts.length) {
     host.appendChild(el('p', 'note', 'Not enough weekly history for this project yet.'));
@@ -1343,23 +1352,30 @@ function weekly() {
   pts.forEach((d, i) => {
     const cx = PL + band * (i + 0.5);
     const h = Math.max(d.v > 0 ? 3 : 0, (d.v / top) * plotH);
-    if (h > 0) svg.appendChild(sv('rect', { x: cx - bw / 2, y: Y(d.v), width: bw, height: h, rx: 4, fill: 'var(--blue)', class: 'mark' }));
+    if (h > 0) svg.appendChild(sv('rect', { x: cx - bw / 2, y: Y(d.v), width: bw, height: h, rx: 4,
+                                            fill: d.live ? 'var(--orange)' : 'var(--blue)', class: 'mark' }));
     const cap = sv('text', { x: cx, y: Y(d.v) - 8, 'text-anchor': 'middle', class: 'vlab' });
     cap.textContent = nf(d.v); svg.appendChild(cap);
     const xl = sv('text', { x: cx, y: H - PB + 20, 'text-anchor': 'middle', class: 'tk' });
-    xl.textContent = fdate(d.d, true); svg.appendChild(xl);
+    xl.textContent = d.live ? 'Today' : fdate(d.d, true); svg.appendChild(xl);
   });
-  const path = pts.map((d, i) => (i ? 'L' : 'M') + (PL + band * (i + 0.5)).toFixed(1) + ' ' + Y(d.avg).toFixed(1)).join(' ');
+  /* The pace line only covers completed weeks — today has no 4-week average. */
+  const avgPts = pts.map((d, i) => ({ d, i })).filter(x => x.d.avg !== null && x.d.avg !== undefined);
+  const path = avgPts.map((x, k) => (k ? 'L' : 'M') + (PL + band * (x.i + 0.5)).toFixed(1) + ' ' + Y(x.d.avg).toFixed(1)).join(' ');
   svg.appendChild(sv('path', { d: path, fill: 'none', stroke: 'var(--orange)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-  pts.forEach((d, i) => svg.appendChild(sv('circle', {
-    cx: PL + band * (i + 0.5), cy: Y(d.avg), r: 4.5, fill: 'var(--orange)', stroke: 'var(--surface)', 'stroke-width': 2 })));
+  avgPts.forEach(x => svg.appendChild(sv('circle', {
+    cx: PL + band * (x.i + 0.5), cy: Y(x.d.avg), r: 4.5, fill: 'var(--orange)', stroke: 'var(--surface)', 'stroke-width': 2 })));
   pts.forEach((d, i) => {
     const hit = sv('rect', { x: PL + band * i, y: 0, width: band, height: H - PB + 24, class: 'hit' });
-    hit.addEventListener('pointermove', e => showTip(e, [
-      { value: nf(d.v) + ' units', label: 'sold this week', color: 'var(--blue)' },
-      { value: d.avg.toFixed(1) + ' units', label: '4-week average', color: 'var(--orange)' },
-      { value: nf(d.total) + ' total', label: 'sold to date' },
-    ], p.name + ' — ' + fdate(d.d)));
+    const rows = [
+      { value: nf(d.v) + ' units', label: d.live ? 'sold since ' + fdate(DATA.weekLatest) : 'sold this week', color: 'var(--blue)' },
+    ];
+    if (d.avg !== null && d.avg !== undefined) {
+      rows.push({ value: d.avg.toFixed(1) + ' units', label: '4-week average', color: 'var(--orange)' });
+    }
+    rows.push({ value: nf(d.total) + ' total', label: 'sold to date' });
+    hit.addEventListener('pointermove', e => showTip(e, rows,
+      p.name + ' — ' + (d.live ? 'Today, ' : '') + fdate(d.d)));
     hit.addEventListener('pointerleave', hideTip);
     svg.appendChild(hit);
   });
@@ -1372,8 +1388,10 @@ function weekly() {
   tb.appendChild(el('thead')).appendChild(hr);
   const bd = el('tbody');
   pts.slice().reverse().forEach(d => {
-    const tr = el('tr');
-    [[fdate(d.d), 'l'], [sgn(d.v), ''], [d.avg.toFixed(1), ''], [nf(d.total), ''], [p.units ? pf(d.total / p.units) : '–', '']]
+    const tr = el('tr', d.live ? 'today' : '');
+    [[d.live ? 'Today · ' + fdate(d.d) : fdate(d.d), 'l'], [sgn(d.v), ''],
+     [d.avg === null || d.avg === undefined ? '–' : d.avg.toFixed(1), ''],
+     [nf(d.total), ''], [p.units ? pf(d.total / p.units) : '–', '']]
       .forEach(([v, c]) => tr.appendChild(el('td', c, v)));
     bd.appendChild(tr);
   });
