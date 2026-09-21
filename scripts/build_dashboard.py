@@ -25,6 +25,10 @@ AREA_TRACKERS = {"seputeh": "Seputeh Hills", "status13": "Klang Valley",
 # Kept as a name so anything still importing it keeps working.
 TRACKER_LABEL = AREA_TRACKERS
 
+# The Cloudflare Worker that serves the "Suggest a project" form (see
+# cloudflare-worker/). Leave empty to hide the form entirely.
+SUGGEST_URL = "https://teduh-workflow-trigger.smtcu.workers.dev"
+
 
 def tracker_label(key, given=""):
     if key in AREA_TRACKERS:
@@ -534,6 +538,18 @@ button,.btn{font:inherit;color:inherit;cursor:pointer}
 .ghost:hover{background:var(--sunk)}
 .ghost[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
 
+/* suggest-a-project form */
+.sgrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.sgin{font:inherit;color:inherit;background:var(--sunk);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13.5px;min-height:40px;flex:1 1 160px;min-width:0}
+.sgin:focus{outline:none;border-color:var(--blue)}
+.sgrow .ghost{flex:0 0 auto}
+.sgopt{display:flex;gap:10px;align-items:baseline;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:13.5px;font-weight:600}
+.sgopt input{accent-color:var(--blue);flex:none;position:relative;top:1px}
+.sgopt.on{border-color:var(--blue);background:var(--hl)}
+.sgopt .m{color:var(--muted);font-size:12.5px;font-weight:500}
+#sg-msg.ok{color:var(--blue);font-weight:650}
+#sg-msg.err{color:var(--orange);font-weight:650}
+
 /* project picker */
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 16px}
 .chip{background:var(--sunk);border:1.5px solid transparent;border-radius:9px;padding:8px 12px;font-size:13px;font-weight:650;color:var(--ink-2);min-height:38px}
@@ -861,6 +877,25 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   <h2>Download</h2>
   <p class="note">The PDFs are table-only summaries meant for forwarding. The weekly PDFs and every Excel tracker — the four areas and the thirteen developers — are rebuilt each Friday; the daily PDF and the daily workbook are rebuilt every morning. This list is generated from the files that are actually on disk, so nothing here is a dead link.</p>
   <div class="dl" id="dl"></div>
+</div>
+
+<div class="card" id="suggest" hidden>
+  <h2>Suggest a project</h2>
+  <p class="note">Type a project name or its TEDUH code, pick the right match, and send it in. It joins the tracker once it&#8217;s approved &#8212; nothing shows up here until then.</p>
+  <div class="sgrow">
+    <input class="sgin" id="sg-q" type="search" placeholder="Project name or TEDUH code (e.g. 30555-1)" autocomplete="off" style="flex:3 1 240px">
+    <button class="ghost" id="sg-find">Search TEDUH</button>
+  </div>
+  <div id="sg-results"></div>
+  <div id="sg-form" hidden>
+    <div class="sgrow">
+      <input class="sgin" id="sg-tracker" list="sg-tlist" placeholder="Which tracker? (type to search)" autocomplete="off">
+      <datalist id="sg-tlist"></datalist>
+      <input class="sgin" id="sg-remarks" placeholder="Remarks (optional)" style="flex:2 1 200px">
+      <button class="ghost" id="sg-send">Send for approval</button>
+    </div>
+  </div>
+  <p class="note" id="sg-msg" style="margin:8px 0 0" hidden></p>
 </div>
 
 <div class="foot" id="foot"></div>
@@ -1502,6 +1537,97 @@ function trends() {
   });
 }
 
+/* ---------- suggest a project ---------- */
+const SUGGEST_URL = '__SUGGEST_URL__';
+if (SUGGEST_URL) {
+  $('#suggest').hidden = false;
+  const msg = $('#sg-msg');
+  let picked = null;
+
+  const say = (text, cls) => { msg.hidden = !text; msg.textContent = text || ''; msg.className = 'note' + (cls ? ' ' + cls : ''); };
+
+  // Every tracker in the data, area sheets first, then the developer watches.
+  const sgTrackers = [];
+  DATA.projects.forEach(p => {
+    if (!sgTrackers.some(t => t.key === p.tracker)) {
+      sgTrackers.push({ key: p.tracker, label: p.trackerLabel, kind: p.trackerKind || 'area' });
+    }
+  });
+  sgTrackers.sort((a, b) => (a.kind === b.kind ? a.label.localeCompare(b.label) : (a.kind === 'area' ? -1 : 1)));
+  const tlist = $('#sg-tlist');
+  sgTrackers.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.label;
+    o.label = t.kind === 'area' ? 'area tracker' : 'developer tracker';
+    tlist.appendChild(o);
+  });
+  const trackerKey = () => {
+    const v = $('#sg-tracker').value.trim().toLowerCase();
+    const hit = sgTrackers.find(t => t.label.toLowerCase() === v || t.key.toLowerCase() === v);
+    return hit ? hit.key : null;
+  };
+
+  async function sgSearch() {
+    const q = $('#sg-q').value.trim();
+    picked = null; $('#sg-form').hidden = true;
+    const host = $('#sg-results'); host.textContent = '';
+    if (q.length < 3) { say('Type at least 3 characters of the project name, or the full TEDUH code.', 'err'); return; }
+    say('Searching TEDUH…');
+    try {
+      const r = await fetch(SUGGEST_URL + '/api/search?q=' + encodeURIComponent(q));
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.status);
+      if (!d.results.length) { say('No TEDUH project matches that. TEDUH search matches the official project name (which can differ from the marketing name) — try a shorter part of the name, or the TEDUH code.', 'err'); return; }
+      say(d.total > d.results.length ? `Showing the first ${d.results.length} of ${nf(d.total)} matches — add more of the name to narrow it down.` : 'Pick the right project:');
+      d.results.forEach(res => {
+        const lab = el('label', 'sgopt');
+        const rb = document.createElement('input');
+        rb.type = 'radio'; rb.name = 'sg-pick';
+        rb.onchange = () => {
+          picked = res;
+          document.querySelectorAll('.sgopt').forEach(x => x.classList.remove('on'));
+          lab.classList.add('on');
+          $('#sg-form').hidden = false;
+          say('');
+        };
+        lab.appendChild(rb);
+        lab.appendChild(el('span', '', res.name));
+        lab.appendChild(el('span', 'm', res.code
+          + (res.developer ? ' · ' + res.developer : '')
+          + (res.location ? ' · ' + res.location : '')
+          + (res.licensed ? ' · licensed ' + fdate(res.licensed) : '')));
+        host.appendChild(lab);
+      });
+    } catch (e) { say('Search failed (' + e.message + '). Try again in a minute.', 'err'); }
+  }
+  $('#sg-find').onclick = sgSearch;
+  $('#sg-q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sgSearch(); } });
+
+  $('#sg-send').onclick = async () => {
+    if (!picked) { say('Pick a project from the search results first.', 'err'); return; }
+    const tk = trackerKey();
+    if (!tk) { say('Pick a tracker from the list — start typing and choose one of the suggestions.', 'err'); return; }
+    const btn = $('#sg-send');
+    btn.disabled = true; say('Sending…');
+    try {
+      const r = await fetch(SUGGEST_URL + '/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: picked.code,
+          tracker: tk,
+          remarks: $('#sg-remarks').value.trim(),
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+      say('✓ ' + d.message, 'ok');
+      $('#sg-form').hidden = true; $('#sg-results').textContent = ''; $('#sg-q').value = ''; $('#sg-tracker').value = ''; picked = null;
+    } catch (e) { say(e.message, 'err'); }
+    btn.disabled = false;
+  };
+}
+
 $('#theme').onclick = e => {
   const dark = document.documentElement.dataset.theme === 'dark';
   document.documentElement.dataset.theme = dark ? 'light' : 'dark';
@@ -1653,6 +1779,7 @@ def main():
     os.makedirs(DOCS, exist_ok=True)
     payload = build_payload()
     html_out = TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False).replace("</", "<\\/"))
+    html_out = html_out.replace("__SUGGEST_URL__", SUGGEST_URL.rstrip("/"))
     out = os.path.join(DOCS, "index.html")
     with open(out, "w", encoding="utf-8") as f:
         f.write(html_out)
