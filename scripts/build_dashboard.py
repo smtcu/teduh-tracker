@@ -1299,10 +1299,15 @@ function pkpis(p, pts) {
     c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v));
     if (d) c.appendChild(el('div', 'd', d)); box.appendChild(c);
   };
+  /* The hero stays the weekly figure (it captions the weekly chart below);
+     the standing totals use today's live reading between Fridays. */
+  const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
+  const ts = live ? p.todaySold : p.wSold;
   add('Sold this week', last ? sgn(last.v) : '–', last ? 'week of ' + fdate(last.d) : '', true);
-  add('Total sold', nf(p.wSold), 'of ' + nf(p.units) + ' units');
-  add('Sell-through', pf(p.wPct), 'this project alone, at ' + fdate(DATA.weekLatest));
-  add('Still unsold', p.wSold === null ? '–' : nf(p.units - p.wSold), 'units remaining');
+  add('Total sold', nf(ts), 'of ' + nf(p.units) + ' units');
+  add('Sell-through', pf(live ? p.pct : p.wPct),
+      'this project alone, at ' + fdate(live ? DATA.todayDate : DATA.weekLatest));
+  add('Still unsold', ts === null ? '–' : nf(p.units - ts), 'units remaining');
 }
 
 function weekly() {
@@ -1380,23 +1385,31 @@ function weekly() {
 function kpis() {
   const box = $('#kpis'); box.textContent = '';
   const P = vis();
-  /* Weekly figures throughout, so nothing here can disagree with the Excel files. */
-  const sold = P.reduce((a, p) => a + (p.wSold || 0), 0);
+  /* Today's live figures whenever the daily run is newer than the weekly
+     record; on a Friday the two are the same numbers and the weekly wording
+     comes back, so nothing here can disagree with the Excel files that day. */
+  const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
+  const soldOf = p => (live ? p.todaySold : p.wSold);
+  const newOf = p => (live ? p.todayNew : p.wNew);
+  const sold = P.reduce((a, p) => a + (soldOf(p) || 0), 0);
   const units = P.reduce((a, p) => a + (p.units || 0), 0);
-  const nw = P.reduce((a, p) => a + (p.wNew || 0), 0);
-  const moved = P.filter(p => (p.wNew || 0) > 0).length;
-  const top = P.slice().sort((a, b) => (b.wNew || 0) - (a.wNew || 0))[0];
-  $('#kpinote').textContent = 'All figures below are the weekly record as at ' + fdate(DATA.weekLatest) + '.';
+  const nw = P.reduce((a, p) => a + (newOf(p) || 0), 0);
+  const moved = P.filter(p => (newOf(p) || 0) > 0).length;
+  const top = P.slice().sort((a, b) => (newOf(b) || 0) - (newOf(a) || 0))[0];
+  $('#kpinote').textContent = live
+    ? 'Live figures as at today, ' + fdate(DATA.todayDate) + '. New sales count from the last weekly record (' + fdate(DATA.weekLatest) + ').'
+    : 'All figures below are the weekly record as at ' + fdate(DATA.weekLatest) + '.';
   const add = (l, v, d, hero) => {
     const c = el('div', 'kpi' + (hero ? ' hero' : ''));
     c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v));
     if (d) c.appendChild(el('div', 'd', d)); box.appendChild(c);
   };
-  add('Sold this week', nf(nw), moved + ' of ' + P.length + ' projects moved', true);
+  add(live ? 'Sold since ' + fdate(DATA.weekLatest) : 'Sold this week', nf(nw),
+      moved + ' of ' + P.length + ' projects moved', true);
   add('Total units sold', nf(sold), 'of ' + nf(units) + ' units tracked');
   add('All ' + P.length + ' projects combined', units ? pf(sold / units) : '–',
       nf(sold) + ' of ' + nf(units) + ' units sold');
-  add('Fastest mover', top && top.wNew ? trunc(top.name, 18) : '–', top && top.wNew ? '+' + top.wNew + ' units' : 'no movement');
+  add('Fastest mover', top && newOf(top) ? trunc(top.name, 18) : '–', top && newOf(top) ? '+' + newOf(top) + ' units' : 'no movement');
 }
 
 /* ---------- horizontal bar helper ---------- */
@@ -1460,16 +1473,20 @@ function movers() {
 }
 
 function sellthru() {
-  const rows = act().filter(p => p.wPct !== null && p.wPct !== undefined).sort((a, b) => b.wPct - a.wPct);
+  /* Today's live share between Fridays, the weekly record on a Friday. */
+  const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
+  const pc = p => (live ? p.pct : p.wPct);
+  const sd = p => (live ? p.todaySold : p.wSold);
+  const rows = act().filter(p => pc(p) !== null && pc(p) !== undefined).sort((a, b) => pc(b) - pc(a));
   const nHid = vis().length - act().length;
-  $('#stnote').textContent = 'Share of total units sold as at ' + fdate(DATA.weekLatest) +
-    ' — the weekly record. The pale bar is what is still unsold.' +
+  $('#stnote').textContent = 'Share of total units sold as at ' + fdate(live ? DATA.todayDate : DATA.weekLatest) +
+    (live ? ' — live daily numbers.' : ' — the weekly record.') + ' The pale bar is what is still unsold.' +
     (nHid ? ' ' + nHid + ' sold-out project' + (nHid > 1 ? 's are' : ' is') + ' hidden — use the toggle in the section bar above.' : '');
   hbars($('#sellthru'), rows.map(p => ({
-    key: pkey(p), label: p.name, frac: p.wPct, value: pf(p.wPct),
-    tip: [{ value: pf(p.wPct), label: 'sold', color: 'var(--blue)' },
-          { value: nf(p.wSold) + ' of ' + nf(p.units), label: 'units' },
-          { value: nf(p.units - p.wSold), label: 'still unsold' }],
+    key: pkey(p), label: p.name, frac: pc(p), value: pf(pc(p)),
+    tip: [{ value: pf(pc(p)), label: 'sold', color: 'var(--blue)' },
+          { value: nf(sd(p)) + ' of ' + nf(p.units), label: 'units' },
+          { value: nf(p.units - sd(p)), label: 'still unsold' }],
   })), { track: true, rw: 66 });
 }
 
@@ -1513,8 +1530,15 @@ function bytype() {
 
 function trends() {
   const host = $('#trends'); host.textContent = '';
+  const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
   act().forEach(p => {
-    const pts = p.weekly;
+    /* Weekly series, with today's live reading as the newest point so the
+       panel and its headline agree with the rest of the page. */
+    const pts = p.weekly.slice();
+    if (live && p.todaySold !== null && p.todaySold !== undefined
+        && (!pts.length || pts[pts.length - 1].d < DATA.todayDate)) {
+      pts.push({ d: DATA.todayDate, v: p.todaySold });
+    }
     const card = el('div', 'smc' + (FOCUS && pkey(p) === FOCUS ? ' focused' : ''));
     const t = el('div', 't', p.name); t.title = p.name; card.appendChild(t);
     const last = pts.length ? pts[pts.length - 1].v : null;
