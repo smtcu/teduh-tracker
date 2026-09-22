@@ -10,8 +10,12 @@ name: TEDUH launch watch
 # run is caught on the next one, and a find shows on the site for two days.
 on:
   schedule:
-    - cron: "30 0 * * *"     # ~08:30 MYT, after the morning refresh
-    - cron: "30 9 * * *"     # ~17:30 MYT, after the afternoon refresh
+    # Odd minutes on purpose. GitHub's cron queue spikes at :00/:15/:30/:45
+    # (everyone schedules on round marks) and worst of all around 00:00 UTC;
+    # jobs scheduled then start late or get dropped. :53 and :23 keep us out
+    # of the crowd. Both are still comfortably after their refresh finishes.
+    - cron: "53 1 * * *"     # ~09:53 MYT, after the morning refresh
+    - cron: "23 10 * * *"    # ~18:23 MYT, after the afternoon refresh
   workflow_dispatch:
 
 permissions:
