@@ -34,11 +34,12 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    # A healthy run finishes in well under ten minutes. On 22 Sep 2026 TEDUH
-    # stopped answering mid-afternoon and the scrape step sat in retry loops
-    # for over an hour and a half; this is the backstop that ends such a run
-    # instead of letting it burn the 6-hour Actions maximum.
-    timeout-minutes: 45
+    # A healthy run takes about an hour: ~36 minutes scraping 800-odd codes at
+    # a polite one-second pace, ~20 more in the launch watch. On 22 Sep 2026
+    # TEDUH stopped answering mid-afternoon and the scrape step sat in retry
+    # loops for over an hour and a half; this is the backstop that ends such a
+    # run instead of letting it burn the 6-hour Actions maximum.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -68,9 +69,10 @@ jobs:
         run: python scripts/selftest.py
 
       - name: Scrape TEDUH
-        # The scraper bails out on its own once TEDUH looks properly down;
-        # this cap is the belt to that suspenders.
-        timeout-minutes: 15
+        # ~36 minutes when TEDUH is healthy (816 codes, 1s apart). The scraper
+        # bails out on its own once TEDUH looks properly down; this cap is the
+        # belt to that suspenders, sized for a slow day, not a dead one.
+        timeout-minutes: 75
         run: python scripts/scrape_teduh.py
 
       # After the scrape, before the builds: the workbooks and the website read
@@ -110,7 +112,7 @@ jobs:
       # trackers are never touched. No email either way.
       - name: Watch for new developer launches
         if: ${{ !cancelled() }}
-        timeout-minutes: 10
+        timeout-minutes: 30      # ~20 minutes on a healthy day
         continue-on-error: true
         run: python scripts/watch_developers.py
 
