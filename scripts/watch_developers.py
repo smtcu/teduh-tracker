@@ -70,7 +70,7 @@ def name_search(token):
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0 (compatible; teduh-tracker/1.0)",
         "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as r:
+    with urllib.request.urlopen(req, timeout=30) as r:
         d = json.loads(r.read().decode("utf-8"))
     return (d.get("projects") or {}).get("data") or []
 # The four area sheets are curated by hand and the watch never writes to them.
@@ -89,7 +89,7 @@ def newest_registrations(pages=SWEEP_PAGES):
         req = urllib.request.Request(url, headers={
             "User-Agent": "Mozilla/5.0 (compatible; teduh-tracker/1.0)",
             "Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=60) as r:
+        with urllib.request.urlopen(req, timeout=30) as r:
             d = json.loads(r.read().decode("utf-8"))
         out.extend((d.get("projects") or {}).get("data") or [])
         time.sleep(1.0)

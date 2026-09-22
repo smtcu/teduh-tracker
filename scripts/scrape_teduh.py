@@ -37,20 +37,27 @@ def retry_after(e, fallback):
     return fallback
 
 
-def fetch(code, attempts=7):
+def fetch(code, attempts=3):
     """GET the unit list for one project code, with retries and backoff.
 
     429 means TEDUH is refusing because we are asking too fast -- usually
     because something else is also hitting the portal. Retrying at the same
     pace just gets refused again, so a refusal waits properly and slows every
     later request in this run as well.
+
+    A healthy TEDUH answers in under a second, so 30s is already generous.
+    The old 7 attempts x 90s meant one dead code cost twelve minutes, and the
+    16:00 run on 22 Sep 2026 spent an hour and a half timing out through the
+    list before it was cancelled. Three attempts at 30s cap a dead code at
+    about two minutes, and main() stops the whole scrape after three dead
+    codes in a row.
     """
     global PAUSE
     last = None
     for i in range(attempts):
         try:
             req = Request(API.format(code=code), headers={"User-Agent": UA, "Accept": "application/json"})
-            with urlopen(req, timeout=90) as r:
+            with urlopen(req, timeout=30) as r:
                 return json.loads(r.read().decode("utf-8"))
         except HTTPError as e:
             last = e
@@ -96,6 +103,13 @@ def main():
     # be fetched once per row. Cache successful fetches so each code hits
     # TEDUH once per run -- both listings then show identical figures too.
     fetched = {}
+    # Circuit breaker: three codes in a row exhausting every retry means TEDUH
+    # itself is down, not that three projects happen to be broken. Stop asking
+    # and leave today's data exactly as the earlier run left it -- writing the
+    # handful of rows scraped before the outage would REPLACE the morning
+    # snapshot with a rump. The workflow's !cancelled() steps still rebuild
+    # the site and workbooks from the existing CSVs, so nothing goes blank.
+    dead_streak = 0
 
     for p in projects:
         codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
@@ -119,8 +133,17 @@ def main():
                     failures.append(f"{code} ({p['project']}): {e}")
                     print(f"FAIL  {code}: {e}", file=sys.stderr)
                     failed = True
+                    dead_streak += 1
+                    if dead_streak >= 3:
+                        print("\nTEDUH looks down: three codes in a row failed "
+                              "every attempt. Stopping the scrape here rather "
+                              "than timing out through the rest of the list.\n"
+                              "FAILURES so far:\n  " + "\n  ".join(failures),
+                              file=sys.stderr)
+                        sys.exit(3)   # nothing written; today's data left as it was
                     continue
                 fetched[code] = (nm, t, s_, g, units)
+                dead_streak = 0
             name = name or nm
             total += t
             sold += s_
