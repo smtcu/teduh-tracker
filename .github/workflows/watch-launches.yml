@@ -1,0 +1,71 @@
+name: TEDUH launch watch
+
+# Split out of the daily refresh on 22 Sep 2026. The watch spends ~20 minutes
+# probing speculative codes, and when TEDUH had its afternoon outage it was
+# one more thing keeping a doomed run alive. Separately, a slow watch can
+# never again delay the day's sales figures.
+#
+# GitHub's own cron is fine here where it wasn't for the refresh: it can fire
+# an hour late, but a launch probe is not time-critical -- a missed or late
+# run is caught on the next one, and a find shows on the site for two days.
+on:
+  schedule:
+    - cron: "30 0 * * *"     # ~08:30 MYT, after the morning refresh
+    - cron: "30 9 * * *"     # ~17:30 MYT, after the afternoon refresh
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Same group as the refresh so the two never run at once: both commit
+# projects.csv and data/, and binary docs cannot merge. If a refresh is
+# already running, this waits its turn.
+concurrency:
+  group: teduh-refresh
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # watch_developers.py and build_dashboard.py are stdlib-only,
+      # so there is nothing to pip install.
+
+      - name: Watch for new developer launches
+        timeout-minutes: 40      # ~20 minutes on a healthy day
+        run: python scripts/watch_developers.py
+
+      # Rebuild the website so a find's +N badge appears now, not at the
+      # next refresh. docs/downloads is untouched, so the Download section
+      # keeps listing exactly the files the last refresh produced.
+      - name: Build website
+        if: ${{ !cancelled() }}
+        run: python scripts/build_dashboard.py
+
+      - name: Commit
+        if: ${{ !cancelled() }}
+        run: |
+          git config user.name  "teduh-bot"
+          git config user.email "teduh-bot@users.noreply.github.com"
+          # projects.csv joins the commit because a licensed find is appended
+          # to its developer tracker automatically.
+          git add data/teduh_watch.csv projects.csv docs
+          if git diff --staged --quiet; then
+            echo "Nothing new to commit."
+            exit 0
+          fi
+          git commit -m "Launch watch $(date -u +%Y-%m-%d)"
+          # The refresh may have pushed while this was running.
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            echo "push attempt $i failed, retrying"
+            sleep 10
+          done
+          exit 1
