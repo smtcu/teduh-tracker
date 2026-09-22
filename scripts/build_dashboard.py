@@ -1354,7 +1354,9 @@ function weekly() {
     const h = Math.max(d.v > 0 ? 3 : 0, (d.v / top) * plotH);
     if (h > 0) svg.appendChild(sv('rect', { x: cx - bw / 2, y: Y(d.v), width: bw, height: h, rx: 4,
                                             fill: d.live ? 'var(--orange)' : 'var(--blue)', class: 'mark' }));
-    const cap = sv('text', { x: cx, y: Y(d.v) - 8, 'text-anchor': 'middle', class: 'vlab' });
+    /* Sit the number above the bar or the pace dot, whichever is higher, so the line never covers it. */
+    const capY = d.avg === null || d.avg === undefined ? Y(d.v) - 8 : Math.min(Y(d.v) - 8, Y(d.avg) - 11);
+    const cap = sv('text', { x: cx, y: capY, 'text-anchor': 'middle', class: 'vlab' });
     cap.textContent = nf(d.v); svg.appendChild(cap);
     const xl = sv('text', { x: cx, y: H - PB + 20, 'text-anchor': 'middle', class: 'tk' });
     xl.textContent = d.live ? 'Today' : fdate(d.d, true); svg.appendChild(xl);
