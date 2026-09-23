@@ -13,6 +13,16 @@ on:
   #
   # The website and the daily workbook refresh every day.
   # The Excel trackers and the PDF report are rebuilt on Fridays only.
+  # Merging a suggest-form PR (or editing projects.csv by hand) refreshes
+  # immediately, so an approved project is on the site ~40 minutes after the
+  # merge instead of waiting for the next scheduled refresh. This cannot
+  # self-trigger: the commits this workflow and the launch watch push are
+  # made with the runner's GITHUB_TOKEN, and GitHub never fires workflows
+  # from those. The teduh-refresh concurrency group queues this behind any
+  # refresh already running.
+  push:
+    branches: [main]
+    paths: ["projects.csv"]
   workflow_dispatch:        # the Cloudflare Worker, or you from the Actions tab
     inputs:
       apdl:
