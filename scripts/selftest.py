@@ -56,7 +56,7 @@ section("cross-module API: names one script calls on another")
 # of them fails here in seconds instead of part-way through a live scrape.
 have = {}
 for fn in ["block_of", "regroup", "note_for", "classify", "tally", "block_groups", "config",
-           "per_code", "is_floor_set", "suppressed", "strip_block_prefix"]:
+           "per_code", "is_floor_set", "suppressed", "strip_block_prefix", "glued_block"]:
     have[fn] = callable(getattr(UT, fn, None))
     ck(have[fn], f"unit_types.{fn}() exists")
 
@@ -80,6 +80,16 @@ else:
     for u, want in [("A-08-03", "A"), ("A-08-03A", "A"), ("1A-07-01", "1A"),
                     ("D1-12-01", "D1"), ("A- 01-02", "A")]:
         ck(UT.block_of(u) == want, f"{u!r} -> {want!r}")
+
+# Desa Timur's "B39-13" lost its first hyphen; it is still block B. Floor-unit
+# numbers must never be read this way.
+if not have["glued_block"]:
+    ck(False, "glued_block() missing - skipping its checks")
+else:
+    ck(UT.glued_block("B39-13") == "B", "'B39-13' -> 'B' (Desa Timur typo)")
+    ck(UT.glued_block("B23A-05") == "B", "'B23A-05' -> 'B'")
+    for u in ["9-1", "10-3A", "G-01", "A-08-03", "B-39-12"]:
+        ck(UT.glued_block(u) is None, f"{u!r} is not a glued block -> None")
 
 # --------------------------------------------------------------------------
 section("is_floor_set(): floors dressed up as blocks get no note")

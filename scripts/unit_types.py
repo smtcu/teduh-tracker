@@ -6,7 +6,7 @@ without touching code. A unit number looks like BLOCK-FLOOR-UNIT, e.g. "A-6-4"
 or "1A-07-01"; the type is decided by the unit segment, with a table of exact
 unit numbers taking precedence (that is what separates A-6-3 from A-7-3).
 """
-import json, os
+import json, os, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CFG = None
@@ -71,6 +71,25 @@ def block_of(unit):
         return None
     head = parts[0].strip()
     return head or None
+
+
+def glued_block(unit):
+    """The block of a number missing its first hyphen, or None.
+
+    Residensi Desa Timur (30363-2) has one sold unit keyed as "B39-13" among
+    ~580 "B-39-12"-style numbers, so block_of() reads it as FLOOR-UNIT and the
+    note came out one short of Total Sold. This reads "B39-13" as block B.
+
+    Only a letter prefix glued to a floor number qualifies ("9-1", "10-3A" and
+    "G-01" never match), and the caller must accept the result only when the
+    same project already has that block from properly hyphenated units --
+    otherwise a single tower numbered "L1-01" would grow a bogus Block L.
+    """
+    parts = str(unit).replace(" ", "").upper().split("-")
+    if len(parts) != 2:
+        return None
+    m = re.fullmatch(r"([A-Z]+)(\d+[A-Z]?)", parts[0])
+    return m.group(1) if m else None
 
 
 FLOOR_TOKENS = {"GF", "UG", "LG", "PH"}

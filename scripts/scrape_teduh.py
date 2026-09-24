@@ -170,6 +170,7 @@ def main():
             note = UT.note_for(grouped, label=pc["label"])
         else:
             by_block = {}
+            glued = []
             for _, units in all_units:
                 for u, is_sold in units:
                     if not is_sold:
@@ -177,6 +178,13 @@ def main():
                     b = UT.block_of(u)
                     if b:
                         by_block[b] = by_block.get(b, 0) + 1
+                    elif UT.glued_block(u):
+                        glued.append(UT.glued_block(u))
+            # A typo like Desa Timur's "B39-13" counts only under a block the
+            # project already has, so a single tower never gains one from it.
+            for b in glued:
+                if b in by_block:
+                    by_block[b] += 1
             # PHASE/BLOCK prefixes (The Glades: HT5T4(I)/A) come off first so
             # a prefixed floor set is still recognisable as floors below.
             by_block = UT.strip_block_prefix(by_block)
