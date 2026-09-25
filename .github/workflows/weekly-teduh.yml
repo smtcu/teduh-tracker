@@ -15,7 +15,10 @@ on:
   # The Excel trackers and the PDF report are rebuilt on Fridays only.
   # Merging a suggest-form PR (or editing projects.csv by hand) refreshes
   # immediately, so an approved project is on the site ~40 minutes after the
-  # merge instead of waiting for the next scheduled refresh. This cannot
+  # merge instead of waiting for the next scheduled refresh. A push that only
+  # edits text in projects.csv (a name, a remark, a label) skips the scrape
+  # and rebuilds the site from the morning's data in a couple of minutes --
+  # see the "Decide whether TEDUH needs scraping" step. This cannot
   # self-trigger: the commits this workflow and the launch watch push are
   # made with the runner's GITHUB_TOKEN, and GitHub never fires workflows
   # from those. The teduh-refresh concurrency group queues this behind any
@@ -78,7 +81,31 @@ jobs:
       - name: Pre-flight self-test
         run: python scripts/selftest.py
 
+      # Text-only pushes do not need 40 minutes of scraping. The pushed
+      # projects.csv is compared with the one from before the push, and only
+      # the columns the scraper reads (tracker, code, total_units, unit_types)
+      # decide: a new code or changed unit count scrapes, a renamed project or
+      # an edited remark rebuilds from the existing data. Dispatches -- the two
+      # daily runs and anything from the Actions tab -- always scrape, and so
+      # does any push whose previous version cannot be fetched.
+      - name: Decide whether TEDUH needs scraping
+        id: mode
+        run: |
+          MODE=scrape
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BEFORE="${{ github.event.before }}"
+            if git fetch --no-tags --depth=1 origin "$BEFORE" 2>/dev/null                && git show "$BEFORE:projects.csv" > /tmp/projects_before.csv 2>/dev/null; then
+              python scripts/needs_scrape.py /tmp/projects_before.csv projects.csv | tee /tmp/mode.txt
+              MODE=$(head -1 /tmp/mode.txt)
+            else
+              echo "Could not read projects.csv from before the push; scraping to be safe."
+            fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Mode: $MODE"
+
       - name: Scrape TEDUH
+        if: ${{ steps.mode.outputs.mode == 'scrape' }}
         # ~36 minutes when TEDUH is healthy (816 codes, 1s apart). The scraper
         # bails out on its own once TEDUH looks properly down; this cap is the
         # belt to that suspenders, sized for a slow day, not a dead one.
@@ -197,6 +224,11 @@ jobs:
           git config user.email "teduh-bot@users.noreply.github.com"
           # projects.csv joins the commit because the APDL step writes to it.
           git add data docs projects.csv
-          git diff --staged --quiet || git commit -m "TEDUH refresh $(date -u +%Y-%m-%d)"
+          if [ "${{ steps.mode.outputs.mode }}" = "build" ]; then
+            MSG="Site rebuild $(date -u +%Y-%m-%d) (text-only change, no scrape)"
+          else
+            MSG="TEDUH refresh $(date -u +%Y-%m-%d)"
+          fi
+          git diff --staged --quiet || git commit -m "$MSG"
           git pull --rebase --autostash || true
           git push
