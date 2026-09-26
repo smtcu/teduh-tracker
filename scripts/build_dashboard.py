@@ -25,6 +25,17 @@ AREA_TRACKERS = {"seputeh": "Seputeh Hills", "status13": "Klang Valley",
 # Kept as a name so anything still importing it keeps working.
 TRACKER_LABEL = AREA_TRACKERS
 
+# "Top projects" view, entered from a toggle in the section bar (the page
+# opens showing everything): each tracker keeps only the N projects closest
+# to selling out -- share of her total units sold as at today's reading
+# (weekly record as fallback). Johor is ranked per group because JBCC and
+# Permas Jaya are separate sheets; Permas Jaya has four projects, so it shows
+# one. Sold-out projects never take a slot -- the charts hide them anyway. The
+# ranked projects carry a #1/#2/#3 tag in every view; in Top view the charts
+# list them ascending, so the one nearest sold out comes last.
+TOP_N_DEFAULT = 3
+TOP_N = {("johor", "Permas Jaya"): 1}
+
 # The Cloudflare Worker that serves the "Suggest a project" form (see
 # cloudflare-worker/). Leave empty to hide the form entirely.
 SUGGEST_URL = "https://teduh-workflow-trigger.smt998.workers.dev"
@@ -378,6 +389,33 @@ def build_payload():
             # listing), which made TriTower read 224/224 instead of 224/360.
             "types": [{"type": "", "units": units or t_units, "sold": t_sold}] if t_units else [],
         })
+
+    # Rank each tracker (each Johor group) by share of units sold as at today's
+    # data -- how close each project is to selling out -- and flag the top N
+    # with their rank. Ties break on units sold. Parkland by the River is one
+    # row with both phases summed, so it ranks as one project even though its
+    # insight tables stay per phase.
+    def sold_now(p):
+        return p["todaySold"] if p["todaySold"] is not None else (p["wSold"] or 0)
+
+    def pct_now(p):
+        return (sold_now(p) / p["units"]) if p["units"] else 0.0
+
+    by_group = {}
+    for p in out:
+        by_group.setdefault((p["tracker"], p["group"]), []).append(p)
+    for (tk, gp), ps in by_group.items():
+        n = TOP_N.get((tk, gp), TOP_N_DEFAULT)
+        live = [p for p in ps if not (p["units"] and p["todaySold"] is not None and p["todaySold"] >= p["units"])]
+        live.sort(key=lambda p: (-pct_now(p), -sold_now(p)))
+        for i, p in enumerate(live):
+            p["top"] = i < n
+            p["rank"] = i + 1 if i < n else None
+    for p in out:
+        p.setdefault("top", False)
+        p.setdefault("rank", None)
+        p["soldNow"] = sold_now(p)
+        p["pctNow"] = pct_now(p)
 
     # Unit-type tables, laid out like the Project Sales Insight pages of the report.
     import json as _json
@@ -743,6 +781,17 @@ tr.soldout td{color:var(--muted)}
   color:var(--ink-2);text-decoration:none}
 .secnav a:hover{background:var(--sunk)}
 .secnav .sotoggle{flex:0 0 auto;margin-left:auto}
+.secnav .sotoggle+.sotoggle{margin-left:4px}
+.chip[aria-pressed="true"] .toptag{border-color:#fff;color:#fff}
+tr.morerow td{padding:8px 10px;background:var(--sunk);border-right:0}
+tr.morerow .ghost{font-size:12px;padding:5px 11px}
+.pn .toptag,.smc .t .toptag,.ins h3 .toptag{vertical-align:middle}
+.ins th.best,.ins td.best{background:var(--hl)}
+.ins th.best{color:var(--blue)}
+.ins th.best .toptag{margin-left:5px;vertical-align:1px}
+.toptag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:20px;background:transparent;
+  border:1px solid var(--blue);color:var(--blue);font-size:10px;font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;vertical-align:1px;white-space:nowrap}
 
 /* A picked search result is outlined in every section until cleared. */
 .fbar{stroke:var(--orange);stroke-width:2.5}
@@ -962,10 +1011,23 @@ const vis = () => ALL.filter(p => p.tracker === tracker)
 const pkey = p => p.code || ('NOCODE-' + p.name);
 const soldOut = p => !!p.units && p.todaySold !== null && p.todaySold !== undefined && p.todaySold >= p.units;
 let showSold = false;
+/* Top-projects view: only the N projects closest to selling out (ranked in
+   Python by share of units sold as at today) reach the charts and unit-type
+   tables, listed ascending so the one nearest sold out comes last. The
+   weekly table keeps Excel order and folds the rest. A searched or picked
+   project always passes. */
+let topOnly = false;           /* opens showing everything; the section-bar toggle enters Top view */
+let tableMore = false;         /* Top view: whether the collapsed table rows are open */
 let FOCUS = null;              /* pkey of a picked search result, shown in every section */
 let pickedKey = null;          /* weekly-chart selection, by key so filters can't shift it */
-const act = () => vis().filter(p => showSold || !soldOut(p) || pkey(p) === FOCUS);
-const pickList = () => vis().filter(p => showSold || !soldOut(p) || pkey(p) === pickedKey);
+const inTop = (p, k) => !topOnly || p.top || pkey(p) === FOCUS || (k && pkey(p) === k);
+const topOrder = list => topOnly ? list.slice().sort((a, b) => ((a.pctNow || 0) - (b.pctNow || 0)) || ((a.soldNow || 0) - (b.soldNow || 0))) : list;
+/* Rank badges: "#1" as a chip in HTML, "#1 " as a prefix inside SVG labels. */
+const byKey = k => ALL.find(p => pkey(p) === k);
+const rkText = p => (p && p.rank ? '#' + p.rank + ' ' : '');
+const rkTag = p => (p && p.rank ? el('span', 'toptag', '#' + p.rank) : null);
+const act = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === FOCUS) && inTop(p)));
+const pickList = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === pickedKey) && inTop(p, pickedKey)));
 
 function trackerBar() {
   const host = $('#ftrack'); host.textContent = '';
@@ -980,7 +1042,7 @@ function trackerBar() {
       const nw = ((DATA.watch || {})[t.key] || []).length;
       if (nw) b.appendChild(el('span', 'plus', '+' + nw));
       b.setAttribute('aria-pressed', String(t.key === tracker));
-      b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; render(); };
+      b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; tableMore = false; render(); };
       btns.appendChild(b);
     });
     row.appendChild(btns); host.appendChild(row);
@@ -1060,7 +1122,7 @@ function table() {
   const th = el('thead'); th.appendChild(r1); th.appendChild(r2); tb.appendChild(th);
 
   const bd = el('tbody');
-  let section = null;
+  let section = null, nMore = 0;
   vis().forEach(p => {
     if (p.group && p.group !== section) {
       section = p.group;
@@ -1070,11 +1132,16 @@ function table() {
       gr.appendChild(gc); bd.appendChild(gr);
     }
     const tr = el('tr', p.pin ? 'pinned' : '');
+    /* Top view keeps Excel order and the group headers, but folds every
+       non-top row (and its phone note) under one "Show N more" row. */
+    const folded = topOnly && !p.top && pkey(p) !== FOCUS;
+    if (folded) { tr.classList.add('more'); if (!tableMore) tr.classList.add('hide'); nMore++; }
     tr.dataset.proj = p.code || ('NOCODE-' + p.name);
     if (soldOut(p)) tr.classList.add('soldout');
     if (FOCUS && pkey(p) === FOCUS) tr.classList.add('focused');
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
     const nm = el('td', 'l stick2 nm', p.name);
+    if (p.top) { tr.classList.add('top'); nm.appendChild(el('span', 'toptag', '#' + p.rank)); }
     if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
     tr.appendChild(nm);
     tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
@@ -1118,7 +1185,7 @@ function table() {
        while the week columns scroll sideways. Hidden on desktop by CSS. */
     const noteText = (p.remarks || '').trim();
     if (noteText && noteText !== '-') {
-      const nr = el('tr', 'noterow' + (p.pin ? ' pinnedNote' : ''));
+      const nr = el('tr', 'noterow' + (p.pin ? ' pinnedNote' : '') + (folded ? ' more' + (tableMore ? '' : ' hide') : ''));
       const nc = el('td', 'l');
       nc.colSpan = 12 + weeks.length * 3;
       const box = el('div', 'notebox');
@@ -1129,6 +1196,18 @@ function table() {
       bd.appendChild(nr);
     }
   });
+  if (nMore) {
+    const mr = el('tr', 'morerow');
+    const mc = el('td', 'l');
+    mc.colSpan = 12 + weeks.length * 3;
+    const mb = el('button', 'ghost', (tableMore ? 'Hide ' : 'Show ') + nMore + ' more project' + (nMore > 1 ? 's' : ''));
+    mb.onclick = () => {
+      tableMore = !tableMore;
+      tb.querySelectorAll('tr.more').forEach(r => r.classList.toggle('hide', !tableMore));
+      mb.textContent = (tableMore ? 'Hide ' : 'Show ') + nMore + ' more project' + (nMore > 1 ? 's' : '');
+    };
+    mc.appendChild(mb); mr.appendChild(mc); bd.appendChild(mr);
+  }
   tb.appendChild(bd); host.appendChild(tb);
   host.classList.toggle('compact', compact);
   /* The header is two rows of variable height, so measure it rather than guess. */
@@ -1155,12 +1234,39 @@ $('#cols').onclick = () => {
 function insight() {
   const card = $('#inscard'), host = $('#insight');
   host.textContent = '';
+  /* The unit-type section is deliberately outside the Top view: every table
+     and every column always shows. Only the best-selling type is marked. */
   const blocks = (DATA.insight || []).filter(b => vis().some(p => (p.unitKeys || []).includes(b.key)));
   card.classList.toggle('hide', blocks.length === 0);
   if (!blocks.length) return;
 
   blocks.forEach(b => {
-    const h = el('h3', '', b.label); host.appendChild(h);
+    const h = el('h3', '', b.label);
+    const hp = vis().find(p => (p.unitKeys || []).includes(b.key));
+    const htg = rkTag(hp); if (htg) h.appendChild(htg);
+    host.appendChild(h);
+    /* The best-selling unit type: highest share sold at the latest reading
+       (today's row when there is one, else the newest week), ties on units.
+       Highlighted column plus a #1 tag on its header. */
+    const lastRow = (b.today && b.today.sold) || b.sold[b.sold.length - 1] || [];
+    const pctOf = i => (b.types[i].total ? (lastRow[i] || 0) / b.types[i].total : 0);
+    /* Only main types compete: a 2-unit variant at 100% is not the story.
+       A type needs a tenth of the block's units to qualify; if none do,
+       every type competes. */
+    const blockU = b.types.reduce((a, t) => a + (t.total || 0), 0);
+    const allIdx = b.types.map((_, i) => i);
+    const main = allIdx.filter(i => (b.types[i].total || 0) >= blockU * 0.1);
+    const pool = main.length ? main : allIdx;
+    const big = pool.reduce((m, i) =>
+      (pctOf(i) > pctOf(m) || (pctOf(i) === pctOf(m) && (lastRow[i] || 0) > (lastRow[m] || 0))) ? i : m, pool[0]);
+    const keep = allIdx;                 /* never trimmed */
+    const bc = i => (i === big && b.types.length > 1 ? 'best' : '');
+    if (b.types.length > 1) {
+      const bt = b.types[big];
+      host.appendChild(el('p', 'note', 'Best-selling unit type: Type ' + bt.key + ', ' + pf(pctOf(big)) + ' sold (' +
+        nf(lastRow[big] || 0) + ' of ' + nf(bt.total) + ' units)' +
+        (pool.length < b.types.length ? ', among the ' + pool.length + ' main types.' : '.')));
+    }
     if (b.seeded) {
       /* New rules, no Friday yet: this is today's classification standing in
          until the first weekly record lands. */
@@ -1171,8 +1277,10 @@ function insight() {
     const tb = el('table');
     const hr = el('tr');
     hr.appendChild(el('th', 'lbl', 'UNIT TYPE'));
-    b.types.forEach(t => {
-      const th = el('th', '', t.key);
+    keep.forEach(i => {
+      const t = b.types[i];
+      const th = el('th', bc(i), t.key);
+      if (bc(i)) th.appendChild(el('span', 'toptag', '#1'));
       const sz = el('span', 'sz', t.size); th.appendChild(sz);
       hr.appendChild(th);
     });
@@ -1182,7 +1290,7 @@ function insight() {
     const bd = el('tbody');
     const totRow = el('tr', 'tot');
     totRow.appendChild(el('td', 'lbl', 'TOTAL UNITS'));
-    b.types.forEach(t => totRow.appendChild(el('td', '', nf(t.total))));
+    keep.forEach(i => totRow.appendChild(el('td', bc(i), nf(b.types[i].total))));
     totRow.appendChild(el('td', '', nf(total)));
     bd.appendChild(totRow);
 
@@ -1196,7 +1304,7 @@ function insight() {
       const mkT = (label, vals, tot, cls) => {
         const tr = el('tr', 'today ' + (cls || ''));
         tr.appendChild(el('td', 'lbl', label));
-        vals.forEach(v => tr.appendChild(el('td', '', v)));
+        keep.forEach(i => tr.appendChild(el('td', bc(i), vals[i])));
         tr.appendChild(el('td', '', tot));
         bd.appendChild(tr);
       };
@@ -1222,7 +1330,7 @@ function insight() {
       const mk = (label, vals, tot, cls) => {
         const tr = el('tr', [cls || '', latest ? 'newweek' : '', older ? 'older hide' : ''].join(' ').trim());
         tr.appendChild(el('td', 'lbl', label));
-        vals.forEach(v => tr.appendChild(el('td', '', v)));
+        keep.forEach(i => tr.appendChild(el('td', bc(i), vals[i])));
         tr.appendChild(el('td', '', tot));
         bd.appendChild(tr);
       };
@@ -1261,6 +1369,7 @@ function picker() {
   host.classList.toggle('hide', many);
   if (!many) list.forEach(p => {
     const b = el('button', 'chip', trunc(p.name, 26));
+    const btg = rkTag(p); if (btg) b.appendChild(btg);
     b.title = p.name + ' — ' + p.developer;
     b.setAttribute('aria-pressed', String(pkey(p) === pickedKey));
     b.onclick = () => { pickedKey = pkey(p); picker(); weekly(); };
@@ -1270,7 +1379,7 @@ function picker() {
   sel.classList.toggle('force', many);
   list.forEach(p => {
     const code = p.codeDisp || p.code;
-    const o = el('option', '', p.name + (many && code ? '  ·  ' + code : ''));
+    const o = el('option', '', rkText(p) + p.name + (many && code ? '  ·  ' + code : ''));
     o.value = pkey(p);
     if (pkey(p) === pickedKey) o.selected = true;
     sel.appendChild(o);
@@ -1318,7 +1427,9 @@ function weekly() {
   if (!p) return;
   const cap = $('#pickedName');
   cap.textContent = '';
-  cap.appendChild(el('span', 'pn', p.name));
+  const pn = el('span', 'pn', p.name);
+  const ctg = rkTag(p); if (ctg) pn.appendChild(ctg);
+  cap.appendChild(pn);
   cap.appendChild(el('span', 'pd', p.developer + (p.codeDisp || p.code ? '  ·  ' + (p.codeDisp || p.code) : '')));
   const host = $('#weekly'); host.textContent = '';
   const pts = weeklyPoints(p, 4);
@@ -1444,7 +1555,7 @@ function hbars(host, rows, opts) {
     const y = i * (BH + GAP) + 3;
     const foc = FOCUS && r.key === FOCUS;
     const lab = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' + (foc ? ' flab' : '') });
-    lab.textContent = trunc(r.label, narrow ? 16 : 34); svg.appendChild(lab);
+    lab.textContent = rkText(r.key ? byKey(r.key) : null) + trunc(r.label, narrow ? 16 : 34); svg.appendChild(lab);
     if (opts.track) svg.appendChild(sv('rect', { x: LW, y, width: PW, height: BH, rx: 4, fill: 'var(--track)', class: foc ? 'fbar' : '' }));
     const w = Math.max(2, r.frac * PW);
     svg.appendChild(sv('rect', { x: LW, y, width: opts.track ? Math.max(2, w - 2) : w, height: BH, rx: 4, fill: 'var(--blue)', class: 'mark' + (foc && !opts.track ? ' fbar' : '') }));
@@ -1486,6 +1597,7 @@ function movers() {
     [[p.name, 'l nm'], [p.codeDisp || p.code || '–', 'l'],
      [nw(p) === null || nw(p) === undefined ? '–' : sgn(nw(p)), ''],
      [nf(p.sold), ''], [nf(p.units), ''], [pf(p.pct), '']].forEach(([v, c]) => tr.appendChild(el('td', c, v)));
+    const mtg = rkTag(p); if (mtg) tr.querySelector('td.nm').appendChild(mtg);
     bd.appendChild(tr);
   });
   tb.appendChild(bd);
@@ -1497,11 +1609,15 @@ function sellthru() {
   const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
   const pc = p => (live ? p.pct : p.wPct);
   const sd = p => (live ? p.todaySold : p.wSold);
-  const rows = act().filter(p => pc(p) !== null && pc(p) !== undefined).sort((a, b) => pc(b) - pc(a));
-  const nHid = vis().length - act().length;
+  /* Top view keeps the ascending sales order; the full view sorts by share. */
+  const rows = act().filter(p => pc(p) !== null && pc(p) !== undefined);
+  if (!topOnly) rows.sort((a, b) => pc(b) - pc(a));
+  const nHid = showSold ? 0 : vis().filter(p => soldOut(p) && pkey(p) !== FOCUS).length;
+  const nTrim = vis().length - act().length - nHid;
   $('#stnote').textContent = 'Share of total units sold as at ' + fdate(live ? DATA.todayDate : DATA.weekLatest) +
     (live ? ' — live daily numbers.' : ' — the weekly record.') + ' The pale bar is what is still unsold.' +
-    (nHid ? ' ' + nHid + ' sold-out project' + (nHid > 1 ? 's are' : ' is') + ' hidden — use the toggle in the section bar above.' : '');
+    (nHid ? ' ' + nHid + ' sold-out project' + (nHid > 1 ? 's are' : ' is') + ' hidden — use the toggle in the section bar above.' : '') +
+    (nTrim ? ' Top view: ' + nTrim + ' project' + (nTrim > 1 ? 's' : '') + ' hidden. Top view ranks by share of units sold as at today; the project nearest sold out is last.' : '');
   hbars($('#sellthru'), rows.map(p => ({
     key: pkey(p), label: p.name, frac: pc(p), value: pf(pc(p)),
     tip: [{ value: pf(pc(p)), label: 'sold', color: 'var(--blue)' },
@@ -1518,7 +1634,8 @@ function bytype() {
   $('#btnote').textContent = (btLive ? 'Live figures for today, ' : 'Weekly record, ')
     + fdate(DATA.typesDate) + ' — one bar per project.'
     + (btLive ? ' These will match the weekly numbers again from the next Friday run.' : '')
-    + (DATA.typesNewer ? ' Projects added since then show their newest reading.' : '');
+    + (DATA.typesNewer ? ' Projects added since then show their newest reading.' : '')
+    + (topOnly && vis().length > act().length ? ' Top view: the projects closest to selling out, nearest sold out last.' : '');
   const rows = [];
   act().forEach(p => (p.types || []).forEach(t => rows.push({ p, t })));
   if (!rows.length) { $('#bytype').textContent = ''; $('#bytype').appendChild(el('p', 'note', 'Unit-type data appears after the first scheduled run.')); return; }
@@ -1560,7 +1677,9 @@ function trends() {
       pts.push({ d: DATA.todayDate, v: p.todaySold });
     }
     const card = el('div', 'smc' + (FOCUS && pkey(p) === FOCUS ? ' focused' : ''));
-    const t = el('div', 't', p.name); t.title = p.name; card.appendChild(t);
+    const t = el('div', 't', p.name); t.title = p.name;
+    const ttg = rkTag(p); if (ttg) t.appendChild(ttg);
+    card.appendChild(t);
     const last = pts.length ? pts[pts.length - 1].v : null;
     const first = pts.length ? pts[0].v : null;
     card.appendChild(el('div', 'm', nf(last) + ' sold' + (last !== null && first !== null ? '  ·  ' + sgn(last - first) : '')));
@@ -1724,6 +1843,16 @@ function secnav() {
     a.onclick = e => { e.preventDefault(); const t = $(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     host.appendChild(a);
   });
+  const nTop = vis().filter(p => p.top).length, nAll = vis().length;
+  if (nTop < nAll) {
+    const t = el('button', 'ghost sotoggle toptoggle',
+      topOnly ? 'Top ' + nTop + ' of ' + nAll + ' \u00b7 show all' : 'All ' + nAll + ' \u00b7 top ' + nTop + ' only');
+    t.setAttribute('aria-pressed', String(topOnly));
+    t.title = topOnly ? 'Charts show the ' + nTop + ' projects closest to selling out (share of units sold as at today). Click to show every project.'
+                      : 'Click to show only the ' + nTop + ' projects closest to selling out (share of units sold as at today).';
+    t.onclick = () => { topOnly = !topOnly; render(); };
+    host.appendChild(t);
+  }
   const nSo = vis().filter(soldOut).length;
   if (nSo) {
     const b = el('button', 'ghost sotoggle', (showSold ? 'Hide' : 'Show') + ' sold-out (' + nSo + ')');
