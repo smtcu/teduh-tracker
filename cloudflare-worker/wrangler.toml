@@ -6,21 +6,13 @@ compatibility_date = "2024-11-01"
 # 23:17 UTC = 07:17 AM Malaysia / Singapore time the following day, same time the
 # GitHub workflow was already aiming for.
 # 08:00 UTC = 4:00 PM Malaysia / Singapore time, same day -- a second daily refresh.
-# 03:00 UTC = 11:00 AM Malaysia time -- the launch watch (watch-launches.yml),
-#             not a refresh. It lived on GitHub's own cron until 28 Sep 2026,
-#             when a six-hour-late run collided with the 4pm refresh. Placed
-#             hours clear of both refreshes so it can never queue against one.
 [triggers]
-crons = ["17 23 * * *", "0 8 * * *", "0 3 * * *"]
+crons = ["17 23 * * *", "0 8 * * *"]
 
 [vars]
 GH_OWNER = "smtcu"
 GH_REPO = "teduh-tracker"
 GH_WORKFLOW_FILE = "weekly-teduh.yml"
-# Which cron above fires the launch watch instead of the refresh, and what
-# it dispatches. The string must match the crons entry exactly.
-GH_WATCH_CRON = "0 3 * * *"
-GH_WATCH_WORKFLOW_FILE = "watch-launches.yml"
 GH_REF = "main"
 # Secrets are NOT set here on purpose -- they're added separately with
 # `npx wrangler secret put <NAME>` so they never get written to a file or git.

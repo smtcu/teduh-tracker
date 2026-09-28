@@ -10,12 +10,9 @@ const STATE = {
 };
 
 export default {
-  // Runs on the Cron Triggers defined in wrangler.toml. Two of them refresh
-  // the data; the one named in GH_WATCH_CRON runs the launch watch instead.
+  // Runs on the Cron Trigger defined in wrangler.toml.
   async scheduled(event, env, ctx) {
-    const isWatch = env.GH_WATCH_CRON && event.cron === env.GH_WATCH_CRON;
-    const file = isWatch ? env.GH_WATCH_WORKFLOW_FILE : env.GH_WORKFLOW_FILE;
-    ctx.waitUntil(dispatchWorkflow(env, file));
+    ctx.waitUntil(dispatchWorkflow(env));
   },
 
   // The fetch handler serves the dashboard's "Suggest a project" form:
@@ -299,10 +296,10 @@ function utf8ToBase64(str) {
   return btoa(bin);
 }
 
-/* ---------- workflow dispatch (refresh, or the launch watch) ---------- */
+/* ---------- daily refresh dispatch (unchanged) ---------- */
 
-async function dispatchWorkflow(env, workflowFile = env.GH_WORKFLOW_FILE) {
-  const url = `${GH_API}/repos/${env.GH_OWNER}/${env.GH_REPO}/actions/workflows/${workflowFile}/dispatches`;
+async function dispatchWorkflow(env) {
+  const url = `${GH_API}/repos/${env.GH_OWNER}/${env.GH_REPO}/actions/workflows/${env.GH_WORKFLOW_FILE}/dispatches`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -321,5 +318,5 @@ async function dispatchWorkflow(env, workflowFile = env.GH_WORKFLOW_FILE) {
     throw new Error(`GitHub dispatch failed: ${res.status}`);
   }
 
-  console.log(`Workflow dispatch sent for ${workflowFile}.`);
+  console.log("Workflow dispatch sent successfully.");
 }
