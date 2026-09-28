@@ -54,7 +54,8 @@ projects.csv                     which projects to track — the config driving 
 unit_types.json                  unit-type classification rules for 4 Johor projects
 block_groups.json                rolls TEDUH block names into her reported groupings
 .github/workflows/weekly-teduh.yml  the pipeline — workflow_dispatch only, no cron
-cloudflare-worker/               the Worker that fires workflow_dispatch twice a day
+.github/workflows/watch-launches.yml the new-launch watch — also workflow_dispatch only
+cloudflare-worker/               the Worker that fires workflow_dispatch three times a day
 worker.js / wrangler.toml        Cloudflare password gate for the website (unrelated
                                  to cloudflare-worker/ above — different Worker)
 scripts/scrape_teduh.py          the scraper — writes all the data files
@@ -80,17 +81,22 @@ docs/downloads/                  generated .xlsx and .pdf files
 
 ## Schedule
 
-The workflow has **no `schedule:` trigger**. It is started by `workflow_dispatch`,
-called twice a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
-`teduh-workflow-trigger`):
+Neither the refresh nor the launch watch has a **`schedule:` trigger**. Both are
+started by `workflow_dispatch`, called by a Cloudflare Worker (`cloudflare-worker/`,
+deployed as `teduh-workflow-trigger`):
 
-| Worker cron | UTC | Malaysia time |
-|---|---|---|
-| `17 23 * * *` | 23:17 | 07:17 next day |
-| `0 8 * * *` | 08:00 | 16:00 same day |
+| Worker cron | UTC | Malaysia time | dispatches |
+|---|---|---|---|
+| `17 23 * * *` | 23:17 | 07:17 next day | `weekly-teduh.yml` (refresh) |
+| `0 3 * * *` | 03:00 | 11:00 same day | `watch-launches.yml` (launch watch) |
+| `0 8 * * *` | 08:00 | 16:00 same day | `weekly-teduh.yml` (refresh) |
 
-GitHub's own cron used to run alongside this and was removed on 23 Aug 2026.
-Two reasons, in order of importance:
+The Worker picks the workflow by comparing `event.cron` with `GH_WATCH_CRON` in
+`wrangler.toml`; the two strings must match exactly. A change to the crons or
+the vars only takes effect once the Worker is redeployed.
+
+GitHub's own cron used to run the refresh alongside this and was removed on
+23 Aug 2026. Two reasons, in order of importance:
 
 1. **Overlapping runs corrupt a Friday rebuild.** On 12 Aug 2026 a GitHub-cron run
    and a dispatched run overlapped. Both regenerated the same `.xlsx` and `.pdf`
@@ -99,6 +105,19 @@ Two reasons, in order of importance:
    second run but does not save it — it only no-ops on days where nothing changed.
 2. **GitHub's cron is queued and unreliable**, often an hour or more late. That is
    the whole reason the Worker exists.
+
+The launch watch kept a GitHub cron (01:53 UTC) when it was split out on 22 Sep
+2026, on the theory that an hour's lateness would not matter. It ran five to six
+hours late every day, and on 28 Sep 2026 it started at 07:49 UTC, inside the 4pm
+refresh. The watch had found nothing, but it rebuilt the site anyway, and its
+commit changed the `generated` timestamp on the single JSON line of
+`docs/index.html` that the refresh was also rewriting. The refresh's rebase
+conflicted; `git pull --rebase || true` swallowed it; `git push` then failed on
+a detached HEAD and the afternoon figures were lost. Three things changed as a
+result: the watch now dispatches from the Worker at 11:00 MYT, it only rebuilds
+and commits when `data/teduh_watch.csv` or `projects.csv` actually changed, and
+every commit step aborts a failed rebase before retrying, so a real conflict
+fails visibly instead of leaving the checkout mid-rebase.
 
 The Worker holds a fine-grained PAT (repo-scoped, Actions: read and write) as an
 encrypted secret named `GITHUB_TOKEN`. It is never in the repo or in the Worker
@@ -215,8 +234,9 @@ must survive belongs in one of these two columns.
 
 ## The new-launch watch
 
-`scripts/watch_developers.py` runs in the daily pipeline and answers "did a
-developer I track register something new on TEDUH?". It probes one code past
+`scripts/watch_developers.py` runs in its own workflow (`watch-launches.yml`,
+dispatched by the Worker at 11:00 MYT) and answers "did a developer I track
+register something new on TEDUH?". It probes one code past
 each tracked developer's highest known phase (new registrations always take
 the next `-N` -- MAIA arrived as 30141-2, Binastra Cochrane as 31332-1), and
 re-checks registered-but-unlicensed codes for a permit; Ukay Spring sat that
@@ -249,9 +269,10 @@ marketing names, so the match is a guess for her to confirm. This is how a
 code eventually surfaces for Aetas Taman Desa, Chin Hin Ulu Kelang and
 Villaria without anyone re-searching by hand.
 
-The step is `continue-on-error` and the script swallows its own failures --
-a missed probe is caught the next morning, and the watch must never cost the
-day's sales figures. Sabah, Vietnam and industrial projects can never appear
+The script swallows its own failures -- a missed probe is caught on the next
+run, and the watch must never cost the day's sales figures. On a day it finds
+nothing it commits nothing: the site rebuild and the commit are skipped, since a
+timestamp-only commit is what collided with the refresh on 28 Sep 2026. Sabah, Vietnam and industrial projects can never appear
 here: they are outside TEDUH entirely.
 
 ## Website search, badges and code ranges
