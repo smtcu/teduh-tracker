@@ -5,18 +5,14 @@ name: TEDUH launch watch
 # one more thing keeping a doomed run alive. Separately, a slow watch can
 # never again delay the day's sales figures.
 #
-# GitHub's own cron is fine here where it wasn't for the refresh: it can fire
-# an hour late, but a launch probe is not time-critical -- a missed or late
-# run is caught on the next one, and a find shows on the site for two days.
+# No `schedule:` here, on purpose. This started on GitHub's own cron at
+# 01:53 UTC and it ran 5-6 hours late every day; on 28 Sep 2026 it landed at
+# 07:49 UTC, inside the 4pm refresh, and its push conflicted with the
+# refresh's and cost that day's afternoon figures. The Cloudflare Worker
+# (cloudflare-worker/) now dispatches this at 03:00 UTC, 11:00 MYT, hours
+# clear of both refreshes, the same way it dispatches the refresh itself.
 on:
-  schedule:
-    # Once a day is enough: a registration spotted this morning instead of
-    # last evening changes nothing, and the script itself promises a missed
-    # probe is "caught on the next morning's run". The odd minute is on
-    # purpose -- GitHub's cron queue spikes at :00/:15/:30/:45 and around
-    # 00:00 UTC, where scheduled jobs start late or get dropped.
-    - cron: "53 1 * * *"     # ~09:53 MYT, after the morning refresh
-  workflow_dispatch:
+  workflow_dispatch:      # the Cloudflare Worker, or you from the Actions tab
 
 permissions:
   contents: write
@@ -46,15 +42,31 @@ jobs:
         timeout-minutes: 40      # ~20 minutes on a healthy day
         run: python scripts/watch_developers.py
 
+      # Only a find is worth a commit. Rebuilding the site on a quiet day
+      # changes nothing but the "generated" timestamp, and that sits on the
+      # same single JSON line the refresh rewrites -- a timestamp-only
+      # commit is exactly what conflicted with the 28 Sep 2026 refresh.
+      - name: Did the watch find anything?
+        id: found
+        if: ${{ !cancelled() }}
+        run: |
+          if git diff --quiet -- data/teduh_watch.csv projects.csv; then
+            echo "Nothing new. Skipping the site rebuild and the commit."
+            echo "any=no" >> "$GITHUB_OUTPUT"
+          else
+            git --no-pager diff --stat -- data/teduh_watch.csv projects.csv
+            echo "any=yes" >> "$GITHUB_OUTPUT"
+          fi
+
       # Rebuild the website so a find's +N badge appears now, not at the
       # next refresh. docs/downloads is untouched, so the Download section
       # keeps listing exactly the files the last refresh produced.
       - name: Build website
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.found.outputs.any == 'yes' }}
         run: python scripts/build_dashboard.py
 
       - name: Commit
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.found.outputs.any == 'yes' }}
         run: |
           git config user.name  "teduh-bot"
           git config user.email "teduh-bot@users.noreply.github.com"
@@ -66,9 +78,12 @@ jobs:
             exit 0
           fi
           git commit -m "Launch watch $(date -u +%Y-%m-%d)"
-          # The refresh may have pushed while this was running.
+          # The refresh may have pushed while this was running. A conflicted
+          # rebase is aborted before the retry so the checkout never sits in
+          # a detached HEAD, and a real conflict fails the run visibly.
           for i in 1 2 3; do
             git pull --rebase --autostash && git push && exit 0
+            git rebase --abort 2>/dev/null || true
             echo "push attempt $i failed, retrying"
             sleep 10
           done

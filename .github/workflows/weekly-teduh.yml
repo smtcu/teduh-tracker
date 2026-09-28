@@ -230,5 +230,16 @@ jobs:
             MSG="TEDUH refresh $(date -u +%Y-%m-%d)"
           fi
           git diff --staged --quiet || git commit -m "$MSG"
-          git pull --rebase --autostash || true
-          git push
+          # Something may have been pushed while the scrape ran. This used to
+          # be `git pull --rebase || true; git push`, which on 28 Sep 2026
+          # swallowed a conflicted rebase and then pushed from a detached
+          # HEAD. Now a failed attempt is unwound with `rebase --abort` and
+          # retried, and a genuine conflict fails the run with the conflict
+          # in the log rather than a git hint about branches.
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $i failed, retrying"
+            sleep 10
+          done
+          exit 1
