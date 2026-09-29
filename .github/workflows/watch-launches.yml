@@ -8,11 +8,14 @@ name: TEDUH launch watch
 # No `schedule:` here, on purpose. This started on GitHub's own cron at
 # 01:53 UTC and it ran 5-6 hours late every day; on 28 Sep 2026 it landed at
 # 07:49 UTC, inside the 4pm refresh, and its push conflicted with the
-# refresh's and cost that day's afternoon figures. The Cloudflare Worker
-# (cloudflare-worker/) now dispatches this at 03:00 UTC, 11:00 MYT, hours
-# clear of both refreshes, the same way it dispatches the refresh itself.
+# refresh's and cost that day's afternoon figures. It now runs on
+# `workflow_run`: GitHub starts it when the refresh finishes, within a
+# minute, so it can never overlap one -- the next refresh is hours away.
 on:
-  workflow_dispatch:      # the Cloudflare Worker, or you from the Actions tab
+  workflow_run:
+    workflows: ["TEDUH tracker refresh"]
+    types: [completed]
+  workflow_dispatch:      # you, from the Actions tab
 
 permissions:
   contents: write
@@ -26,6 +29,12 @@ concurrency:
 
 jobs:
   watch:
+    # Once a day is enough, so only the morning refresh (dispatched 23:17
+    # UTC, 07:17 MYT) is followed. The 4pm refresh and any projects.csv-push
+    # rebuild are ignored. A manual run always goes ahead.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.workflow_run.created_at, 'T23:')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

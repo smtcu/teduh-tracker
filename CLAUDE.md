@@ -54,8 +54,8 @@ projects.csv                     which projects to track — the config driving 
 unit_types.json                  unit-type classification rules for 4 Johor projects
 block_groups.json                rolls TEDUH block names into her reported groupings
 .github/workflows/weekly-teduh.yml  the pipeline — workflow_dispatch only, no cron
-.github/workflows/watch-launches.yml the new-launch watch — also workflow_dispatch only
-cloudflare-worker/               the Worker that fires workflow_dispatch three times a day
+.github/workflows/watch-launches.yml the new-launch watch — runs after the morning refresh
+cloudflare-worker/               the Worker that fires workflow_dispatch twice a day
 worker.js / wrangler.toml        Cloudflare password gate for the website (unrelated
                                  to cloudflare-worker/ above — different Worker)
 scripts/scrape_teduh.py          the scraper — writes all the data files
@@ -81,19 +81,21 @@ docs/downloads/                  generated .xlsx and .pdf files
 
 ## Schedule
 
-Neither the refresh nor the launch watch has a **`schedule:` trigger**. Both are
-started by `workflow_dispatch`, called by a Cloudflare Worker (`cloudflare-worker/`,
-deployed as `teduh-workflow-trigger`):
+The refresh has **no `schedule:` trigger**. It is started by `workflow_dispatch`,
+called twice a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
+`teduh-workflow-trigger`):
 
-| Worker cron | UTC | Malaysia time | dispatches |
-|---|---|---|---|
-| `17 23 * * *` | 23:17 | 07:17 next day | `weekly-teduh.yml` (refresh) |
-| `0 3 * * *` | 03:00 | 11:00 same day | `watch-launches.yml` (launch watch) |
-| `0 8 * * *` | 08:00 | 16:00 same day | `weekly-teduh.yml` (refresh) |
+| Worker cron | UTC | Malaysia time |
+|---|---|---|
+| `17 23 * * *` | 23:17 | 07:17 next day |
+| `0 8 * * *` | 08:00 | 16:00 same day |
 
-The Worker picks the workflow by comparing `event.cron` with `GH_WATCH_CRON` in
-`wrangler.toml`; the two strings must match exactly. A change to the crons or
-the vars only takes effect once the Worker is redeployed.
+The launch watch (`watch-launches.yml`) has no cron either. It runs on
+`workflow_run`: GitHub starts it when a refresh finishes, and a job-level `if`
+keeps only the morning one (a refresh created in UTC hour 23), so the watch runs
+once a day at about 07:55 MYT, right after the morning figures are in. It can
+never overlap a refresh because it only starts once one has ended, and the
+next is hours away. A manual run from the Actions tab always goes ahead.
 
 GitHub's own cron used to run the refresh alongside this and was removed on
 23 Aug 2026. Two reasons, in order of importance:
@@ -114,10 +116,13 @@ commit changed the `generated` timestamp on the single JSON line of
 `docs/index.html` that the refresh was also rewriting. The refresh's rebase
 conflicted; `git pull --rebase || true` swallowed it; `git push` then failed on
 a detached HEAD and the afternoon figures were lost. Three things changed as a
-result: the watch now dispatches from the Worker at 11:00 MYT, it only rebuilds
-and commits when `data/teduh_watch.csv` or `projects.csv` actually changed, and
-every commit step aborts a failed rebase before retrying, so a real conflict
-fails visibly instead of leaving the checkout mid-rebase.
+result: the watch now runs on `workflow_run` after the morning refresh instead
+of on a cron, it only rebuilds and commits when `data/teduh_watch.csv` or
+`projects.csv` actually changed, and every commit step aborts a failed rebase
+before retrying, so a real conflict fails visibly instead of leaving the
+checkout mid-rebase. A Worker-dispatched watch was the first draft of this fix
+and was dropped because redeploying the Worker needs a laptop or a keyboard
+select-all in the Cloudflare editor, neither of which the iPad offers.
 
 The Worker holds a fine-grained PAT (repo-scoped, Actions: read and write) as an
 encrypted secret named `GITHUB_TOKEN`. It is never in the repo or in the Worker
@@ -235,7 +240,7 @@ must survive belongs in one of these two columns.
 ## The new-launch watch
 
 `scripts/watch_developers.py` runs in its own workflow (`watch-launches.yml`,
-dispatched by the Worker at 11:00 MYT) and answers "did a developer I track
+started by GitHub when the morning refresh finishes) and answers "did a developer I track
 register something new on TEDUH?". It probes one code past
 each tracked developer's highest known phase (new registrations always take
 the next `-N` -- MAIA arrived as 30141-2, Binastra Cochrane as 31332-1), and
