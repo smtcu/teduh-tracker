@@ -319,6 +319,22 @@ returns `CONNECT tunnel failed, 403`). GitHub Actions can. That is why the runti
 is Actions rather than anything local. If you need to inspect unit numbers while
 developing, a web-fetch tool sometimes gets through where curl does not.
 
+### Scrape pace -- one request every 1.1s, shared
+
+`scrape_teduh.py` fetches every code up front with four workers sharing one
+clock: TEDUH sees one request every `PAUSE` (1.1s) seconds, whichever worker
+sends it. That brought the scrape from ~34 minutes (one code at a time, ~2.4s
+each) to ~16, which is what lets both daily refreshes fit GitHub's free 2,000
+private-repo Actions minutes (~1,650 a month with the launch watch).
+
+Do not raise the pace without a test run. TEDUH rate-limits: on 08 Oct 2026 a
+first draft with four workers each pausing on their own (~1.7 requests a
+second) was refused with 429 within 45 seconds. The second draft, this one,
+ran clean at 15.5 minutes, and both test runs matched the 4pm run on all 778
+rows. A 429 holds every worker for TEDUH's `Retry-After` and slows the pace
+once per refusal (`push_back`); the circuit breaker (three dead codes in a row
+-> exit 3, nothing written) is unchanged.
+
 ## Unit numbers — read this before touching `block_of`
 
 TEDUH uses two different shapes, and confusing them has caused two separate bugs.

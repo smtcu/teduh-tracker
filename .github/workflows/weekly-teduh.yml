@@ -14,7 +14,7 @@ on:
   # The website and the daily workbook refresh every day.
   # The Excel trackers and the PDF report are rebuilt on Fridays only.
   # Merging a suggest-form PR (or editing projects.csv by hand) refreshes
-  # immediately, so an approved project is on the site ~40 minutes after the
+  # immediately, so an approved project is on the site ~20 minutes after the
   # merge instead of waiting for the next scheduled refresh. A push that only
   # edits text in projects.csv (a name, a remark, a label) skips the scrape
   # and rebuilds the site from the morning's data in a couple of minutes --
@@ -47,8 +47,8 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    # A healthy run takes ~40 minutes, almost all of it scraping 800-odd codes
-    # at a polite one-second pace. On 22 Sep 2026 TEDUH stopped answering
+    # A healthy run takes ~16 minutes, almost all of it scraping 800-odd codes
+    # at one request every 1.1s (see PAUSE in scrape_teduh.py). On 22 Sep 2026 TEDUH stopped answering
     # mid-afternoon and the scrape step sat in retry loops for over an hour
     # and a half; this is the backstop that ends such a run instead of
     # letting it burn the 6-hour Actions maximum.
@@ -81,7 +81,7 @@ jobs:
       - name: Pre-flight self-test
         run: python scripts/selftest.py
 
-      # Text-only pushes do not need 40 minutes of scraping. The pushed
+      # Text-only pushes do not need 16 minutes of scraping. The pushed
       # projects.csv is compared with the one from before the push, and only
       # the columns the scraper reads (tracker, code, total_units, unit_types)
       # decide: a new code or changed unit count scrapes, a renamed project or
@@ -106,7 +106,8 @@ jobs:
 
       - name: Scrape TEDUH
         if: ${{ steps.mode.outputs.mode == 'scrape' }}
-        # ~36 minutes when TEDUH is healthy (816 codes, 1s apart). The scraper
+        # ~16 minutes when TEDUH is healthy (844 codes, one request every 1.1s
+        # across four workers -- it was ~34 one at a time). The scraper
         # bails out on its own once TEDUH looks properly down; this cap is the
         # belt to that suspenders, sized for a slow day, not a dead one.
         timeout-minutes: 75

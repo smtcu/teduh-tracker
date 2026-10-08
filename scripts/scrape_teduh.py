@@ -7,7 +7,8 @@ data/teduh_history.csv (plus a per-unit-type breakdown in data/teduh_by_type.csv
 
 Runs on GitHub Actions — no browser and no local machine required.
 """
-import csv, json, os, sys, time
+import csv, json, os, sys, threading, time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -23,7 +24,53 @@ TODAY = NOW.strftime("%Y-%m-%d")
 IS_FRIDAY = NOW.weekday() == 4              # the weekly Excel snapshot lands on Friday
 
 
-PAUSE = 1.0          # seconds between projects; raised when TEDUH pushes back
+# One shared pace for the whole scrape: PAUSE is the gap between the START of
+# one request and the start of the next, whichever worker sends it.
+#
+# The scrape used to ask for one code, wait for the reply, pause a second and
+# move on -- ~2.4s a code, ~33 minutes for 816 codes, most of it waiting on
+# TEDUH's reply. Several workers now overlap that waiting, but TEDUH still
+# sees one request every PAUSE seconds, never a burst.
+#
+# 1.1s (~0.9 requests a second) is deliberate. The 8 Oct 2026 test let four
+# workers each pause one second on their own -- about 1.7 requests a second
+# -- and TEDUH answered 429 within 45 seconds. The old pace (one every ~2.4s)
+# has never been refused. 1.1s sits under the limit that test found and
+# brings the scrape to ~16 minutes.
+PAUSE = 1.1
+MAX_PAUSE = 15.0
+WORKERS = 4          # requests that may be waiting on TEDUH at once
+
+_pace = threading.Lock()
+_next_slot = 0.0     # monotonic time the next request may start
+_hold_until = 0.0    # end of the current wait after a 429, shared by all
+
+
+def wait_turn():
+    """Block until this worker may send its request, keeping the shared pace."""
+    global _next_slot
+    with _pace:
+        now = time.monotonic()
+        start = max(now, _next_slot)
+        _next_slot = start + PAUSE
+    time.sleep(max(0.0, start - time.monotonic()))
+
+
+def push_back(wait):
+    """TEDUH refused: every worker waits, and the pace slows once per refusal.
+
+    Requests already in flight when TEDUH starts refusing come back as 429
+    together -- four of them on 8 Oct -- and each one used to raise the pace
+    again, 1.5 x 1.5 x 1.5 x 1.5, leaving the rest of the run five times
+    slower. Only the first refusal of a hold slows the pace now.
+    """
+    global PAUSE, _next_slot, _hold_until
+    with _pace:
+        now = time.monotonic()
+        if now >= _hold_until:
+            PAUSE = min(MAX_PAUSE, PAUSE * 1.5)
+        _hold_until = max(_hold_until, now + wait)
+        _next_slot = max(_next_slot, _hold_until)
 
 
 def retry_after(e, fallback):
@@ -40,10 +87,11 @@ def retry_after(e, fallback):
 def fetch(code, attempts=3):
     """GET the unit list for one project code, with retries and backoff.
 
-    429 means TEDUH is refusing because we are asking too fast -- usually
-    because something else is also hitting the portal. Retrying at the same
-    pace just gets refused again, so a refusal waits properly and slows every
-    later request in this run as well.
+    Every attempt takes its turn through wait_turn(), so retries keep the
+    shared pace too. 429 means TEDUH is refusing because we are asking too
+    fast -- usually because something else is also hitting the portal.
+    Retrying at the same pace just gets refused again, so a refusal holds
+    every worker for the wait TEDUH asked for and slows the rest of the run.
 
     A healthy TEDUH answers in under a second, so 30s is already generous.
     The old 7 attempts x 90s meant one dead code cost twelve minutes, and the
@@ -52,9 +100,9 @@ def fetch(code, attempts=3):
     about two minutes, and main() stops the whole scrape after three dead
     codes in a row.
     """
-    global PAUSE
     last = None
     for i in range(attempts):
+        wait_turn()
         try:
             req = Request(API.format(code=code), headers={"User-Agent": UA, "Accept": "application/json"})
             with urlopen(req, timeout=30) as r:
@@ -63,16 +111,67 @@ def fetch(code, attempts=3):
             last = e
             if e.code in (429, 503):
                 wait = retry_after(e, min(180, 20 * (i + 1)))
-                PAUSE = min(15.0, PAUSE * 1.5)
-                print(f"  {code}: {e.code}, waiting {wait}s "
-                      f"(pace now {PAUSE:.1f}s between projects)", file=sys.stderr, flush=True)
-                time.sleep(wait)
+                push_back(wait)
+                print(f"  {code}: {e.code}, all workers waiting {wait}s "
+                      f"(pace now {PAUSE:.1f}s between requests)", file=sys.stderr, flush=True)
                 continue
             time.sleep(5 * (i + 1))
         except (URLError, json.JSONDecodeError, TimeoutError, ValueError) as e:
             last = e
             time.sleep(5 * (i + 1))
     raise RuntimeError(f"{code}: failed after {attempts} attempts -> {last}")
+
+
+def prefetch(codes):
+    """Fetch and tally every code, WORKERS at a time.
+
+    Returns (results, errors): code -> tally tuple, and code -> exception.
+    fetch() keeps every worker on the one shared pace (wait_turn), and a
+    429 holds and slows all of them together (push_back). The circuit breaker
+    is kept: three codes in a row (in the order they finish) failing every
+    retry means TEDUH itself is down, so the remaining codes are not asked
+    for and the run exits without writing anything.
+    """
+    results, errors = {}, {}
+    stop = threading.Event()
+
+    def one(code):
+        if stop.is_set():
+            return code, None, None
+        try:
+            return code, tally(fetch(code)), None
+        except Exception as e:
+            return code, None, e
+
+    dead_streak = 0
+    with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        futures = [pool.submit(one, c) for c in codes]
+        for f in as_completed(futures):
+            if f.cancelled():
+                continue                    # never started: the breaker tripped
+            code, res, err = f.result()
+            if res is None and err is None:
+                continue                    # skipped after the breaker tripped
+            if err is not None:
+                errors[code] = err
+                print(f"FAIL  {code}: {err}", file=sys.stderr)
+                dead_streak += 1
+                if dead_streak >= 3 and not stop.is_set():
+                    stop.set()
+                    for other in futures:
+                        other.cancel()
+                    print("\nTEDUH looks down: three codes in a row failed "
+                          "every attempt. Stopping the scrape here rather "
+                          "than timing out through the rest of the list.\n"
+                          "FAILURES so far:\n  "
+                          + "\n  ".join(f"{c}: {e}" for c, e in errors.items()),
+                          file=sys.stderr)
+            else:
+                results[code] = res
+                dead_streak = 0
+    if stop.is_set():
+        sys.exit(3)   # nothing written; today's data left as it was
+    return results, errors
 
 
 def tally(payload):
@@ -99,17 +198,26 @@ def main():
 
     hist_rows, type_rows, failures = [], [], []
     unit_rows, byunit_rows = [], []
-    # A project listed in two trackers (Johor + its developer tracker) used to
-    # be fetched once per row. Cache successful fetches so each code hits
-    # TEDUH once per run -- both listings then show identical figures too.
-    fetched = {}
-    # Circuit breaker: three codes in a row exhausting every retry means TEDUH
-    # itself is down, not that three projects happen to be broken. Stop asking
-    # and leave today's data exactly as the earlier run left it -- writing the
-    # handful of rows scraped before the outage would REPLACE the morning
-    # snapshot with a rump. The workflow's !cancelled() steps still rebuild
-    # the site and workbooks from the existing CSVs, so nothing goes blank.
-    dead_streak = 0
+    # Every code is fetched up front, WORKERS at a time (see prefetch()), so
+    # the loop below only reads results. Each code is fetched once even when a
+    # project is listed in two trackers (Johor + its developer tracker), so
+    # both listings show identical figures. The circuit breaker -- three dead
+    # codes in a row means TEDUH is down -- lives in prefetch(): it exits
+    # before anything is written, because writing the handful of rows scraped
+    # before an outage would REPLACE the morning snapshot with a rump. The
+    # workflow's !cancelled() steps still rebuild the site and workbooks from
+    # the existing CSVs, so nothing goes blank.
+    wanted = []
+    for p in projects:
+        for c in (p.get("code") or "").split(","):
+            if c.strip() and c.strip() not in wanted:
+                wanted.append(c.strip())
+    print(f"Fetching {len(wanted)} codes, one request every {PAUSE:.1f}s "
+          f"across {WORKERS} workers.", flush=True)
+    started = time.time()
+    fetched, errors = prefetch(wanted)
+    print(f"Fetched in {(time.time() - started) / 60:.1f} minutes "
+          f"(pace at the end: {PAUSE:.1f}s between requests).\n", flush=True)
 
     for p in projects:
         codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
@@ -123,27 +231,11 @@ def main():
         all_units = []
         failed = False
         for code in codes:
-            if code in fetched:
-                nm, t, s_, g, units = fetched[code]
-            else:
-                time.sleep(PAUSE)      # gentle by default, slower if TEDUH pushes back
-                try:
-                    nm, t, s_, g, units = tally(fetch(code))
-                except Exception as e:
-                    failures.append(f"{code} ({p['project']}): {e}")
-                    print(f"FAIL  {code}: {e}", file=sys.stderr)
-                    failed = True
-                    dead_streak += 1
-                    if dead_streak >= 3:
-                        print("\nTEDUH looks down: three codes in a row failed "
-                              "every attempt. Stopping the scrape here rather "
-                              "than timing out through the rest of the list.\n"
-                              "FAILURES so far:\n  " + "\n  ".join(failures),
-                              file=sys.stderr)
-                        sys.exit(3)   # nothing written; today's data left as it was
-                    continue
-                fetched[code] = (nm, t, s_, g, units)
-                dead_streak = 0
+            if code not in fetched:
+                failures.append(f"{code} ({p['project']}): {errors.get(code)}")
+                failed = True
+                continue
+            nm, t, s_, g, units = fetched[code]
             name = name or nm
             total += t
             sold += s_
