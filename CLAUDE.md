@@ -82,13 +82,19 @@ docs/downloads/                  generated .xlsx and .pdf files
 ## Schedule
 
 The refresh has **no `schedule:` trigger**. It is started by `workflow_dispatch`,
-called twice a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
+called once a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
 `teduh-workflow-trigger`):
 
 | Worker cron | UTC | Malaysia time |
 |---|---|---|
 | `17 23 * * *` | 23:17 | 07:17 next day |
-| `0 8 * * *` | 08:00 | 16:00 same day |
+
+A second refresh at 16:00 MYT (`0 8 * * *`) ran until **9 Oct 2026** and was
+removed on her call, to keep Actions minutes down for a private repo.
+It was deleted as a Cron Trigger in the Cloudflare dashboard (Worker ->
+Settings -> Trigger events), which needs no redeploy; `wrangler.toml` was
+updated to match so a later `wrangler deploy` does not bring it back. Mentions
+of "the 4pm refresh" further down are history.
 
 The launch watch (`watch-launches.yml`) has no cron either. It runs on
 `workflow_run`: GitHub starts it when a refresh finishes, and a job-level `if`
@@ -324,8 +330,9 @@ developing, a web-fetch tool sometimes gets through where curl does not.
 `scrape_teduh.py` fetches every code up front with four workers sharing one
 clock: TEDUH sees one request every `PAUSE` (1.1s) seconds, whichever worker
 sends it. That brought the scrape from ~34 minutes (one code at a time, ~2.4s
-each) to ~16, which is what lets both daily refreshes fit GitHub's free 2,000
-private-repo Actions minutes (~1,650 a month with the launch watch).
+each) to ~16. With one daily refresh plus the launch watch that is ~38
+minutes a day, ~1,150 a month, against the 2,000 a private repo gets on
+GitHub Free (two refreshes came to ~1,650).
 
 Do not raise the pace without a test run. TEDUH rate-limits: on 08 Oct 2026 a
 first draft with four workers each pausing on their own (~1.7 requests a
