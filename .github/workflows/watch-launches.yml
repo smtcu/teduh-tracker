@@ -30,8 +30,8 @@ concurrency:
 jobs:
   watch:
     # Once a day is enough, so only the morning refresh (dispatched 23:17
-    # UTC, 07:17 MYT) is followed. The 4pm refresh and any projects.csv-push
-    # rebuild are ignored. A manual run always goes ahead.
+    # UTC, 07:17 MYT) is followed. Any projects.csv-push rebuild, or a manual
+    # refresh at another hour, is ignored. A manual run always goes ahead.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.workflow_run.created_at, 'T23:')
