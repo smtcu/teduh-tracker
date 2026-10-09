@@ -13,7 +13,7 @@ It replaced the Launched date column on 01 Sep 2026.
 NEW SALES and % are live Excel formulas, never hardcoded results.
 """
 import csv, sys, os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter as L
@@ -393,7 +393,13 @@ if __name__ == '__main__':
     # it this script reads nothing but the history file, as it always has.
     seed_from = next((f.split('=', 1)[1] for f in flags if f.startswith('--seed-from=')), None)
     pcsv, hcsv, outdir = args[0], args[1], args[2]
-    rd = datetime.strptime(args[3], '%Y-%m-%d') if len(args) > 3 else datetime.now()
+    # Malaysia date, not the runner's. GitHub's runners are on UTC, so the
+    # Friday 07:17 MYT refresh (23:17 UTC Thursday) named its workbooks and
+    # their "Report as at" line with Thursday's date -- 20261008 for the
+    # 9 Oct 2026 Friday update.
+    MYT = timezone(timedelta(hours=8))
+    rd = (datetime.strptime(args[3], '%Y-%m-%d') if len(args) > 3
+          else datetime.now(MYT).replace(tzinfo=None))
     os.makedirs(outdir, exist_ok=True)
     projects, order, lookup, seeded = load(pcsv, hcsv, seed_from)
     notes = {}
