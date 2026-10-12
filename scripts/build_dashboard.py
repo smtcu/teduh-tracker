@@ -547,6 +547,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   --ink:#0b0b0b; --ink-2:#42413e; --muted:#6f6e69;
   --grid:#d8d7cf; --rule:#c3c2b7; --border:rgba(11,11,11,.16);
   --blue:#2a78d6; --orange:#eb6834; --track:#cde2fb;
+  --check:#7a4fd0; --checkbg:#f1ecfb;
   --hl:rgba(42,120,214,.09); --pinbg:#eaf2fd;
   --shadow:0 1px 2px rgba(11,11,11,.05),0 6px 20px rgba(11,11,11,.06);
 }
@@ -556,6 +557,7 @@ html[data-theme="dark"]{
   --ink:#fff; --ink-2:#d4d3c9; --muted:#9d9c94;
   --grid:#35352f; --rule:#45453f; --border:rgba(255,255,255,.18);
   --blue:#3987e5; --orange:#d95926; --track:#184f95;
+  --check:#a585ee; --checkbg:#272038;
   --hl:rgba(57,135,229,.16); --pinbg:#16304f;
   --shadow:none;
 }
@@ -596,7 +598,11 @@ button,.btn{font:inherit;color:inherit;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--blue);color:#fff}
 .chips .lbl{width:100%;font-size:11.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -2px}
 .plus{display:inline-block;background:var(--orange);color:#fff;border-radius:999px;font-size:10.5px;font-weight:750;padding:1px 7px;margin-left:7px;vertical-align:1px}
-.ghost[aria-pressed="true"] .plus{background:#fff;color:var(--orange)}
+/* Purple = a guess waiting on her (new SPV, name match); orange = added.
+   Both keep their colour on the selected button, ringed in white, so the
+   two never read alike. */
+.plus.check{background:var(--check)}
+.ghost[aria-pressed="true"] .plus{box-shadow:0 0 0 1.5px #fff}
 .searchwrap{position:relative;margin:0 0 14px;max-width:520px}
 #q{width:100%;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 13px;min-height:40px;box-sizing:border-box}
 #q::placeholder{color:var(--muted)}
@@ -619,6 +625,8 @@ html[data-theme="dark"] tr.found td{animation-name:rowglowd}
    Blue edge = handled automatically or purely informational. */
 .wnrow{border-left:4px solid var(--orange);background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
 .wnrow.auto{border-left-color:var(--blue)}
+.wnrow.check{border-left-color:var(--check);background:var(--checkbg)}
+.wnrow.check b{color:var(--check)}
 .wnrow b{font-weight:750}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
@@ -1022,6 +1030,9 @@ let FOCUS = null;              /* pkey of a picked search result, shown in every
 let pickedKey = null;          /* weekly-chart selection, by key so filters can't shift it */
 const inTop = (p, k) => !topOnly || p.top || pkey(p) === FOCUS || (k && pkey(p) === k);
 const topOrder = list => topOnly ? list.slice().sort((a, b) => ((a.pctNow || 0) - (b.pctNow || 0)) || ((a.soldNow || 0) - (b.soldNow || 0))) : list;
+/* A new SPV or a name match is a guess -- never added, waits on her. */
+const needsCheck = f => f.kind === 'name-match' || f.kind === 'new-spv';
+
 /* Rank badges: "#1" as a chip in HTML, "#1 " as a prefix inside SVG labels. */
 const byKey = k => ALL.find(p => pkey(p) === k);
 const rkText = p => (p && p.rank ? '#' + p.rank + ' ' : '');
@@ -1039,8 +1050,10 @@ function trackerBar() {
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
       const b = el('button', 'ghost', t.label);
-      const nw = ((DATA.watch || {})[t.key] || []).length;
-      if (nw) b.appendChild(el('span', 'plus', '+' + nw));
+      const fs = (DATA.watch || {})[t.key] || [];
+      const nCheck = fs.filter(needsCheck).length, nAuto = fs.length - nCheck;
+      if (nAuto) { const s = el('span', 'plus', '+' + nAuto); s.title = 'Added automatically'; b.appendChild(s); }
+      if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check — not added'; b.appendChild(s); }
       b.setAttribute('aria-pressed', String(t.key === tracker));
       b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; tableMore = false; render(); };
       btns.appendChild(b);
@@ -1076,9 +1089,9 @@ function table() {
       : (f.permit
         ? '. This developer has no developer tracker of its own, so nothing was added — the area sheets stay hand-picked.'
         : '. Registered but not licensed yet — it joins its developer tracker automatically the day its permit is issued.');
-    /* Orange edge: her judgment needed. Blue edge: automatic / informational. */
-    const needsHer = f.kind === 'name-match' || f.kind === 'new-spv';
-    const row = el('div', 'wnrow' + (needsHer ? '' : ' auto'));
+    /* Purple: her judgment needed, nothing was added. Blue edge: automatic / informational. */
+    const needsHer = needsCheck(f);
+    const row = el('div', 'wnrow' + (needsHer ? ' check' : ' auto'));
     row.appendChild(el('b', '', needsHer ? 'Check: ' : 'Auto: '));
     row.appendChild(document.createTextNode('New on TEDUH: ' + f.name + ' (' + f.code + ')'
       + (f.units ? ' — ' + nf(f.units) + ' units' : '')

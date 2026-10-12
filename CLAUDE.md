@@ -297,6 +297,12 @@ Gen holds through one Sunway JV). SPVs newer than the developers.csv crawl cost
 one detail fetch each, capped at `EMAIL_CHECKS_MAX` (40) per run. An email
 match is a `new-spv` notice whose label is the domain; never auto-added.
 
+**Colours on the site.** Finds that need her judgment -- `new-spv` (family
+name or email domain) and `name-match` -- are never added, and show **purple**
+(`--check`): a purple-tinted "Check:" banner and a purple `+N` on the tracker
+button. Finds the watch added or that are informational keep a blue-edged
+"Auto:" banner and an orange `+N`. A button can carry both pills.
+
 The script swallows its own failures -- a missed probe is caught on the next
 run, and the watch must never cost the day's sales figures. On a day it finds
 nothing it commits nothing: the site rebuild and the commit are skipped, since a
