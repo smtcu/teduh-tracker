@@ -23,9 +23,11 @@ on:
   # made with the runner's GITHUB_TOKEN, and GitHub never fires workflows
   # from those. The teduh-refresh concurrency group queues this behind any
   # refresh already running.
+  # A file in data/teduh_watch_resolved/ is her answer to a purple "Check:"
+  # notice on the site (see scripts/apply_resolutions.py); it refreshes too.
   push:
     branches: [main]
-    paths: ["projects.csv"]
+    paths: ["projects.csv", "data/teduh_watch_resolved/**"]
   workflow_dispatch:        # the Cloudflare Worker, or you from the Actions tab
     inputs:
       apdl:
@@ -88,6 +90,11 @@ jobs:
       # an edited remark rebuilds from the existing data. Dispatches -- the two
       # daily runs and anything from the Actions tab -- always scrape, and so
       # does any push whose previous version cannot be fetched.
+      # Before the scrape decision, so an accepted code counts as a new code
+      # and is scraped in this run; a dismiss changes no code and only rebuilds.
+      - name: Apply answers to the site's Check notices
+        run: python scripts/apply_resolutions.py
+
       - name: Decide whether TEDUH needs scraping
         id: mode
         run: |

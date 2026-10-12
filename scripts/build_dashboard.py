@@ -485,7 +485,13 @@ def build_payload():
     watch = {}
     for r in read("data/teduh_watch.csv"):
         seen = (r.get("first_seen") or "").strip()
-        if not seen or seen < cutoff:
+        kind = (r.get("kind") or "").strip()
+        # A guess (name-match, new-spv) is a question for her, so it stays up
+        # until she answers it -- the code reaches projects.csv, or a dismiss
+        # (scripts/apply_resolutions.py). Anything else is news: BADGE_DAYS.
+        if kind in ("accepted", "dismissed"):
+            continue
+        if not seen or (seen < cutoff and kind not in ("name-match", "new-spv")):
             continue
         # A name-match or new-SPV notice is a guess for her to confirm. Once
         # its code is in projects.csv -- she accepted it, or it turned out to
@@ -513,6 +519,7 @@ def build_payload():
     return {
         "trackers": areas + devs,
         "watch": watch,
+        "repo": os.environ.get("GITHUB_REPOSITORY") or "smtcu/teduh-tracker",
         "downloads": downloads(),
         # %-I (no-leading-zero hour) is Unix-only; strip the zero by hand so the
         # build also runs on Windows.
@@ -627,6 +634,11 @@ html[data-theme="dark"] tr.found td{animation-name:rowglowd}
 .wnrow.auto{border-left-color:var(--blue)}
 .wnrow.check{border-left-color:var(--check);background:var(--checkbg)}
 .wnrow.check b{color:var(--check)}
+.wnres{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px}
+.wnopts{display:contents}
+.wnopts[hidden]{display:none}
+.wnlink{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--check);text-decoration:underline;cursor:pointer}
+.wnhint{color:var(--muted);font-weight:500}
 .wnrow b{font-weight:750}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
@@ -1033,6 +1045,30 @@ const topOrder = list => topOnly ? list.slice().sort((a, b) => ((a.pctNow || 0) 
 /* A new SPV or a name match is a guess -- never added, waits on her. */
 const needsCheck = f => f.kind === 'name-match' || f.kind === 'new-spv';
 
+/* "Resolve…" reveals two links to GitHub's new-file page, pre-filled with
+   data/teduh_watch_resolved/<code> = accept | dismiss. Nothing changes until
+   she taps Commit there, which needs write access to the repo -- that is the
+   guard against a stray tap. scripts/apply_resolutions.py applies it. */
+function resolveLinks(f) {
+  const box = el('span', 'wnres');
+  const more = el('button', 'wnlink', 'Resolve…');
+  const opts = el('span', 'wnopts'); opts.hidden = true;
+  const gh = answer => 'https://github.com/' + DATA.repo + '/new/main/data/teduh_watch_resolved?filename='
+    + encodeURIComponent(f.code) + '&value=' + answer;
+  const yes = f.kind === 'name-match'
+    ? 'Yes — put ' + f.code + ' on “' + (f.label || 'that row') + '”'
+    : 'Yes — add it to this tracker';
+  [[yes, 'accept'], ['Not theirs — dismiss', 'dismiss']].forEach(([text, answer]) => {
+    const a = el('a', 'wnlink', text);
+    a.href = gh(answer); a.target = '_blank'; a.rel = 'noopener';
+    opts.appendChild(a);
+  });
+  opts.appendChild(el('span', 'wnhint', 'Opens GitHub — tap Commit there to confirm.'));
+  more.onclick = () => { opts.hidden = !opts.hidden; more.textContent = opts.hidden ? 'Resolve…' : 'Cancel'; };
+  box.appendChild(more); box.appendChild(opts);
+  return box;
+}
+
 /* Rank badges: "#1" as a chip in HTML, "#1 " as a prefix inside SVG labels. */
 const byKey = k => ALL.find(p => pkey(p) === k);
 const rkText = p => (p && p.rank ? '#' + p.rank + ' ' : '');
@@ -1079,11 +1115,11 @@ function table() {
   const wn = $('#watchnote'); wn.textContent = '';
   finds.forEach(f => {
     const tail = f.kind === 'name-match'
-      ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, and put the code in projects.csv if it’s the one.'
+      ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, then Resolve.'
       : f.kind === 'new-spv' && (f.label || '').startsWith('@')
-      ? '. Its registered email is ' + f.label + ', the same as this developer’s other SPVs — check it, and add the code to projects.csv if it’s theirs.'
+      ? '. Its registered email is ' + f.label + ', the same as this developer’s other SPVs — check it, then Resolve.'
       : f.kind === 'new-spv'
-      ? '. Looks like a new SPV of this developer — check it, and add the code to projects.csv if it’s theirs.'
+      ? '. Looks like a new SPV of this developer — check it, then Resolve.'
       : f.tracked
       ? '. Added to its developer tracker automatically — figures appear from the next morning\u2019s run.'
       : (f.permit
@@ -1096,7 +1132,9 @@ function table() {
     row.appendChild(document.createTextNode('New on TEDUH: ' + f.name + ' (' + f.code + ')'
       + (f.units ? ' — ' + nf(f.units) + ' units' : '')
       + (f.permit ? ', permit from ' + fdate(f.permit) : ', no sales permit yet')
-      + (f.pemaju ? ' — ' + f.pemaju : '') + tail));
+      + (f.pemaju ? ' — ' + f.pemaju : '') + tail
+      + (needsHer && f.seen && f.seen < DATA.todayDate ? ' Waiting since ' + fdate(f.seen) + '.' : '')));
+    if (needsHer) row.appendChild(resolveLinks(f));
     wn.appendChild(row);
   });
   wn.hidden = !finds.length;

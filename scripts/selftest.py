@@ -37,7 +37,7 @@ section("modules import cleanly")
 mods = {}
 for name in ["unit_types", "scrape_teduh", "build_dashboard", "build_trackers",
              "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary",
-             "fill_apdl", "watch_developers", "survey_area"]:
+             "fill_apdl", "watch_developers", "survey_area", "apply_resolutions"]:
     try:
         mods[name] = __import__(name)
         ck(True, name)
@@ -174,6 +174,35 @@ try:
     ck("hanya" in WD.words_of("RESIDENSI HAN-YA WAHYU"), "HAN-YA reads as hanya")
 except Exception as e:                                     # noqa: BLE001
     ck(False, f"family-pattern checks failed to run ({e})")
+
+# --------------------------------------------------------------------------
+section("Check-notice answers: accept fills the right row, dismiss adds nothing")
+# --------------------------------------------------------------------------
+# An accepted name match must fill the code-less row it was matched to, never
+# append a second one -- the duplicate Hanya Wahyu nearly got on 12 Oct 2026.
+try:
+    import apply_resolutions as AR
+    cols = ["tracker", "tracker_label", "no", "project", "code", "developer",
+            "apdl", "total_units", "remarks"]
+    rows = [dict(zip(cols, ["tslaw", "TS Law", "6", "Hanya Wahyu @ Taman Wahyu",
+                            "", "", "", "1816", "Not launched yet."]))]
+    base = {"kod_pemaju": "", "pemaju": "X SDN. BHD.", "units": "900",
+            "permit_mula": "", "trackers": "tslaw"}
+    watch = [dict(base, kod_projek="31436-1", kind="name-match", nama="RESIDENSI HAN-YA WAHYU",
+                  label="Hanya Wahyu @ Taman Wahyu"),
+             dict(base, kod_projek="31999-1", kind="new-spv", nama="NEW ONE", label="@tslawland.com"),
+             dict(base, kod_projek="31998-1", kind="new-spv", nama="NOT THEIRS", label="@tslawland.com")]
+    AR.apply({"31436-1": "accept", "31999-1": "accept", "31998-1": "dismiss"}, watch, rows, cols)
+    ck(len(rows) == 2, f"one row appended, for the new SPV only ({len(rows) - 1})")
+    ck(rows[0]["code"] == "31436-1" and rows[0]["total_units"] == "1816",
+       "name match filled row 6's code and kept her 1,816 units")
+    ck(rows[1]["code"] == "31999-1" and rows[1]["no"] == "7", "new SPV became row 7")
+    ck([w["kind"] for w in watch] == ["accepted", "accepted", "dismissed"],
+       f"watch kinds -> {[w['kind'] for w in watch]}")
+    AR.apply({"31436-1": "accept", "31999-1": "accept"}, watch, rows, cols)
+    ck(len(rows) == 2, "applying the same answers again changes nothing")
+except Exception as e:                                     # noqa: BLE001
+    ck(False, f"resolution checks failed to run ({e})")
 
 # --------------------------------------------------------------------------
 section("regroup(): roll-ups never change the arithmetic")

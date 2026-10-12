@@ -199,19 +199,47 @@ def family_match(pemaju, families):
     return best_t
 
 
+# Finds that are a guess for her to confirm: never added by the watch itself,
+# only when she accepts them (scripts/apply_resolutions.py).
+GUESS_KINDS = ("name-match", "new-spv")
+# What a guess becomes once she has answered it.
+RESOLVED_KINDS = ("accepted", "dismissed")
+
+
+def read_projects(pcsv):
+    with open(pcsv, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        return list(reader.fieldnames or []), list(reader)
+
+
+def write_projects(pcsv, cols, rows):
+    """Same write shape as fill_apdl.py, which rewrites this file daily."""
+    import shutil
+    shutil.copyfile(pcsv, pcsv + ".bak")
+    with open(pcsv, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        w.writeheader()
+        w.writerows(rows)
+
+
 def auto_add(rows_to_add, pcsv):
     """Append permit-holding finds to their developer tracker in projects.csv.
 
-    Same read/write shape as fill_apdl.py, which rewrites this file daily, so
-    the formatting stays canonical. Returns the codes actually added.
+    Returns the codes actually added.
     """
     if not rows_to_add:
         return []
-    import shutil
-    with open(pcsv, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        cols = list(reader.fieldnames or [])
-        rows = list(reader)
+    cols, rows = read_projects(pcsv)
+    added = add_rows(rows, cols, rows_to_add)
+    if added:
+        write_projects(pcsv, cols, rows)
+        for code, t in added:
+            print(f"ADDED {code} to the '{t}' tracker in projects.csv")
+    return [c for c, _ in added]
+
+
+def add_rows(rows, cols, rows_to_add):
+    """Append finds to their developer tracker, in memory. [(code, tracker)]."""
     have = {c.strip() for r in rows for c in (r.get("code") or "").split(",") if c.strip()}
     by_tracker = {}
     for r in rows:
@@ -236,15 +264,7 @@ def auto_add(rows_to_add, pcsv):
         sib.append(row)
         have.add(find["kod_projek"])
         added.append((find["kod_projek"], t))
-    if added:
-        shutil.copyfile(pcsv, pcsv + ".bak")
-        with open(pcsv, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=cols)
-            w.writeheader()
-            w.writerows(rows)
-        for code, t in added:
-            print(f"ADDED {code} to the '{t}' tracker in projects.csv")
-    return [c for c, _ in added]
+    return added
 
 
 def read(path):
@@ -452,11 +472,21 @@ def main():
                 continue
             time.sleep(PAUSE)
         done = set()
+        own = (p.get("tracker") or "").strip()
         for h in hits:
             hid = (h.get("id") or "").strip()
             if hid in done:
                 continue
             done.add(hid)
+            # Already raised as this tracker's new SPV (by family name or
+            # email)? Then it most likely IS this code-less row: say so, so
+            # accepting it fills the row instead of appending a duplicate.
+            # Hanya Wahyu's 31436-1 matches both ways.
+            prior = next((f for f in finds if f["kod_projek"] == hid), None)
+            if prior is not None:
+                if prior.get("kind") == "new-spv" and prior.get("trackers") == own:
+                    prior.update(kind="name-match", label=(p.get("project") or "").strip())
+                continue
             if (not hid or hid in tracked_codes or hid in seen_codes
                     or hid in register_codes
                     or hid in {f["kod_projek"] for f in finds}):
@@ -466,7 +496,6 @@ def main():
                 continue
             row = detail_row(hid, detail)
             pemaju = (row.get("pemaju") or "").upper()
-            own = (p.get("tracker") or "").strip()
             if any(lbl in pemaju for t, lbl in dev_labels.items() if t != own):
                 continue
             row.update(first_seen=today, kind="name-match",
@@ -489,13 +518,20 @@ def main():
                    label=(x.get("label") or "").strip())
         finds.append(row)
     for r in state:
-        if r.get("permit_mula") or r["kod_projek"] in {f["kod_projek"] for f in finds}:
+        if (r.get("permit_mula") or r.get("kind") in RESOLVED_KINDS
+                or r["kod_projek"] in {f["kod_projek"] for f in finds}):
             continue
         detail, reached = fetch(r["kod_projek"], net)
         if not reached or detail is None:
             continue
         fresh = detail_row(r["kod_projek"], detail)
-        if fresh["permit_mula"]:
+        if fresh["permit_mula"] and r.get("kind") in GUESS_KINDS:
+            # A guess stays a guess when its permit arrives: turning it into
+            # permit-issued would auto-add it, and a name match added that way
+            # duplicates the code-less row it was matched to.
+            r.update(permit_mula=fresh["permit_mula"], units=fresh["units"] or r.get("units", ""))
+            updated += 1
+        elif fresh["permit_mula"]:
             r.update(permit_mula=fresh["permit_mula"], units=fresh["units"] or r.get("units", ""),
                      first_seen=today, kind="permit-issued")
             updated += 1
@@ -504,7 +540,7 @@ def main():
     # everything else waits in the watch file and is re-checked each run.
     # name-match and new-spv are guesses for her to confirm -- never added.
     licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()
-                and f.get("kind") not in ("name-match", "new-spv")]
+                and f.get("kind") not in GUESS_KINDS]
     licensed += [r for r in state if r.get("kind") == "permit-issued"]
     added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"))
     for r in finds + state:
