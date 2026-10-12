@@ -42,12 +42,21 @@ WATCH = os.path.join(ROOT, "data", "teduh_watch.csv")
 EXTRA = os.path.join(ROOT, "data", "teduh_watch_extra.csv")
 INDEX = os.path.join(ROOT, "data", "projects_index.csv")
 FAMILIES = os.path.join(ROOT, "data", "developer_families.csv")
+DEVELOPERS = os.path.join(ROOT, "data", "developers.csv")
 # TEDUH's register listing is sorted by developer code descending, so the
 # first pages are the newest SPVs -- exactly what the phase walk cannot see.
 # 5 pages = the 100 newest developer codes, several weeks of registrations.
 SWEEP_PAGES = 5
 FIELDS = ["first_seen", "kind", "kod_projek", "kod_pemaju", "nama", "pemaju",
           "units", "permit_mula", "trackers", "label"]
+# Webmail domains say nothing about who an SPV belongs to -- nine developer
+# trackers have at least one SPV on gmail.com.
+WEBMAIL = {"gmail.com", "yahoo.com", "yahoo.com.my", "hotmail.com", "outlook.com",
+           "live.com", "msn.com", "icloud.com", "me.com", "ymail.com",
+           "rocketmail.com", "streamyx.com", "tm.net.my"}
+# Detail fetches the email check may spend per run on SPVs that
+# data/developers.csv has not seen yet, newest first.
+EMAIL_CHECKS_MAX = 40
 MAX_NEW_PER_DEV = 3        # cap the walk upward, in case a developer lands several at once
 # Words too generic to search TEDUH by. The name watch below picks the most
 # distinctive word of a code-less project's name instead.
@@ -56,11 +65,74 @@ GENERIC = {"taman", "residensi", "residence", "residences", "the", "at", "apartm
            "hill", "hills", "park", "city", "one", "new", "phase", "fasa"}
 
 
-def name_token(project):
-    """The most distinctive word of a marketing name, for a q= search."""
-    words = [w.strip("()@,.'\"-") for w in (project or "").lower().split()]
-    words = [w for w in words if len(w) >= 4 and w not in GENERIC and not w.isdigit()]
-    return max(words, key=len) if words else ""
+def words_of(name):
+    """Lowercased words, with inner hyphens and apostrophes closed up.
+
+    TEDUH registered Hanya Wahyu as RESIDENSI HAN-YA WAHYU; closing the
+    hyphen lets "hanya" and "han-ya" compare equal.
+    """
+    out = []
+    for w in (name or "").lower().split():
+        w = re.sub(r"[-'\u2019]", "", w).strip("()@,.\"")
+        if w:
+            out.append(w)
+    return out
+
+
+def name_tokens(project):
+    """Every distinctive word of a marketing name, longest first.
+
+    One word used to be enough, but "Hanya Wahyu @ Taman Wahyu" searched only
+    for "hanya", which TEDUH's q= does not match against HAN-YA. Searching
+    "wahyu" as well would have found it.
+    """
+    words = {w for w in words_of(project)
+             if len(w) >= 4 and w not in GENERIC and not w.isdigit()}
+    return sorted(words, key=lambda w: (-len(w), w))
+
+
+def email_domain(email):
+    """'marketing@tslawland.com' -> 'tslawland.com'; '' for webmail or junk."""
+    e = (email or "").strip().lower()
+    if "@" not in e:
+        return ""
+    d = e.rsplit("@", 1)[1].strip().strip(".>")
+    return "" if "." not in d or d in WEBMAIL else d
+
+
+def domain_trackers(projects, emails):
+    """Email domain -> the one developer tracker whose SPVs use it.
+
+    Built from the codes already tracked, so it learns a domain the day a
+    project of that developer is added. A domain shared by two trackers is
+    dropped -- it cannot say whose a new SPV is. So is a domain the tracker
+    only borrowed through a joint venture: Majestic Gen tracks one Sunway JV
+    SPV out of 25 on @sunway.com.my, and every new Sunway SPV is not
+    Majestic's. The tracked SPVs must be at least a quarter of all the SPVs
+    on that domain that data/developers.csv knows.
+    """
+    seen, spvs = {}, {}
+    for p in projects:
+        t = (p.get("tracker") or "").strip()
+        if not t or t in AREA_TRACKERS:
+            continue
+        for c in (p.get("code") or "").split(","):
+            sp = split_code(c)
+            d = email_domain(emails.get(sp[0])) if sp else ""
+            if d:
+                seen.setdefault(d, set()).add(t)
+                spvs.setdefault(d, set()).add(sp[0])
+    total = {}
+    for e in emails.values():
+        d = email_domain(e)
+        total[d] = total.get(d, 0) + 1
+    return {d: next(iter(ts)) for d, ts in seen.items()
+            if len(ts) == 1 and 4 * len(spvs[d]) >= total.get(d, 0)}
+
+
+def detail_email(detail):
+    pm = (detail or {}).get("pemaju") or {}
+    return (pm.get("emel") or pm.get("email") or "") if isinstance(pm, dict) else ""
 
 
 def name_search(token):
@@ -127,19 +199,47 @@ def family_match(pemaju, families):
     return best_t
 
 
+# Finds that are a guess for her to confirm: never added by the watch itself,
+# only when she accepts them (scripts/apply_resolutions.py).
+GUESS_KINDS = ("name-match", "new-spv")
+# What a guess becomes once she has answered it.
+RESOLVED_KINDS = ("accepted", "dismissed")
+
+
+def read_projects(pcsv):
+    with open(pcsv, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        return list(reader.fieldnames or []), list(reader)
+
+
+def write_projects(pcsv, cols, rows):
+    """Same write shape as fill_apdl.py, which rewrites this file daily."""
+    import shutil
+    shutil.copyfile(pcsv, pcsv + ".bak")
+    with open(pcsv, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        w.writeheader()
+        w.writerows(rows)
+
+
 def auto_add(rows_to_add, pcsv):
     """Append permit-holding finds to their developer tracker in projects.csv.
 
-    Same read/write shape as fill_apdl.py, which rewrites this file daily, so
-    the formatting stays canonical. Returns the codes actually added.
+    Returns the codes actually added.
     """
     if not rows_to_add:
         return []
-    import shutil
-    with open(pcsv, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        cols = list(reader.fieldnames or [])
-        rows = list(reader)
+    cols, rows = read_projects(pcsv)
+    added = add_rows(rows, cols, rows_to_add)
+    if added:
+        write_projects(pcsv, cols, rows)
+        for code, t in added:
+            print(f"ADDED {code} to the '{t}' tracker in projects.csv")
+    return [c for c, _ in added]
+
+
+def add_rows(rows, cols, rows_to_add):
+    """Append finds to their developer tracker, in memory. [(code, tracker)]."""
     have = {c.strip() for r in rows for c in (r.get("code") or "").split(",") if c.strip()}
     by_tracker = {}
     for r in rows:
@@ -164,15 +264,7 @@ def auto_add(rows_to_add, pcsv):
         sib.append(row)
         have.add(find["kod_projek"])
         added.append((find["kod_projek"], t))
-    if added:
-        shutil.copyfile(pcsv, pcsv + ".bak")
-        with open(pcsv, "w", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=cols)
-            w.writeheader()
-            w.writerows(rows)
-        for code, t in added:
-            print(f"ADDED {code} to the '{t}' tracker in projects.csv")
-    return [c for c, _ in added]
+    return added
 
 
 def read(path):
@@ -282,6 +374,16 @@ def main():
     # sees also tops up projects_index.csv, keeping the snapshot fresh.
     register_codes = {r.get("kod_projek") for r in read(INDEX)}
     families = family_patterns()
+    # A family name only works when the SPV carries it. TS Law's do not --
+    # PLAZA SENTOSA PROPERTIES, L & T REALTY, SKYLINE EMBASSY -- but all of
+    # them register a @tslawland.com email, so the email domain is the
+    # fallback. data/developers.csv already holds the email for every SPV it
+    # has crawled; anything newer costs one detail fetch, capped per run.
+    dev_rows = read(DEVELOPERS)
+    emails = {r.get("kod_pemaju"): r.get("emel") or "" for r in dev_rows
+              if r.get("found") == "yes"}
+    domains = domain_trackers(projects, emails)
+    email_checks = 0
     index_new = []
     try:
         sweep = newest_registrations()
@@ -311,13 +413,28 @@ def main():
         if sp and sp[0] in dev_trackers:
             continue                    # the phase walk owns known developer codes
         t = family_match(pem_name, families)
-        if not t or t in AREA_TRACKERS:
+        if t in AREA_TRACKERS:
+            t = ""
+        detail, label = None, pem_name
+        if not t and domains:
+            kp = str(it.get("kod_pemaju") or "").strip() or (sp[0] if sp else "")
+            if kp not in emails and email_checks < EMAIL_CHECKS_MAX:
+                email_checks += 1
+                detail, reached = fetch(hid, net)
+                if reached and detail is not None:
+                    emails[kp] = detail_email(detail)
+            dom = email_domain(emails.get(kp))
+            t = domains.get(dom, "")
+            if t:
+                label = "@" + dom
+        if not t:
             continue
-        detail, reached = fetch(hid, net)
-        if not reached or detail is None:
-            continue
+        if detail is None:
+            detail, reached = fetch(hid, net)
+            if not reached or detail is None:
+                continue
         row = detail_row(hid, detail)
-        row.update(first_seen=today, kind="new-spv", trackers=t, label=pem_name)
+        row.update(first_seen=today, kind="new-spv", trackers=t, label=label)
         finds.append(row)
 
     # --- 2. a name watch for every project tracked WITHOUT a code ---
@@ -337,18 +454,39 @@ def main():
         lbl = (pr.get("tracker_label") or "").strip().upper()
         if t and len(lbl) >= 3:
             dev_labels[t] = lbl
+    # Every distinctive word is searched, not just the longest, and the
+    # newest registrations from the sweep are matched here too with hyphens
+    # closed up -- TEDUH's own q= search will not find HAN-YA from "hanya".
+    sweep_words = [(it, set(words_of(it.get("nama")))) for it in sweep]
     for p in projects:
         if (p.get("code") or "").strip():
             continue
-        token = name_token(p.get("project"))
-        if not token:
+        tokens = name_tokens(p.get("project"))
+        if not tokens:
             continue
-        try:
-            hits = name_search(token)
-        except Exception:
-            continue
+        hits = [it for it, ws in sweep_words if ws.intersection(tokens)]
+        for token in tokens:
+            try:
+                hits += name_search(token)
+            except Exception:
+                continue
+            time.sleep(PAUSE)
+        done = set()
+        own = (p.get("tracker") or "").strip()
         for h in hits:
             hid = (h.get("id") or "").strip()
+            if hid in done:
+                continue
+            done.add(hid)
+            # Already raised as this tracker's new SPV (by family name or
+            # email)? Then it most likely IS this code-less row: say so, so
+            # accepting it fills the row instead of appending a duplicate.
+            # Hanya Wahyu's 31436-1 matches both ways.
+            prior = next((f for f in finds if f["kod_projek"] == hid), None)
+            if prior is not None:
+                if prior.get("kind") == "new-spv" and prior.get("trackers") == own:
+                    prior.update(kind="name-match", label=(p.get("project") or "").strip())
+                continue
             if (not hid or hid in tracked_codes or hid in seen_codes
                     or hid in register_codes
                     or hid in {f["kod_projek"] for f in finds}):
@@ -358,7 +496,6 @@ def main():
                 continue
             row = detail_row(hid, detail)
             pemaju = (row.get("pemaju") or "").upper()
-            own = (p.get("tracker") or "").strip()
             if any(lbl in pemaju for t, lbl in dev_labels.items() if t != own):
                 continue
             row.update(first_seen=today, kind="name-match",
@@ -381,13 +518,20 @@ def main():
                    label=(x.get("label") or "").strip())
         finds.append(row)
     for r in state:
-        if r.get("permit_mula") or r["kod_projek"] in {f["kod_projek"] for f in finds}:
+        if (r.get("permit_mula") or r.get("kind") in RESOLVED_KINDS
+                or r["kod_projek"] in {f["kod_projek"] for f in finds}):
             continue
         detail, reached = fetch(r["kod_projek"], net)
         if not reached or detail is None:
             continue
         fresh = detail_row(r["kod_projek"], detail)
-        if fresh["permit_mula"]:
+        if fresh["permit_mula"] and r.get("kind") in GUESS_KINDS:
+            # A guess stays a guess when its permit arrives: turning it into
+            # permit-issued would auto-add it, and a name match added that way
+            # duplicates the code-less row it was matched to.
+            r.update(permit_mula=fresh["permit_mula"], units=fresh["units"] or r.get("units", ""))
+            updated += 1
+        elif fresh["permit_mula"]:
             r.update(permit_mula=fresh["permit_mula"], units=fresh["units"] or r.get("units", ""),
                      first_seen=today, kind="permit-issued")
             updated += 1
@@ -396,7 +540,7 @@ def main():
     # everything else waits in the watch file and is re-checked each run.
     # name-match and new-spv are guesses for her to confirm -- never added.
     licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()
-                and f.get("kind") not in ("name-match", "new-spv")]
+                and f.get("kind") not in GUESS_KINDS]
     licensed += [r for r in state if r.get("kind") == "permit-issued"]
     added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"))
     for r in finds + state:

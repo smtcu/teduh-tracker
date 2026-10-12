@@ -485,7 +485,13 @@ def build_payload():
     watch = {}
     for r in read("data/teduh_watch.csv"):
         seen = (r.get("first_seen") or "").strip()
-        if not seen or seen < cutoff:
+        kind = (r.get("kind") or "").strip()
+        # A guess (name-match, new-spv) is a question for her, so it stays up
+        # until she answers it -- the code reaches projects.csv, or a dismiss
+        # (scripts/apply_resolutions.py). Anything else is news: BADGE_DAYS.
+        if kind in ("accepted", "dismissed"):
+            continue
+        if not seen or (seen < cutoff and kind not in ("name-match", "new-spv")):
             continue
         # A name-match or new-SPV notice is a guess for her to confirm. Once
         # its code is in projects.csv -- she accepted it, or it turned out to
@@ -513,6 +519,7 @@ def build_payload():
     return {
         "trackers": areas + devs,
         "watch": watch,
+        "repo": os.environ.get("GITHUB_REPOSITORY") or "smtcu/teduh-tracker",
         "downloads": downloads(),
         # %-I (no-leading-zero hour) is Unix-only; strip the zero by hand so the
         # build also runs on Windows.
@@ -547,6 +554,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   --ink:#0b0b0b; --ink-2:#42413e; --muted:#6f6e69;
   --grid:#d8d7cf; --rule:#c3c2b7; --border:rgba(11,11,11,.16);
   --blue:#2a78d6; --orange:#eb6834; --track:#cde2fb;
+  --check:#7a4fd0; --checkbg:#f1ecfb;
   --hl:rgba(42,120,214,.09); --pinbg:#eaf2fd;
   --shadow:0 1px 2px rgba(11,11,11,.05),0 6px 20px rgba(11,11,11,.06);
 }
@@ -556,6 +564,7 @@ html[data-theme="dark"]{
   --ink:#fff; --ink-2:#d4d3c9; --muted:#9d9c94;
   --grid:#35352f; --rule:#45453f; --border:rgba(255,255,255,.18);
   --blue:#3987e5; --orange:#d95926; --track:#184f95;
+  --check:#a585ee; --checkbg:#272038;
   --hl:rgba(57,135,229,.16); --pinbg:#16304f;
   --shadow:none;
 }
@@ -596,7 +605,11 @@ button,.btn{font:inherit;color:inherit;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--blue);color:#fff}
 .chips .lbl{width:100%;font-size:11.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -2px}
 .plus{display:inline-block;background:var(--orange);color:#fff;border-radius:999px;font-size:10.5px;font-weight:750;padding:1px 7px;margin-left:7px;vertical-align:1px}
-.ghost[aria-pressed="true"] .plus{background:#fff;color:var(--orange)}
+/* Purple = a guess waiting on her (new SPV, name match); orange = added.
+   Both keep their colour on the selected button, ringed in white, so the
+   two never read alike. */
+.plus.check{background:var(--check)}
+.ghost[aria-pressed="true"] .plus{box-shadow:0 0 0 1.5px #fff}
 .searchwrap{position:relative;margin:0 0 14px;max-width:520px}
 #q{width:100%;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 13px;min-height:40px;box-sizing:border-box}
 #q::placeholder{color:var(--muted)}
@@ -619,6 +632,13 @@ html[data-theme="dark"] tr.found td{animation-name:rowglowd}
    Blue edge = handled automatically or purely informational. */
 .wnrow{border-left:4px solid var(--orange);background:var(--sunk);border-radius:8px;padding:8px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
 .wnrow.auto{border-left-color:var(--blue)}
+.wnrow.check{border-left-color:var(--check);background:var(--checkbg)}
+.wnrow.check b{color:var(--check)}
+.wnres{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px}
+.wnopts{display:contents}
+.wnopts[hidden]{display:none}
+.wnlink{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--check);text-decoration:underline;cursor:pointer}
+.wnhint{color:var(--muted);font-weight:500}
 .wnrow b{font-weight:750}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
@@ -1022,6 +1042,33 @@ let FOCUS = null;              /* pkey of a picked search result, shown in every
 let pickedKey = null;          /* weekly-chart selection, by key so filters can't shift it */
 const inTop = (p, k) => !topOnly || p.top || pkey(p) === FOCUS || (k && pkey(p) === k);
 const topOrder = list => topOnly ? list.slice().sort((a, b) => ((a.pctNow || 0) - (b.pctNow || 0)) || ((a.soldNow || 0) - (b.soldNow || 0))) : list;
+/* A new SPV or a name match is a guess -- never added, waits on her. */
+const needsCheck = f => f.kind === 'name-match' || f.kind === 'new-spv';
+
+/* "Resolve…" reveals two links to GitHub's new-file page, pre-filled with
+   data/teduh_watch_resolved/<code> = accept | dismiss. Nothing changes until
+   she taps Commit there, which needs write access to the repo -- that is the
+   guard against a stray tap. scripts/apply_resolutions.py applies it. */
+function resolveLinks(f) {
+  const box = el('span', 'wnres');
+  const more = el('button', 'wnlink', 'Resolve…');
+  const opts = el('span', 'wnopts'); opts.hidden = true;
+  const gh = answer => 'https://github.com/' + DATA.repo + '/new/main/data/teduh_watch_resolved?filename='
+    + encodeURIComponent(f.code) + '&value=' + answer;
+  const yes = f.kind === 'name-match'
+    ? 'Yes — put ' + f.code + ' on “' + (f.label || 'that row') + '”'
+    : 'Yes — add it to this tracker';
+  [[yes, 'accept'], ['Not theirs — dismiss', 'dismiss']].forEach(([text, answer]) => {
+    const a = el('a', 'wnlink', text);
+    a.href = gh(answer); a.target = '_blank'; a.rel = 'noopener';
+    opts.appendChild(a);
+  });
+  opts.appendChild(el('span', 'wnhint', 'Opens GitHub — tap Commit there to confirm.'));
+  more.onclick = () => { opts.hidden = !opts.hidden; more.textContent = opts.hidden ? 'Resolve…' : 'Cancel'; };
+  box.appendChild(more); box.appendChild(opts);
+  return box;
+}
+
 /* Rank badges: "#1" as a chip in HTML, "#1 " as a prefix inside SVG labels. */
 const byKey = k => ALL.find(p => pkey(p) === k);
 const rkText = p => (p && p.rank ? '#' + p.rank + ' ' : '');
@@ -1039,8 +1086,10 @@ function trackerBar() {
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
       const b = el('button', 'ghost', t.label);
-      const nw = ((DATA.watch || {})[t.key] || []).length;
-      if (nw) b.appendChild(el('span', 'plus', '+' + nw));
+      const fs = (DATA.watch || {})[t.key] || [];
+      const nCheck = fs.filter(needsCheck).length, nAuto = fs.length - nCheck;
+      if (nAuto) { const s = el('span', 'plus', '+' + nAuto); s.title = 'Added automatically'; b.appendChild(s); }
+      if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check — not added'; b.appendChild(s); }
       b.setAttribute('aria-pressed', String(t.key === tracker));
       b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; tableMore = false; render(); };
       btns.appendChild(b);
@@ -1066,22 +1115,26 @@ function table() {
   const wn = $('#watchnote'); wn.textContent = '';
   finds.forEach(f => {
     const tail = f.kind === 'name-match'
-      ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, and put the code in projects.csv if it’s the one.'
+      ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, then Resolve.'
+      : f.kind === 'new-spv' && (f.label || '').startsWith('@')
+      ? '. Its registered email is ' + f.label + ', the same as this developer’s other SPVs — check it, then Resolve.'
       : f.kind === 'new-spv'
-      ? '. Looks like a new SPV of this developer — check it, and add the code to projects.csv if it’s theirs.'
+      ? '. Looks like a new SPV of this developer — check it, then Resolve.'
       : f.tracked
       ? '. Added to its developer tracker automatically — figures appear from the next morning\u2019s run.'
       : (f.permit
         ? '. This developer has no developer tracker of its own, so nothing was added — the area sheets stay hand-picked.'
         : '. Registered but not licensed yet — it joins its developer tracker automatically the day its permit is issued.');
-    /* Orange edge: her judgment needed. Blue edge: automatic / informational. */
-    const needsHer = f.kind === 'name-match' || f.kind === 'new-spv';
-    const row = el('div', 'wnrow' + (needsHer ? '' : ' auto'));
+    /* Purple: her judgment needed, nothing was added. Blue edge: automatic / informational. */
+    const needsHer = needsCheck(f);
+    const row = el('div', 'wnrow' + (needsHer ? ' check' : ' auto'));
     row.appendChild(el('b', '', needsHer ? 'Check: ' : 'Auto: '));
     row.appendChild(document.createTextNode('New on TEDUH: ' + f.name + ' (' + f.code + ')'
       + (f.units ? ' — ' + nf(f.units) + ' units' : '')
       + (f.permit ? ', permit from ' + fdate(f.permit) : ', no sales permit yet')
-      + (f.pemaju ? ' — ' + f.pemaju : '') + tail));
+      + (f.pemaju ? ' — ' + f.pemaju : '') + tail
+      + (needsHer && f.seen && f.seen < DATA.todayDate ? ' Waiting since ' + fdate(f.seen) + '.' : '')));
+    if (needsHer) row.appendChild(resolveLinks(f));
     wn.appendChild(row);
   });
   wn.hidden = !finds.length;

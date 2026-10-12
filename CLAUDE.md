@@ -67,8 +67,10 @@ scripts/build_pdf.py             weekly and daily PDF reports (landscape A4)
 scripts/build_unit_workbook.py   unit-type and unit-list workbook
 scripts/weekly_summary.py        the summary text used in the email and WhatsApp
 scripts/watch_developers.py      new-launch watch -- see its own section below
+scripts/apply_resolutions.py     applies her Resolve answers to purple Check notices
 data/teduh_watch.csv             what the watch has found (and is still waiting on)
 data/teduh_watch_extra.csv       extra things to watch that projects.csv cannot imply
+data/teduh_watch_resolved/       one file per answer: <code> = accept | dismiss
 scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
@@ -279,6 +281,48 @@ Name matches are **never auto-added** -- registered names rarely resemble
 marketing names, so the match is a guess for her to confirm. This is how a
 code eventually surfaces for Aetas Taman Desa, Chin Hin Ulu Kelang and
 Villaria without anyone re-searching by hand.
+
+Since 12 Oct 2026 the name watch searches **every** distinctive word, not just
+the longest, and also matches the newest registrations from the SPV sweep
+locally with hyphens and apostrophes closed up. Hanya Wahyu (31436-1) is why:
+TEDUH registered it as RESIDENSI HAN-YA WAHYU, and its `q=` search for "hanya"
+does not match HAN-YA.
+
+The SPV sweep also matches on **email domain** when the SPV's name carries no
+family name. TS Law's SPVs (PLAZA SENTOSA PROPERTIES, L & T REALTY, SKYLINE
+EMBASSY, and 31436's) never say TS LAW, but all register `@tslawland.com`. The
+domain map is built each run from the emails of SPVs already tracked
+(`data/developers.csv`), skipping webmail, domains shared by two trackers, and
+domains a tracker only borrowed through a JV (tracked SPVs must be at least a
+quarter of that domain's SPVs -- this drops `@sunway.com.my`, which Majestic
+Gen holds through one Sunway JV). SPVs newer than the developers.csv crawl cost
+one detail fetch each, capped at `EMAIL_CHECKS_MAX` (40) per run. An email
+match is a `new-spv` notice whose label is the domain; never auto-added.
+
+**Colours on the site.** Finds that need her judgment -- `new-spv` (family
+name or email domain) and `name-match` -- are never added, and show **purple**
+(`--check`): a purple-tinted "Check:" banner and a purple `+N` on the tracker
+button. Finds the watch added or that are informational keep a blue-edged
+"Auto:" banner and an orange `+N`. A button can carry both pills.
+
+**Purple stays until she answers it** (orange keeps `BADGE_DAYS`). The banner's
+"Resolve…" link reveals two links to GitHub's new-file page, pre-filled as
+`data/teduh_watch_resolved/<code>` containing `accept` or `dismiss`. Tapping
+Commit there is the confirmation; only someone with write access to the repo
+can, so a stray tap by a viewer does nothing. That push starts the refresh,
+whose first step, `scripts/apply_resolutions.py`, applies it before the scrape
+decision:
+
+- accept on a `name-match` fills the code into the code-less row it matched
+  (her name and total units stay) -- never a new row;
+- accept on a `new-spv` appends a row to that developer tracker;
+- dismiss marks the find `dismissed` and changes nothing else.
+
+The files stay as the record and re-applying is a no-op. A new-SPV find whose
+name also matches a code-less row in the same tracker is recorded as a
+name-match on that row, so accepting it cannot duplicate the row (Hanya Wahyu
+matched both ways). A guess whose permit arrives keeps its kind -- it is
+never auto-added on permit day.
 
 The script swallows its own failures -- a missed probe is caught on the next
 run, and the watch must never cost the day's sales figures. On a day it finds
