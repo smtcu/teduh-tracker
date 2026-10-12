@@ -37,7 +37,7 @@ section("modules import cleanly")
 mods = {}
 for name in ["unit_types", "scrape_teduh", "build_dashboard", "build_trackers",
              "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary",
-             "fill_apdl", "watch_developers"]:
+             "fill_apdl", "watch_developers", "survey_area"]:
     try:
         mods[name] = __import__(name)
         ck(True, name)

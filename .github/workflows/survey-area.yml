@@ -1,0 +1,81 @@
+name: TEDUH area survey
+
+# Manual only, run once when looking for projects to add to an area tracker.
+# It asks TEDUH about every untracked project in a district (Gombak by default,
+# for Ukay) and writes data/area_survey.csv with location fields and sold /
+# unsold units. It never touches projects.csv, the trackers, the daily data or
+# docs/, so the website and the Excel files are exactly as they were.
+on:
+  workflow_dispatch:
+    inputs:
+      district:
+        description: "District as TEDUH spells it (Gombak covers Ukay, Melawati, Kemensah)"
+        default: "Gombak"
+      since:
+        description: "Only projects with a permit starting or running on or after this date"
+        default: "2019-01-01"
+
+permissions:
+  contents: write
+
+# Same group as the refresh, so the two never ask TEDUH at the same time and
+# never push at the same time.
+concurrency:
+  group: teduh-refresh
+  cancel-in-progress: false
+
+jobs:
+  survey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # survey_area.py imports scrape_teduh.py for its pacing, and that imports
+      # nothing outside the standard library -- but the self-test needs these.
+      - name: Install dependencies
+        run: pip install --quiet openpyxl reportlab
+
+      - name: Pre-flight self-test
+        run: python scripts/selftest.py
+
+      - name: Survey the district
+        run: |
+          python scripts/survey_area.py \
+            --district "${{ inputs.district }}" \
+            --since "${{ inputs.since }}"
+
+      - name: Confirm nothing else changed
+        if: always()
+        run: |
+          if git status --porcelain | grep -v 'data/area_survey' | grep .; then
+            echo "::error::the survey changed a file outside data/area_survey* -- it must not"
+            exit 1
+          fi
+          echo "Only the survey files changed, as intended."
+
+      - name: Commit the survey
+        if: always()
+        run: |
+          git config user.name  "teduh-bot"
+          git config user.email "teduh-bot@users.noreply.github.com"
+          git add data/area_survey.csv data/area_survey_raw.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Nothing new to commit."
+            exit 0
+          fi
+          git commit -m "Area survey: ${{ inputs.district }}, permits since ${{ inputs.since }}"
+          # The refresh may have pushed while this was running. A conflicted
+          # rebase is aborted before the retry so the checkout never sits in
+          # a detached HEAD, and a real conflict fails the run visibly.
+          for i in 1 2 3; do
+            git pull --rebase --autostash && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $i failed, retrying"
+            sleep 10
+          done
+          exit 1
