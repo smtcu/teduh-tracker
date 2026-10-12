@@ -1067,6 +1067,8 @@ function table() {
   finds.forEach(f => {
     const tail = f.kind === 'name-match'
       ? '. Possible TEDUH match for “' + (f.label || 'a project tracked without a code') + '” — check it, and put the code in projects.csv if it’s the one.'
+      : f.kind === 'new-spv' && (f.label || '').startsWith('@')
+      ? '. Its registered email is ' + f.label + ', the same as this developer’s other SPVs — check it, and add the code to projects.csv if it’s theirs.'
       : f.kind === 'new-spv'
       ? '. Looks like a new SPV of this developer — check it, and add the code to projects.csv if it’s theirs.'
       : f.tracked

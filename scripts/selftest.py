@@ -161,6 +161,17 @@ try:
         ck(got == want, f"{pemaju[:34]!r} -> {got or 'no match'!r}")
     ck(not WD.family_match("ECOLOGY SDN. BHD.", fams),
        "ECO matches whole words only, not ECOLOGY")
+    # TS Law's SPVs never carry its name; their @tslawland.com email does.
+    devs = {r["kod_pemaju"]: r.get("emel") or "" for r in WD.read(WD.DEVELOPERS)
+            if r.get("found") == "yes"}
+    doms = WD.domain_trackers(WD.read(os.path.join(ROOT, "projects.csv")), devs)
+    ck(doms.get("tslawland.com") == "tslaw", "@tslawland.com -> tslaw")
+    ck("sunway.com.my" not in doms, "a joint venture's partner domain (@sunway.com.my) is not borrowed")
+    ck("gmail.com" not in doms and WD.email_domain("x@gmail.com") == "",
+       "webmail domains never match a developer")
+    ck(WD.name_tokens("Hanya Wahyu @ Taman Wahyu") == ["hanya", "wahyu"],
+       f"every distinctive word is searched -> {WD.name_tokens('Hanya Wahyu @ Taman Wahyu')}")
+    ck("hanya" in WD.words_of("RESIDENSI HAN-YA WAHYU"), "HAN-YA reads as hanya")
 except Exception as e:                                     # noqa: BLE001
     ck(False, f"family-pattern checks failed to run ({e})")
 

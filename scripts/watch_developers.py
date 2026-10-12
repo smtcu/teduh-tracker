@@ -42,12 +42,21 @@ WATCH = os.path.join(ROOT, "data", "teduh_watch.csv")
 EXTRA = os.path.join(ROOT, "data", "teduh_watch_extra.csv")
 INDEX = os.path.join(ROOT, "data", "projects_index.csv")
 FAMILIES = os.path.join(ROOT, "data", "developer_families.csv")
+DEVELOPERS = os.path.join(ROOT, "data", "developers.csv")
 # TEDUH's register listing is sorted by developer code descending, so the
 # first pages are the newest SPVs -- exactly what the phase walk cannot see.
 # 5 pages = the 100 newest developer codes, several weeks of registrations.
 SWEEP_PAGES = 5
 FIELDS = ["first_seen", "kind", "kod_projek", "kod_pemaju", "nama", "pemaju",
           "units", "permit_mula", "trackers", "label"]
+# Webmail domains say nothing about who an SPV belongs to -- nine developer
+# trackers have at least one SPV on gmail.com.
+WEBMAIL = {"gmail.com", "yahoo.com", "yahoo.com.my", "hotmail.com", "outlook.com",
+           "live.com", "msn.com", "icloud.com", "me.com", "ymail.com",
+           "rocketmail.com", "streamyx.com", "tm.net.my"}
+# Detail fetches the email check may spend per run on SPVs that
+# data/developers.csv has not seen yet, newest first.
+EMAIL_CHECKS_MAX = 40
 MAX_NEW_PER_DEV = 3        # cap the walk upward, in case a developer lands several at once
 # Words too generic to search TEDUH by. The name watch below picks the most
 # distinctive word of a code-less project's name instead.
@@ -56,11 +65,74 @@ GENERIC = {"taman", "residensi", "residence", "residences", "the", "at", "apartm
            "hill", "hills", "park", "city", "one", "new", "phase", "fasa"}
 
 
-def name_token(project):
-    """The most distinctive word of a marketing name, for a q= search."""
-    words = [w.strip("()@,.'\"-") for w in (project or "").lower().split()]
-    words = [w for w in words if len(w) >= 4 and w not in GENERIC and not w.isdigit()]
-    return max(words, key=len) if words else ""
+def words_of(name):
+    """Lowercased words, with inner hyphens and apostrophes closed up.
+
+    TEDUH registered Hanya Wahyu as RESIDENSI HAN-YA WAHYU; closing the
+    hyphen lets "hanya" and "han-ya" compare equal.
+    """
+    out = []
+    for w in (name or "").lower().split():
+        w = re.sub(r"[-'\u2019]", "", w).strip("()@,.\"")
+        if w:
+            out.append(w)
+    return out
+
+
+def name_tokens(project):
+    """Every distinctive word of a marketing name, longest first.
+
+    One word used to be enough, but "Hanya Wahyu @ Taman Wahyu" searched only
+    for "hanya", which TEDUH's q= does not match against HAN-YA. Searching
+    "wahyu" as well would have found it.
+    """
+    words = {w for w in words_of(project)
+             if len(w) >= 4 and w not in GENERIC and not w.isdigit()}
+    return sorted(words, key=lambda w: (-len(w), w))
+
+
+def email_domain(email):
+    """'marketing@tslawland.com' -> 'tslawland.com'; '' for webmail or junk."""
+    e = (email or "").strip().lower()
+    if "@" not in e:
+        return ""
+    d = e.rsplit("@", 1)[1].strip().strip(".>")
+    return "" if "." not in d or d in WEBMAIL else d
+
+
+def domain_trackers(projects, emails):
+    """Email domain -> the one developer tracker whose SPVs use it.
+
+    Built from the codes already tracked, so it learns a domain the day a
+    project of that developer is added. A domain shared by two trackers is
+    dropped -- it cannot say whose a new SPV is. So is a domain the tracker
+    only borrowed through a joint venture: Majestic Gen tracks one Sunway JV
+    SPV out of 25 on @sunway.com.my, and every new Sunway SPV is not
+    Majestic's. The tracked SPVs must be at least a quarter of all the SPVs
+    on that domain that data/developers.csv knows.
+    """
+    seen, spvs = {}, {}
+    for p in projects:
+        t = (p.get("tracker") or "").strip()
+        if not t or t in AREA_TRACKERS:
+            continue
+        for c in (p.get("code") or "").split(","):
+            sp = split_code(c)
+            d = email_domain(emails.get(sp[0])) if sp else ""
+            if d:
+                seen.setdefault(d, set()).add(t)
+                spvs.setdefault(d, set()).add(sp[0])
+    total = {}
+    for e in emails.values():
+        d = email_domain(e)
+        total[d] = total.get(d, 0) + 1
+    return {d: next(iter(ts)) for d, ts in seen.items()
+            if len(ts) == 1 and 4 * len(spvs[d]) >= total.get(d, 0)}
+
+
+def detail_email(detail):
+    pm = (detail or {}).get("pemaju") or {}
+    return (pm.get("emel") or pm.get("email") or "") if isinstance(pm, dict) else ""
 
 
 def name_search(token):
@@ -282,6 +354,16 @@ def main():
     # sees also tops up projects_index.csv, keeping the snapshot fresh.
     register_codes = {r.get("kod_projek") for r in read(INDEX)}
     families = family_patterns()
+    # A family name only works when the SPV carries it. TS Law's do not --
+    # PLAZA SENTOSA PROPERTIES, L & T REALTY, SKYLINE EMBASSY -- but all of
+    # them register a @tslawland.com email, so the email domain is the
+    # fallback. data/developers.csv already holds the email for every SPV it
+    # has crawled; anything newer costs one detail fetch, capped per run.
+    dev_rows = read(DEVELOPERS)
+    emails = {r.get("kod_pemaju"): r.get("emel") or "" for r in dev_rows
+              if r.get("found") == "yes"}
+    domains = domain_trackers(projects, emails)
+    email_checks = 0
     index_new = []
     try:
         sweep = newest_registrations()
@@ -311,13 +393,28 @@ def main():
         if sp and sp[0] in dev_trackers:
             continue                    # the phase walk owns known developer codes
         t = family_match(pem_name, families)
-        if not t or t in AREA_TRACKERS:
+        if t in AREA_TRACKERS:
+            t = ""
+        detail, label = None, pem_name
+        if not t and domains:
+            kp = str(it.get("kod_pemaju") or "").strip() or (sp[0] if sp else "")
+            if kp not in emails and email_checks < EMAIL_CHECKS_MAX:
+                email_checks += 1
+                detail, reached = fetch(hid, net)
+                if reached and detail is not None:
+                    emails[kp] = detail_email(detail)
+            dom = email_domain(emails.get(kp))
+            t = domains.get(dom, "")
+            if t:
+                label = "@" + dom
+        if not t:
             continue
-        detail, reached = fetch(hid, net)
-        if not reached or detail is None:
-            continue
+        if detail is None:
+            detail, reached = fetch(hid, net)
+            if not reached or detail is None:
+                continue
         row = detail_row(hid, detail)
-        row.update(first_seen=today, kind="new-spv", trackers=t, label=pem_name)
+        row.update(first_seen=today, kind="new-spv", trackers=t, label=label)
         finds.append(row)
 
     # --- 2. a name watch for every project tracked WITHOUT a code ---
@@ -337,18 +434,29 @@ def main():
         lbl = (pr.get("tracker_label") or "").strip().upper()
         if t and len(lbl) >= 3:
             dev_labels[t] = lbl
+    # Every distinctive word is searched, not just the longest, and the
+    # newest registrations from the sweep are matched here too with hyphens
+    # closed up -- TEDUH's own q= search will not find HAN-YA from "hanya".
+    sweep_words = [(it, set(words_of(it.get("nama")))) for it in sweep]
     for p in projects:
         if (p.get("code") or "").strip():
             continue
-        token = name_token(p.get("project"))
-        if not token:
+        tokens = name_tokens(p.get("project"))
+        if not tokens:
             continue
-        try:
-            hits = name_search(token)
-        except Exception:
-            continue
+        hits = [it for it, ws in sweep_words if ws.intersection(tokens)]
+        for token in tokens:
+            try:
+                hits += name_search(token)
+            except Exception:
+                continue
+            time.sleep(PAUSE)
+        done = set()
         for h in hits:
             hid = (h.get("id") or "").strip()
+            if hid in done:
+                continue
+            done.add(hid)
             if (not hid or hid in tracked_codes or hid in seen_codes
                     or hid in register_codes
                     or hid in {f["kod_projek"] for f in finds}):

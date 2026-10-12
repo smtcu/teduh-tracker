@@ -280,6 +280,23 @@ marketing names, so the match is a guess for her to confirm. This is how a
 code eventually surfaces for Aetas Taman Desa, Chin Hin Ulu Kelang and
 Villaria without anyone re-searching by hand.
 
+Since 12 Oct 2026 the name watch searches **every** distinctive word, not just
+the longest, and also matches the newest registrations from the SPV sweep
+locally with hyphens and apostrophes closed up. Hanya Wahyu (31436-1) is why:
+TEDUH registered it as RESIDENSI HAN-YA WAHYU, and its `q=` search for "hanya"
+does not match HAN-YA.
+
+The SPV sweep also matches on **email domain** when the SPV's name carries no
+family name. TS Law's SPVs (PLAZA SENTOSA PROPERTIES, L & T REALTY, SKYLINE
+EMBASSY, and 31436's) never say TS LAW, but all register `@tslawland.com`. The
+domain map is built each run from the emails of SPVs already tracked
+(`data/developers.csv`), skipping webmail, domains shared by two trackers, and
+domains a tracker only borrowed through a JV (tracked SPVs must be at least a
+quarter of that domain's SPVs -- this drops `@sunway.com.my`, which Majestic
+Gen holds through one Sunway JV). SPVs newer than the developers.csv crawl cost
+one detail fetch each, capped at `EMAIL_CHECKS_MAX` (40) per run. An email
+match is a `new-spv` notice whose label is the domain; never auto-added.
+
 The script swallows its own failures -- a missed probe is caught on the next
 run, and the watch must never cost the day's sales figures. On a day it finds
 nothing it commits nothing: the site rebuild and the commit are skipped, since a
