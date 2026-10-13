@@ -267,11 +267,16 @@ if BD and BT and hasattr(BD, "stale_remark") and hasattr(BT, "stale_remark"):
         ({"remarks": "No TEDUH code", "code": ""}, None, "No TEDUH code"),
         ({"remarks": "Big unit (not yet launched wing)", "code": "1-1"}, 5,
          "Big unit (not yet launched wing)"),
+        # The same rule on note_prefix: a placeholder whose code was filled in.
+        ({"note_prefix": "Not launched yet.", "code": "1-1"}, 5, ""),
+        ({"note_prefix": "Not launched yet.", "code": "1-1"}, 0, "Not launched yet."),
+        ({"note_prefix": "Block C is not opened yet.", "code": "1-1"}, 5,
+         "Block C is not opened yet."),
     ]
     for proj, sold, want in cases:
         a, b = BD.remark_for(proj, "", sold), BT.remark_for(proj, "", sold)
         ck(a == want and b == want,
-           f"stale remark: {proj['remarks']!r} sold={sold} code={'yes' if proj['code'] else 'no'} -> {want!r}")
+           f"stale remark: {proj.get('remarks') or proj.get('note_prefix')!r} sold={sold} code={'yes' if proj['code'] else 'no'} -> {want!r}")
 else:
     ck(False, "stale_remark exists in both build_dashboard and build_trackers")
 
