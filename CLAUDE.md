@@ -330,6 +330,21 @@ nothing it commits nothing: the site rebuild and the commit are skipped, since a
 timestamp-only commit is what collided with the refresh on 28 Sep 2026. Sabah, Vietnam and industrial projects can never appear
 here: they are outside TEDUH entirely.
 
+## Suggest a project -- filling a placeholder row
+
+The site's "Suggest a project" form calls the `teduh-workflow-trigger` Worker
+(`cloudflare-worker/src/index.js`), which opens a PR against projects.csv;
+merging is the approval. Since 13 Oct 2026, once a tracker is picked the form
+lists that tracker's rows with **no code** (not-yet-launched placeholders) and
+she must say whether the find is one of them. Picking one fills the code into
+that row -- her name, total units and remarks stay, a blank developer or
+total comes from TEDUH -- instead of appending a duplicate row. Neither path
+writes `apdl`: `fill_apdl.py` fills the earliest permit date on the next
+refresh (the form used to put the permit *number* there). The same day the
+stale-remark rule was extended to `note_prefix`, so a filled placeholder's
+"Not launched yet." caveat stops printing once it records sales. Worker
+changes only take effect after a `wrangler deploy` from a laptop.
+
 ## Website search, badges and code ranges
 
 - The search box matches the marketing name, the **registered TEDUH name**

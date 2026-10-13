@@ -67,9 +67,13 @@ STALE_WHEN_SELLING = {'not yet launched', 'not launched yet', 'no launch yet'}
 STALE_WHEN_CODED = {'no teduh code', 'not on teduh', 'no info on teduh'}
 
 
-def stale_remark(project, sold=None):
-    """True when the row's remark describes a state the project has left behind."""
-    r = (project.get('remarks') or '').strip().rstrip('.').lower()
+def stale_remark(project, sold=None, field='remarks'):
+    """True when the row's remark describes a state the project has left behind.
+
+    `field` is 'note_prefix' for the standing caveat: a placeholder row whose
+    caveat reads "Not launched yet." gets a code filled in, and the caveat
+    must stop printing beside its sales just as the remark would."""
+    r = (project.get(field) or '').strip().rstrip('.').lower()
     if not r:
         return False
     has_code = bool((project.get('code') or '').strip())
@@ -89,6 +93,8 @@ def remark_for(project, generated, sold=None):
     if override and not stale_remark(project, sold):
         return override
     caveat = (project.get('note_prefix') or '').strip()
+    if stale_remark(project, sold, 'note_prefix'):
+        caveat = ''
     return ' '.join(part for part in (caveat, generated) if part)
 
 def seed_missing(projects, order, lookup, daily_csv):

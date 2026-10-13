@@ -118,6 +118,9 @@ async function suggest(body, env) {
   const code = (body.code || "").trim();
   const tracker = (body.tracker || "").trim();
   const remarks = (body.remarks || "").trim().slice(0, 300);
+  // The name of an existing code-less row to fill (a not-yet-launched
+  // placeholder), or empty for a new row.
+  const fill = (body.fill || "").trim();
   if (!/^\d{2,6}(-\d{1,3})?$/.test(code)) return fail(400, "Pick a project from the search results first.");
   if (!tracker) return fail(400, "Pick which tracker the project belongs to.");
 
@@ -168,22 +171,59 @@ async function suggest(body, env) {
     return fail(400, `"${tracker}" is not an existing tracker. Pick one from the list.`);
   }
 
-  // 4. Append the row: next running number within the chosen tracker,
-  //    launched/first_new left blank (all build scripts tolerate that).
-  let nextNo = 1;
-  for (const r of rows.slice(1)) {
-    if (r[trackerCol] === tracker) {
-      const n = parseInt(r[noCol], 10);
-      if (!isNaN(n) && n >= nextNo) nextNo = n + 1;
+  // Python's csv module writes \r\n; keep whatever the file already uses.
+  const eol = /\r\n/.test(csvText) ? "\r\n" : "\n";
+  const projectCol = col("project"), devCol = col("developer"), totalCol = col("total_units");
+  const remarksCol = col("remarks");
+  // Same normalisation as the dashboard's project names.
+  const norm = s => (s || "").replace(/\n/g, " ").trim();
+  let newCsv, title, commitMsg;
+
+  if (fill) {
+    // 4a. Fill the code into the existing code-less row. Her name, total
+    //     units and remarks stay; a blank developer or total comes from
+    //     TEDUH. apdl stays blank for fill_apdl.py, which takes the
+    //     earliest permit date. Only that one line of the file changes.
+    const lines = csvText.split(/(?<=\n)/);
+    let hits = 0, at = -1, row = null;
+    for (let i = 1; i < lines.length; i++) {
+      const r = parseCsv(lines[i])[0];
+      if (!r || r[trackerCol] !== tracker || norm(r[projectCol]) !== fill) continue;
+      if ((r[codeCol] || "").trim()) continue;
+      hits += 1; at = i; row = r;
     }
+    if (hits === 0) return fail(409, `"${fill}" has no row without a code in that tracker any more. Refresh the page and pick again.`);
+    if (hits > 1) return fail(409, `That tracker has two rows named "${fill}" without a code, so it is not clear which to fill. Edit projects.csv by hand.`);
+    while (row.length < header.length) row.push("");
+    row[codeCol] = code;
+    if (devCol >= 0 && !row[devCol].trim()) row[devCol] = developer;
+    if (totalCol >= 0 && !row[totalCol].trim() && totalUnits) row[totalCol] = String(totalUnits);
+    if (remarksCol >= 0 && !row[remarksCol].trim() && remarks) row[remarksCol] = remarks;
+    const ending = lines[at].match(/\r?\n$/)?.[0] || eol;
+    lines[at] = toCsvLine(row) + ending;
+    newCsv = lines.join("");
+    title = `Fill ${code} into ${fill} (${tracker} tracker)`;
+    commitMsg = `Fill ${code} into ${fill} in the ${tracker} tracker\n\nSubmitted via the dashboard form.`;
+  } else {
+    // 4b. Append the row: next running number within the chosen tracker,
+    //     launched/first_new left blank (all build scripts tolerate that),
+    //     apdl left blank for fill_apdl.py to fill with the earliest date.
+    let nextNo = 1;
+    for (const r of rows.slice(1)) {
+      if (r[trackerCol] === tracker) {
+        const n = parseInt(r[noCol], 10);
+        if (!isNaN(n) && n >= nextNo) nextNo = n + 1;
+      }
+    }
+    const newRow = header.map(h => ({
+      tracker, tracker_label: trackerLabel, no: String(nextNo), project: name, code, developer,
+      total_units: totalUnits ? String(totalUnits) : "",
+      remarks,
+    }[h] ?? ""));
+    newCsv = csvText.replace(/\s*$/, "") + eol + toCsvLine(newRow) + eol;
+    title = `Add ${name} to ${tracker} tracker`;
+    commitMsg = `Suggest ${name} (${code}) for ${tracker} tracker\n\nSubmitted via the dashboard form.`;
   }
-  const newRow = header.map(h => ({
-    tracker, tracker_label: trackerLabel, no: String(nextNo), project: name, code, developer,
-    apdl: detail.projek?.permitNo || "",
-    total_units: totalUnits ? String(totalUnits) : "",
-    remarks,
-  }[h] ?? ""));
-  const newCsv = csvText.replace(/\s*$/, "") + "\n" + toCsvLine(newRow) + "\n";
 
   // 5. Branch + commit + PR. Merging the PR is the approval step.
   const branch = `suggest/${code}-${Date.now()}`;
@@ -193,18 +233,20 @@ async function suggest(body, env) {
     sha: main.object.sha,
   });
   await gh(`/repos/${env.GH_OWNER}/${env.GH_REPO}/contents/projects.csv`, "PUT", {
-    message: `Suggest ${name} (${code}) for ${tracker} tracker\n\nSubmitted via the dashboard form.`,
+    message: commitMsg,
     content: utf8ToBase64(newCsv),
     sha: file.sha,
     branch,
   });
   const pct = published ? ((sold / published) * 100).toFixed(1) : "?";
   const pr = await gh(`/repos/${env.GH_OWNER}/${env.GH_REPO}/pulls`, "POST", {
-    title: `Add ${name} to ${tracker} tracker`,
+    title,
     head: branch,
     base: env.GH_REF,
     body: [
-      `**${name}** (\`${code}\`) — suggested via the dashboard form.`,
+      fill
+        ? `**${name}** (\`${code}\`) — suggested via the dashboard form as the TEDUH code for the existing row **${fill}**. No new row is added.`
+        : `**${name}** (\`${code}\`) — suggested via the dashboard form.`,
       "",
       `| | |`,
       `|---|---|`,
@@ -212,11 +254,13 @@ async function suggest(body, env) {
       `| Location | ${detail.lokasi || "?"} |`,
       `| Licensed units | ${licensedUnits ?? "?"} |`,
       `| Published on unit API | ${published} (${sold} sold, ${avail} unsold, ${pct}% sold) |`,
-      `| APDL | ${detail.projek?.permitNo || "?"} |`,
+      `| Current permit no. | ${detail.projek?.permitNo || "?"} |`,
       `| Licence period | ${detail.projek?.permitMula || "?"} to ${detail.projek?.permitTamat || "?"} |`,
       remarks ? `| Submitter remarks | ${remarks} |` : null,
       "",
-      "**Merging this PR adds the project.** Check the developer/SPV name and the marketing name before merging; `launched` is left blank to fill in later. Close the PR to reject.",
+      fill
+        ? `**Merging this PR fills the code into ${fill}.** Its name, total units and remarks stay as they are; a blank developer or total is filled from TEDUH. The APDL date fills itself in on the next refresh. Close the PR to reject.`
+        : "**Merging this PR adds the project.** Check the developer/SPV name and the marketing name before merging; `launched` is left blank to fill in later and the APDL date fills itself in on the next refresh. Close the PR to reject.",
     ].filter(l => l !== null).join("\n"),
   });
 
@@ -224,7 +268,9 @@ async function suggest(body, env) {
     status: 200,
     payload: {
       ok: true,
-      message: `${name} sent for approval. It appears on the dashboard after it is approved and the next refresh runs.`,
+      message: fill
+        ? `${code} sent for approval as the code for ${fill}. The row updates after it is approved and the next refresh runs.`
+        : `${name} sent for approval. It appears on the dashboard after it is approved and the next refresh runs.`,
       pr: pr.html_url,
     },
   };

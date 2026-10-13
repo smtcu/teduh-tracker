@@ -199,9 +199,13 @@ STALE_WHEN_SELLING = {"not yet launched", "not launched yet", "no launch yet"}
 STALE_WHEN_CODED = {"no teduh code", "not on teduh", "no info on teduh"}
 
 
-def stale_remark(project, sold=None):
-    """True when the row's remark describes a state the project has left behind."""
-    r = (project.get("remarks") or "").strip().rstrip(".").lower()
+def stale_remark(project, sold=None, field="remarks"):
+    """True when the row's remark describes a state the project has left behind.
+
+    `field` is "note_prefix" for the standing caveat: a placeholder row whose
+    caveat reads "Not launched yet." gets a code filled in, and the caveat
+    must stop printing beside its sales just as the remark would."""
+    r = (project.get(field) or "").strip().rstrip(".").lower()
     if not r:
         return False
     has_code = bool((project.get("code") or "").strip())
@@ -227,6 +231,8 @@ def remark_for(project, generated, sold=None):
     if override and not stale_remark(project, sold):
         return override
     caveat = (project.get("note_prefix") or "").strip()
+    if stale_remark(project, sold, "note_prefix"):
+        caveat = ""
     return " ".join(part for part in (caveat, generated) if part)
 
 
@@ -952,7 +958,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 
 <div class="card" id="suggest" hidden>
   <h2>Suggest a project</h2>
-  <p class="note">Type a project name or its TEDUH code, pick the right match, and send it in. It joins the tracker once it&#8217;s approved &#8212; nothing shows up here until then.</p>
+  <p class="note">Type a project name or its TEDUH code, pick the right match, and send it in. If the tracker already has a row for it without a code, choose that row and the code is filled in there instead of adding a new row. It joins the tracker once it&#8217;s approved &#8212; nothing shows up here until then.</p>
   <div class="sgrow">
     <input class="sgin" id="sg-q" type="search" placeholder="Project name or TEDUH code (e.g. 30555-1)" autocomplete="off" style="flex:3 1 240px">
     <button class="ghost" id="sg-find">Search TEDUH</button>
@@ -963,6 +969,11 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
       <input class="sgin" id="sg-tracker" list="sg-tlist" placeholder="Which tracker? (type to search)" autocomplete="off">
       <datalist id="sg-tlist"></datalist>
       <input class="sgin" id="sg-remarks" placeholder="Remarks (optional)" style="flex:2 1 200px">
+    </div>
+    <div class="sgrow" id="sg-fillrow" hidden>
+      <select class="sgin" id="sg-fill" aria-label="New row, or fill an existing row without a code" style="flex:3 1 240px"></select>
+    </div>
+    <div class="sgrow">
       <button class="ghost" id="sg-send">Send for approval</button>
     </div>
   </div>
@@ -1789,6 +1800,24 @@ if (SUGGEST_URL) {
     return hit ? hit.key : null;
   };
 
+  // A tracker's rows with no code yet (not-yet-launched placeholders). When it
+  // has any, she must say whether the find IS one of them -- filling that row
+  // instead of appending a duplicate -- or a genuinely new project.
+  const fillSel = $('#sg-fill');
+  const refreshFill = () => {
+    const tk = trackerKey();
+    const open = tk ? DATA.projects.filter(p => p.tracker === tk && !p.code) : [];
+    fillSel.textContent = '';
+    $('#sg-fillrow').hidden = !open.length;
+    if (!open.length) return;
+    const opt = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; fillSel.appendChild(o); };
+    opt('', 'Is it one of this tracker’s rows without a code? Choose…');
+    open.forEach(p => opt(p.name, 'Yes, fill in row ' + p.no + ': ' + p.name));
+    opt('__new__', 'No, add it as a new row');
+  };
+  $('#sg-tracker').addEventListener('input', refreshFill);
+  $('#sg-tracker').addEventListener('change', refreshFill);
+
   async function sgSearch() {
     const q = $('#sg-q').value.trim();
     picked = null; $('#sg-form').hidden = true;
@@ -1829,6 +1858,8 @@ if (SUGGEST_URL) {
     if (!picked) { say('Pick a project from the search results first.', 'err'); return; }
     const tk = trackerKey();
     if (!tk) { say('Pick a tracker from the list — start typing and choose one of the suggestions.', 'err'); return; }
+    const fill = $('#sg-fillrow').hidden ? '__new__' : fillSel.value;
+    if (!fill) { say('Say whether this is one of the tracker’s rows without a code, or a new row.', 'err'); return; }
     const btn = $('#sg-send');
     btn.disabled = true; say('Sending…');
     try {
@@ -1839,12 +1870,13 @@ if (SUGGEST_URL) {
           code: picked.code,
           tracker: tk,
           remarks: $('#sg-remarks').value.trim(),
+          fill: fill === '__new__' ? '' : fill,
         }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
       say('✓ ' + d.message, 'ok');
-      $('#sg-form').hidden = true; $('#sg-results').textContent = ''; $('#sg-q').value = ''; $('#sg-tracker').value = ''; picked = null;
+      $('#sg-form').hidden = true; $('#sg-results').textContent = ''; $('#sg-q').value = ''; $('#sg-tracker').value = ''; refreshFill(); picked = null;
     } catch (e) { say(e.message, 'err'); }
     btn.disabled = false;
   };
