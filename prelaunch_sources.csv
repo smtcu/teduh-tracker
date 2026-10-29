@@ -33,7 +33,8 @@ developer,https://www.uemsunrise.com/,UEM Sunrise,uem,blocked -- laptop
 developer,https://lagendaproperties.com/,Lagenda,lagenda,blocked -- laptop
 developer,https://maximglobal.com.my/,Maxim Global,maxim,blocked -- laptop
 developer,https://majesticgen.com.my/,Majestic Gen,majesticgen,blocked -- laptop
-developer,https://shangheight.com.my/,Shang Height,status13,blocked -- laptop
+developer,https://www.shangheight.com/,Shang Height,status13,untested -- was shangheight.com.my (wrong address) until 29 Oct
+developer,https://www.cpiland.com/,CPI Land,cpiland,untested -- site found 29 Oct
 sitemap,https://www.mahsing.com.my/sitemap.xml,Mah Sing,mahsing,ok
 sitemap,https://paramountproperty.my/sitemap_index.xml,Paramount Property,paramount,ok
 facebook,https://www.facebook.com/armanigroup,Armani,armani,laptop -- Run C; site footer 29 Oct

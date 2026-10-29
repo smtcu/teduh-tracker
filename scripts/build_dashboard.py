@@ -306,11 +306,34 @@ def prelaunch(projects):
                 ("url", "url"), ("kind", "kind"), ("label", "label"),
                 ("via", "found_via"), ("seen", "first_seen"), ("note", "note"))})
 
+    def blankish(v):
+        return not v or v.lower().startswith(("not shown", "not stated"))
+
     for r in rows:
         r["finds"].sort(key=lambda f: f["seen"], reverse=True)
         staged = [f for f in r["finds"] if f["stage"].lower() in stage_rank]
         best = max(staged, key=lambda f: (stage_rank[f["stage"].lower()], f["seen"]), default=None)
-        r["latest"] = best or (r["finds"][0] if r["finds"] else None)
+        top = best or (r["finds"][0] if r["finds"] else None)
+        # The row shows one line, but finds add up: a screenshot gives the
+        # launch date, a later ad gives the price. Stage and event date come
+        # from the furthest stage; every other column takes the newest find
+        # that actually stated something, and the short facts are pooled.
+        if top:
+            top = dict(top)
+            if not top["event"]:
+                top["event"] = next((f["event"] for f in r["finds"]
+                                     if f["stage"] == top["stage"] and f["event"]), "")
+            for k in ("adSince", "permit", "by", "ads", "price"):
+                if blankish(top[k]):
+                    top[k] = next((f[k] for f in r["finds"] if not blankish(f[k])), top[k])
+            facts = []
+            for f in [top] + r["finds"]:
+                for x in f["note"].split(";"):
+                    x = x.strip()
+                    if x and x not in facts:
+                        facts.append(x)
+            top["note"] = "; ".join(facts)
+        r["latest"] = top
         r["stageRank"] = stage_rank.get(best["stage"].lower(), -1) if best else -1
         del r["keys"]
     # Stable sorts, least important first: area trackers before developer
