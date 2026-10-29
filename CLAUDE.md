@@ -364,12 +364,33 @@ the Melaka Shang Height projects), and a correct find can carry a different
 name (HAN-YA). Verification is shown as evidence for her to judge, never
 decided silently.
 
-Still to come: daily GitHub sources (Google News RSS, 27 developer sites,
-Mah Sing / Paramount sitemaps, Lowyat), verification ticks, accept/dismiss,
-the laptop runs (Meta Ad Library, Google search drill), crt.sh and a search
-API. From GitHub, PropertyGuru, iProperty, EdgeProp listings, Bursa and six
-developer sites (Armani, UEM, Lagenda, Shang Height, Maxim, Majestic Gen) are
-blocked -- tested 29 Oct 2026 with scripts/probe_sources.py.
+**Phase 2, the daily GitHub sources** (built 30 Oct 2026, approved plan):
+`scripts/watch_prelaunch.py`, a step in watch-launches.yml after the
+developer watch, 10-minute cap, `continue-on-error`. It reads Google News RSS
+(one search per no-code row, one per area word), the `developer` / `sitemap`
+/ `forum` rows of prelaunch_sources.csv (rows whose probe says blocked,
+browser only, laptop or untested are skipped; social rows are for the laptop
+Run C) and the saved pages. It writes only data/prelaunch_finds.csv (status
+"new") and its memory, data/prelaunch_seen.json -- **the first run with no
+memory file is a silent baseline**. Ticks per find: name, place, developer,
+size, current (6 months), not resale; Strong = name + place + developer +
+current + not resale (her rule, 29 Oct). Place words come from the name after
+"@", an area tracker's words, and data/prelaunch_places.csv (projects.csv has
+no place column). One-word names ("The Eclipse", "Permas") count only next to
+their developer. `--report FILE` lists what it would find and writes nothing.
+Strong-find emails (a GitHub issue) are **not switched on yet**: her choice
+was to watch the page for a week first.
+
+On the page, a row pools its finds: stage and event date from the furthest
+stage, the other columns from the newest find that stated something, facts
+merged, and a Source line linking each find's exact ad, post or article. A
+"Seen:" line on a tracker opens Pre-launch at that row, outlined.
+
+Still to come: accept/dismiss buttons, crt.sh and a search API. From GitHub,
+PropertyGuru, iProperty, EdgeProp listings, Bursa and six developer sites
+(Armani, UEM, Lagenda, Shang Height, Maxim, Majestic Gen) are blocked --
+tested 29 Oct 2026 with scripts/probe_sources.py (Shang Height's address was
+wrong then; shangheight.com is untested).
 
 ## Suggest a project -- filling a placeholder row
 

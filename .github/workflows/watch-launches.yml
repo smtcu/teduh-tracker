@@ -51,20 +51,35 @@ jobs:
         timeout-minutes: 40      # ~20 minutes on a healthy day
         run: python scripts/watch_developers.py
 
-      # Only a find is worth a commit. Rebuilding the site on a quiet day
+      # Pre-launch watch, phase 2: Google News, developer sites, sitemaps,
+      # Lowyat and saved pages (see the script's docstring). It writes only
+      # data/prelaunch_finds.csv and its memory file, never projects.csv. A
+      # hard 10-minute cap, and a failure here never stops the commit below.
+      - name: Pre-launch watch
+        if: ${{ !cancelled() }}
+        timeout-minutes: 10
+        continue-on-error: true
+        run: python scripts/watch_prelaunch.py
+
+      # Only a find is worth a site rebuild. Rebuilding on a quiet day
       # changes nothing but the "generated" timestamp, and that sits on the
       # same single JSON line the refresh rewrites -- a timestamp-only
       # commit is exactly what conflicted with the 28 Sep 2026 refresh.
+      # The pre-launch memory file is committed on its own when only it
+      # changed: no rebuild, and nothing the refresh ever writes.
       - name: Did the watch find anything?
         id: found
         if: ${{ !cancelled() }}
         run: |
-          if git diff --quiet -- data/teduh_watch.csv projects.csv; then
-            echo "Nothing new. Skipping the site rebuild and the commit."
+          if [ -z "$(git status --porcelain -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv)" ]; then
+            echo "Nothing new. Skipping the site rebuild."
             echo "any=no" >> "$GITHUB_OUTPUT"
           else
-            git --no-pager diff --stat -- data/teduh_watch.csv projects.csv
+            git --no-pager diff --stat -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv
             echo "any=yes" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$(git status --porcelain -- data/prelaunch_seen.json)" ]; then
+            echo "mem=yes" >> "$GITHUB_OUTPUT"
           fi
 
       # Rebuild the website so a find's +N badge appears now, not at the
@@ -75,13 +90,15 @@ jobs:
         run: python scripts/build_dashboard.py
 
       - name: Commit
-        if: ${{ !cancelled() && steps.found.outputs.any == 'yes' }}
+        if: ${{ !cancelled() && (steps.found.outputs.any == 'yes' || steps.found.outputs.mem == 'yes') }}
         run: |
           git config user.name  "teduh-bot"
           git config user.email "teduh-bot@users.noreply.github.com"
           # projects.csv joins the commit because a licensed find is appended
-          # to its developer tracker automatically.
+          # to its developer tracker automatically. The pre-launch watch never
+          # writes it; its two files ride along when they changed.
           git add data/teduh_watch.csv projects.csv docs
+          git add data/prelaunch_finds.csv data/prelaunch_seen.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "Nothing new to commit."
             exit 0

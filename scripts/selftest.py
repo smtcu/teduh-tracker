@@ -13,7 +13,7 @@ Run it locally the same way CI does:
 
     python scripts/selftest.py
 """
-import csv, json, os, sys
+import csv, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
@@ -349,7 +349,8 @@ BD = mods.get("build_dashboard")
 if projects and BD:
     rows = {((p.get("tracker") or "").strip(),
              (p.get("project") or "").replace("\n", " ").strip().upper()) for p in projects}
-    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv"):
+    tracking = re.compile(r"[?&](utm_\w+|gclid|gbraid|wbraid|gad_source|fbclid)=")
+    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv", "data/prelaunch_places.csv"):
         path = os.path.join(ROOT, f)
         if not os.path.exists(path):
             continue
@@ -362,9 +363,23 @@ if projects and BD:
                 url = (r.get("url") or "").strip()
                 if url:
                     ck(url.startswith(("http://", "https://")), f"{f} line {i}: url is a web address")
+                    ck(not tracking.search(url), f"{f} line {i}: url carries no tracking code")
                 stage = (r.get("stage") or "").strip()
                 if stage:
                     ck(stage in BD.STAGES, f"{f} line {i}: stage {stage!r} is one of {BD.STAGES}")
+                if f.endswith("finds.csv"):
+                    ck((r.get("confidence") or "").strip() in ("", "strong", "possible", "weak"),
+                       f"{f} line {i}: confidence is strong, possible or weak")
+                    ck((r.get("status") or "").strip() in ("new", "accepted", "dismissed"),
+                       f"{f} line {i}: status is new, accepted or dismissed")
+
+# The pre-launch watch must never write projects.csv: adding a project is
+# always her Accept. A cheap guard against a future edit that forgets.
+wp = os.path.join(ROOT, "scripts", "watch_prelaunch.py")
+if os.path.exists(wp):
+    src = open(wp, encoding="utf-8").read()
+    ck(not re.search(r"open\(\s*PROJECTS[^)]*['\"][wa]", src) and "write_projects" not in src,
+       "watch_prelaunch.py never writes projects.csv")
 
 print()
 if FAILS:

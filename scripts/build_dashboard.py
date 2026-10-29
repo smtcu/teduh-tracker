@@ -997,6 +997,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 #pltab td.l{white-space:normal}
 #pltab td.nm{min-width:210px;max-width:250px}
 #pltab tr.quiet td{color:var(--muted)}
+#pltab tr.plfocus{outline:2px solid var(--blue);outline-offset:-2px}
 .plnote{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.35}
 .plfacts{margin:5px 0 0;padding-left:16px;font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.4}
 .plfacts li+li{margin-top:1px}
@@ -1322,7 +1323,8 @@ function table() {
     row.appendChild(document.createTextNode(r.name + ' (no TEDUH code yet) — ' + plSummary(r) + ' '));
     const a = el('button', 'wnlink', 'Pre-launch ›');
     a.style.color = 'var(--blue)';
-    a.onclick = () => { tracker = 'prelaunch'; render(); window.scrollTo({ top: 0 }); };
+    // Straight to this project's row, outlined, not just the top of the list.
+    a.onclick = () => { tracker = 'prelaunch'; plFilter = 'all'; plFocus = r.name; render(); };
     row.appendChild(a);
     wn.appendChild(row);
   });
@@ -2098,6 +2100,7 @@ $('#foot').textContent = 'Generated ' + DATA.generated +
 /* ---------- Pre-launch: tracker rows with no TEDUH code ---------- */
 const PL = DATA.prelaunch || { stages: [], rows: [], newInArea: [] };
 let plFilter = 'all';
+let plFocus = '';     // a row a "Seen:" link asked for, outlined and scrolled to once
 const plSeen = key => PL.rows.filter(r => r.trackers.includes(key) && r.latest);
 function stagePill(stage) {
   const i = PL.stages.indexOf(stage);
@@ -2156,7 +2159,7 @@ function prelaunchView() {
   const bd = el('tbody');
   PL.rows.filter(r => plFilter === 'all' || (plFilter === 'act') === !!act(r)).forEach(r => {
     const f = r.latest || {};
-    const tr = el('tr', act(r) ? '' : 'quiet');
+    const tr = el('tr', (act(r) ? '' : 'quiet') + (r.name === plFocus ? ' plfocus' : ''));
     const nm = el('td', 'l nm', r.name);
     /* Three kinds of text, kept apart so a row reads at a glance: her total,
        what the source said (a find's note is short facts split on ";"), and
@@ -2174,6 +2177,16 @@ function prelaunchView() {
       const ul = el('ul', 'plfacts');
       facts.forEach(x => ul.appendChild(el('li', '', x)));
       nm.appendChild(ul);
+    }
+    /* Where each find came from -- the exact ad, post or article -- so a fact
+       can always be checked at its source. */
+    const srcs = [];
+    r.finds.forEach(x => { if (x.url && !srcs.some(s => s.url === x.url)) srcs.push(x); });
+    if (srcs.length) {
+      const sp = el('span', 'plnote pllinks');
+      sp.appendChild(el('b', '', 'Source: '));
+      srcs.slice(0, 4).forEach(x => sp.appendChild(plLink(x.url, (x.source || 'link') + (x.seen ? ' (' + fdate(x.seen, true) + ')' : ''))));
+      nm.appendChild(sp);
     }
     if (r.note) {
       const yn = el('span', 'plnote');
@@ -2197,6 +2210,8 @@ function prelaunchView() {
   });
   tb.appendChild(bd);
   const host = $('#pltabwrap'); host.textContent = ''; host.appendChild(tb);
+  const focus = tb.querySelector('tr.plfocus');
+  if (focus) { plFocus = ''; requestAnimationFrame(() => focus.scrollIntoView({ block: 'center' })); }
 }
 
 function secnav() {
