@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-off reachability test: which pre-launch sources answer from GitHub?
 
-  python scripts/probe_sources.py              # second list, plain fetch + real browser
+  python scripts/probe_sources.py              # third list, plain fetch + real browser
   python scripts/probe_sources.py --set first  # the first run's list
   python scripts/probe_sources.py --no-browser # plain fetch only
 
@@ -16,7 +16,7 @@ One request per source per method, a pause between each, nothing retried. It
 writes only into probe_out/ (uploaded as a workflow artifact) and the job
 summary: never data/, docs/ or projects.csv, and it never commits.
 """
-import argparse, json, os, re, sys, time, urllib.error, urllib.request
+import argparse, html as htmlmod, json, os, re, sys, time, urllib.error, urllib.request
 
 PAUSE = 2.0
 TIMEOUT = 30
@@ -104,7 +104,36 @@ SECOND = [
     ("osk", "OSK Property (guess)", "https://www.oskproperty.com.my/", _DEV),
     ("titijaya", "Titijaya (guess)", "https://www.titijaya.com.my/", _DEV),
 ]
-SETS = {"first": FIRST, "second": SECOND}
+
+# Third run: the four addresses she supplied, the Lowyat property boards
+# (the second run's link-picker grabbed a garbled one), and two ways to see a
+# pre-launch microsite before the developer's own project cards mention it:
+# the public certificate-transparency log at crt.sh, where every new https
+# site shows up, and the developer's sitemap.xml, which lists pages the menu
+# does not link yet.
+THIRD = [
+    ("armani_dev", "Armani: our developments", "https://armanigroup.com.my/our-developments/", _DEV),
+    ("sks_prop", "SKS: property", "https://sksgroup.com.my/property/", _DEV),
+    ("exsim_dev", "Exsim: our developments", "https://exsim.com.my/our-developments/", _DEV),
+    ("setiaawan_res", "Setia Awan: residential", "https://setiaawan.com/residential/", _DEV),
+    ("lowyat_p0", "Lowyat property board 1", "LOWYAT_PROPERTY_0", ["topic", "property"]),
+    ("lowyat_p1", "Lowyat property board 2", "LOWYAT_PROPERTY_1", ["topic", "property"]),
+    ("lowyat_p2", "Lowyat property board 3", "LOWYAT_PROPERTY_2", ["topic", "property"]),
+    ("crt_spsetia", "crt.sh: *.spsetia.com",
+     "https://crt.sh/?q=%25.spsetia.com&output=json&exclude=expired", ["name_value"]),
+    ("crt_mahsing", "crt.sh: *.mahsing.com.my",
+     "https://crt.sh/?q=%25.mahsing.com.my&output=json&exclude=expired", ["name_value"]),
+    ("crt_theshang", "crt.sh: any site named *theshang*",
+     "https://crt.sh/?q=%25theshang%25&output=json&exclude=expired", ["name_value"]),
+    ("crt_villaria", "crt.sh: any site named *villaria*",
+     "https://crt.sh/?q=%25villaria%25&output=json&exclude=expired", ["name_value"]),
+    ("sitemap_spsetia", "S P Setia sitemap", "https://spsetia.com/sitemap.xml", ["<loc>"]),
+    ("sitemap_spsetia_ix", "S P Setia sitemap index", "https://spsetia.com/sitemap_index.xml", ["<loc>"]),
+    ("sitemap_mahsing", "Mah Sing sitemap", "https://www.mahsing.com.my/sitemap.xml", ["<loc>"]),
+    ("sitemap_paramount", "Paramount sitemap", "https://paramountproperty.my/sitemap_index.xml", ["<loc>"]),
+    ("sitemap_tslaw", "TS Law sitemap", "https://tslawland.com/sitemap.xml", ["<loc>"]),
+]
+SETS = {"first": FIRST, "second": SECOND, "third": THIRD}
 
 # Words on a developer's page that suggest it announces projects before
 # launch -- counted, so the summary shows which sites are worth watching.
@@ -142,7 +171,9 @@ def verdict(status, html, words):
     found = [w for w in words if w.lower() in low]
     if not found:
         return "empty", f"HTTP {status}, none of {words} on the page"
-    if len(visible_text(html)) < 500 and "<rss" not in low:
+    feed = ("<rss" in low or "<urlset" in low or "<sitemapindex" in low
+            or html.lstrip()[:1] in ("[", "{"))
+    if len(visible_text(html)) < 500 and not feed:
         return "empty", f"HTTP {status}, only {len(visible_text(html))} chars of text"
     return "ok", f"HTTP {status}, found '{found[0]}'"
 
@@ -164,13 +195,45 @@ def plain(url):
         return None, "", f"{type(e).__name__}: {e}"[:120]
 
 
-def lowyat_property():
-    """The property forum's address, read off the Lowyat front page."""
-    st, html, _ = plain("https://forum.lowyat.net/")
-    for href, text in re.findall(r'<a[^>]+href="([^"]+)"[^>]*>([^<]{2,60})</a>', html):
-        if "property" in text.lower():
-            return href if href.startswith("http") else "https://forum.lowyat.net" + href
-    return "https://forum.lowyat.net/"
+_LOWYAT = None
+
+
+def lowyat_property(n=0):
+    """The n-th property board's address, read off the Lowyat front page.
+    hrefs are HTML-escaped (&amp;), which the second run forgot to undo."""
+    global _LOWYAT
+    if _LOWYAT is None:
+        st, page, _ = plain("https://forum.lowyat.net/")
+        _LOWYAT = []
+        for href, text in re.findall(r'<a[^>]+href="([^"]+)"[^>]*>([^<]{2,60})</a>', page):
+            if "property" in text.lower():
+                href = htmlmod.unescape(href)
+                href = href if href.startswith("http") else "https://forum.lowyat.net" + href
+                if href not in _LOWYAT:
+                    _LOWYAT.append(href)
+        print(f"Lowyat property links on the front page: {_LOWYAT}")
+    return _LOWYAT[n] if n < len(_LOWYAT) else "https://forum.lowyat.net/"
+
+
+def details(key, body):
+    """For crt.sh and sitemaps: what a daily watch would actually read."""
+    if key.startswith("crt_"):
+        rows = re.findall(r'"not_before":"([^"]+)"', body)
+        names = re.findall(r'"name_value":"([^"]+)"', body)
+        pairs = sorted(zip(rows, names), reverse=True)
+        seen, out = set(), []
+        for nb, nm in pairs:
+            for n in nm.split("\\n"):
+                if n not in seen:
+                    seen.add(n)
+                    out.append(f"{nb[:10]} {n}")
+        return f"{len(names)} certificates; newest: " + "; ".join(out[:8])
+    if key.startswith("sitemap_"):
+        locs = re.findall(r"<loc>\s*([^<]+?)\s*</loc>", body)
+        mods = sorted(re.findall(r"<lastmod>\s*([^<]+?)\s*</lastmod>", body), reverse=True)
+        return (f"{len(locs)} pages listed; newest lastmod {mods[0][:10] if mods else 'n/a'}; "
+                f"sample: " + "; ".join(locs[:5]))
+    return ""
 
 
 def prelaunch_hits(html):
@@ -182,10 +245,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--out", default="probe_out")
-    ap.add_argument("--set", choices=sorted(SETS), default="second")
+    ap.add_argument("--set", choices=sorted(SETS), default="third")
     args = ap.parse_args()
     global SOURCES
-    SOURCES = [(k, lab, lowyat_property() if url == "LOWYAT_PROPERTY" else url, w)
+    SOURCES = [(k, lab,
+                lowyat_property(int(url.rsplit("_", 1)[1])) if url.startswith("LOWYAT_PROPERTY_")
+                else lowyat_property() if url == "LOWYAT_PROPERTY" else url, w)
                for k, lab, url, w in SETS[args.set]]
     os.makedirs(args.out, exist_ok=True)
 
@@ -196,7 +261,8 @@ def main():
         st, html, err = plain(url)
         v, why = verdict(st, html, words) if st is not None else ("error", err)
         results[key].update(plain=v, plain_why=why, plain_title=title_of(html),
-                            plain_bytes=len(html), url=url, hits=prelaunch_hits(html))
+                            plain_bytes=len(html), url=url, hits=prelaunch_hits(html),
+                            details=details(key, html))
         with open(os.path.join(args.out, f"{key}.plain.html"), "w") as f:
             f.write(html)
         print(f"  {v:8} {lab}: {why}")
@@ -248,6 +314,10 @@ def main():
                      f"| {mark.get(r.get('browser'), '–')}<br><sub>{why(r, 'browser_why')}</sub> "
                      f"| {r.get('hits', 0)} "
                      f"| {(r.get('browser_title') or r.get('plain_title') or '').replace('|', '/')} |")
+    extra = [f"- **{r['label']}**: {r['details'].replace('|', '/')}"
+             for r in results.values() if r.get("details")]
+    if extra:
+        lines += ["", "### What a daily watch would read", ""] + extra
     lines += ["", "Saved pages and screenshots are in the `probe-results` artifact."]
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
