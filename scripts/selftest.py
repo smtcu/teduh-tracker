@@ -338,6 +338,34 @@ if projects and have["config"]:
             if k:
                 ck(k in known, f"unit_types {k!r} ({p['project']}) is defined in unit_types.json")
 
+# --------------------------------------------------------------------------
+section("pre-launch files point at real rows")
+# --------------------------------------------------------------------------
+# A find or page whose tracker + project matches no projects.csv row is
+# silently dropped from the Pre-launch view -- a typo would hide it -- so
+# every one must resolve. Rows that have since got a code still count: their
+# finds stay as the record.
+BD = mods.get("build_dashboard")
+if projects and BD:
+    rows = {((p.get("tracker") or "").strip(),
+             (p.get("project") or "").replace("\n", " ").strip().upper()) for p in projects}
+    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv"):
+        path = os.path.join(ROOT, f)
+        if not os.path.exists(path):
+            continue
+        with open(path, newline="", encoding="utf-8") as fh:
+            for i, r in enumerate(csv.DictReader(fh), 2):
+                proj = (r.get("project") or "").strip()
+                if proj:          # blank = new in an area, not on a tracker yet
+                    ck(((r.get("tracker") or "").strip(), proj.upper()) in rows,
+                       f"{f} line {i}: {r.get('tracker')} / {proj} is a projects.csv row")
+                url = (r.get("url") or "").strip()
+                if url:
+                    ck(url.startswith(("http://", "https://")), f"{f} line {i}: url is a web address")
+                stage = (r.get("stage") or "").strip()
+                if stage:
+                    ck(stage in BD.STAGES, f"{f} line {i}: stage {stage!r} is one of {BD.STAGES}")
+
 print()
 if FAILS:
     print(f"{len(FAILS)} check(s) FAILED")
