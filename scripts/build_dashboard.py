@@ -255,6 +255,7 @@ def prelaunch(projects):
     finds = [f for f in read("data/prelaunch_finds.csv")
              if (f.get("status") or "").strip() != "dismissed"]
     pages = read("data/prelaunch_pages.csv")
+    kols = read("data/prelaunch_influencers.csv")
 
     def key(tracker, project):
         return ((tracker or "").strip(), (project or "").replace("\n", " ").strip().upper())
@@ -273,7 +274,7 @@ def prelaunch(projects):
                  "units": to_int(p.get("total_units")),
                  "note": " ".join(x for x in ((p.get("note_prefix") or "").strip(),
                                               (p.get("remarks") or "").strip()) if x),
-                 "finds": [], "pages": []}
+                 "finds": [], "pages": [], "kol": []}
             by_name[name.upper()] = r
             rows.append(r)
         r["trackers"].append(p["tracker"])
@@ -306,7 +307,17 @@ def prelaunch(projects):
                 ("url", "url"), ("kind", "kind"), ("label", "label"),
                 ("via", "found_via"), ("seen", "first_seen"), ("note", "note"))})
 
+    # Influencer posts about a row (laptop Runs A and C). The label is what the
+    # platform or the creator showed -- "paid partnership", "boosted ad",
+    # "#ad" or "no label" -- never a judgment that an unlabelled post was paid.
+    for k in kols:
+        r = owner.get(key(k.get("tracker"), k.get("project")))
+        if r is not None:
+            r["kol"].append({c: (k.get(c) or "").strip() for c in (
+                "posted", "platform", "creator", "followers", "label", "views", "url", "note")})
+
     for r in rows:
+        r["kol"].sort(key=lambda k: k["posted"], reverse=True)
         r["finds"].sort(key=lambda f: f["seen"], reverse=True)
         staged = [f for f in r["finds"] if f["stage"].lower() in stage_rank]
         best = max(staged, key=lambda f: (stage_rank[f["stage"].lower()], f["seen"]), default=None)
@@ -319,7 +330,7 @@ def prelaunch(projects):
     order = {k: i for i, k in enumerate(AREA_TRACKERS)}
     rows.sort(key=lambda r: (min(order.get(t, 99) for t in r["trackers"]), r["name"].lower()))
     rows.sort(key=lambda r: r["latest"]["seen"] if r["latest"] else "", reverse=True)
-    rows.sort(key=lambda r: (0 if (r["finds"] or r["pages"]) else 1, -r["stageRank"]))
+    rows.sort(key=lambda r: (0 if (r["finds"] or r["pages"] or r["kol"]) else 1, -r["stageRank"]))
     new_in_area.sort(key=lambda f: f["seen"], reverse=True)
     return {"stages": STAGES, "rows": rows, "newInArea": new_in_area}
 
@@ -977,6 +988,10 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .plnote{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.35}
 .plfacts{margin:5px 0 0;padding-left:16px;font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.4}
 .plfacts li+li{margin-top:1px}
+.plfacts li a{display:inline;font-weight:700;color:var(--blue)}
+.plkol{margin-top:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.plkol summary{cursor:pointer;line-height:1.4}
+.plkol summary b{color:var(--ink)}
 .plnote b{font-weight:700;color:var(--ink-2)}
 .plph{display:none;font-size:12px;font-weight:600;color:var(--ink-2);margin-top:4px;line-height:1.45}
 .pllinks a{display:block;font-size:12.5px;font-weight:650;color:var(--blue);white-space:nowrap}
@@ -1241,7 +1256,7 @@ function trackerBar() {
     if (kind === 'area') {
       /* Pre-launch sits with the area sheets because it is read with them each morning. */
       const b = el('button', 'ghost', 'Pre-launch');
-      const nAct = PL.rows.filter(r => r.finds.length || r.pages.length).length;
+      const nAct = PL.rows.filter(r => r.finds.length || r.pages.length || r.kol.length).length;
       if (nAct) { const s = el('span', 'plus ad', String(nAct)); s.title = 'Rows with something seen'; b.appendChild(s); }
       const nNew = PL.newInArea.filter(f => f.status !== 'accepted').length;
       if (nNew) { const s = el('span', 'plus check', '+' + nNew); s.title = 'New in your areas — needs your check'; b.appendChild(s); }
@@ -2097,6 +2112,38 @@ function plLink(url, text) {
   if (/^https?:\/\//.test(url)) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; }
   return a;
 }
+/* "KOL: 3 creators in the last 30 days · Xiaohongshu 2 · TikTok 1 · paid
+   partnership 2 · no label 1", folding open to the posts themselves. Counts
+   creators, not posts; the window is 30 days back from the data date. */
+function kolLine(r) {
+  if (!r.kol.length) return null;
+  const end = new Date((DATA.todayDate || '') + 'T00:00:00');
+  const start = new Date(end); start.setDate(start.getDate() - 30);
+  const recent = r.kol.filter(k => !k.posted || new Date(k.posted + 'T00:00:00') >= start);
+  const list = recent.length ? recent : r.kol;
+  const tally = f => { const m = {}; list.forEach(k => { const v = f(k) || 'unknown'; m[v] = (m[v] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, n]) => k + ' ' + n).join(' · '); };
+  const creators = new Set(list.map(k => (k.platform + ' ' + k.creator).toLowerCase())).size;
+  const box = el('details', 'plkol');
+  const sum = el('summary');
+  sum.appendChild(el('b', '', 'KOL: '));
+  sum.appendChild(document.createTextNode(creators + (creators === 1 ? ' creator' : ' creators')
+    + (recent.length ? ' in the last 30 days' : ' (older than 30 days)')
+    + ' · ' + tally(k => k.platform) + ' · ' + tally(k => k.label)));
+  box.appendChild(sum);
+  const ul = el('ul', 'plfacts');
+  list.forEach(k => {
+    const li = el('li');
+    const who = (k.creator || 'unnamed') + (k.followers ? ' (' + k.followers + ')' : '');
+    li.appendChild(k.url ? plLink(k.url, who) : el('span', '', who));
+    li.appendChild(document.createTextNode(' · ' + [k.platform, k.posted ? fdate(k.posted, true) : '', k.label,
+      k.views, k.note].filter(Boolean).join(' · ')));
+    ul.appendChild(li);
+  });
+  box.appendChild(ul);
+  return box;
+}
+
 function prelaunchView() {
   const nw = $('#plnew'); nw.textContent = '';
   PL.newInArea.forEach(f => {
@@ -2112,7 +2159,7 @@ function prelaunchView() {
   const lad = $('#plladder'); lad.textContent = '';
   PL.stages.forEach((st, i) => { if (i) lad.appendChild(document.createTextNode('›')); lad.appendChild(stagePill(st)); });
 
-  const act = r => r.finds.length || r.pages.length;
+  const act = r => r.finds.length || r.pages.length || r.kol.length;
   const counts = { all: PL.rows.length, act: PL.rows.filter(act).length };
   counts.quiet = counts.all - counts.act;
   const ch = $('#plchips'); ch.textContent = '';
@@ -2152,6 +2199,8 @@ function prelaunchView() {
       facts.forEach(x => ul.appendChild(el('li', '', x)));
       nm.appendChild(ul);
     }
+    const kl = kolLine(r);
+    if (kl) nm.appendChild(kl);
     if (r.note) {
       const yn = el('span', 'plnote');
       yn.appendChild(el('b', '', 'Your note: '));

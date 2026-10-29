@@ -349,7 +349,8 @@ BD = mods.get("build_dashboard")
 if projects and BD:
     rows = {((p.get("tracker") or "").strip(),
              (p.get("project") or "").replace("\n", " ").strip().upper()) for p in projects}
-    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv"):
+    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv",
+              "data/prelaunch_influencers.csv"):
         path = os.path.join(ROOT, f)
         if not os.path.exists(path):
             continue
