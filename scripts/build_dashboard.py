@@ -326,11 +326,15 @@ def prelaunch(projects):
             for k in ("adSince", "permit", "by", "ads", "price"):
                 if blankish(top[k]):
                     top[k] = next((f[k] for f in r["finds"] if not blankish(f[k])), top[k])
+            # A news find's headline is one fact; three outlets carrying the
+            # same story would repeat it, so only the top find's headline is
+            # pooled. The watch's working notes (article date, ticks) belong
+            # on the Source line, not among the facts.
             facts = []
-            for f in [top] + r["finds"]:
+            for f in [top] + [f for f in r["finds"] if f["kind"] != "news"]:
                 for x in f["note"].split(";"):
                     x = x.strip()
-                    if x and x not in facts:
+                    if x and x not in facts and not x.startswith(("Ticks:", "dated ")):
                         facts.append(x)
             top["note"] = "; ".join(facts)
         r["latest"] = top
@@ -998,6 +1002,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 #pltab td.nm{min-width:210px;max-width:250px}
 #pltab tr.quiet td{color:var(--muted)}
 #pltab tr.plfocus{outline:2px solid var(--blue);outline-offset:-2px}
+#pltab .plev{display:block;font-size:11px;color:var(--muted);margin:0 0 4px}
 .plnote{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.35}
 .plfacts{margin:5px 0 0;padding-left:16px;font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.4}
 .plfacts li+li{margin-top:1px}
@@ -2185,7 +2190,18 @@ function prelaunchView() {
     if (srcs.length) {
       const sp = el('span', 'plnote pllinks');
       sp.appendChild(el('b', '', 'Source: '));
-      srcs.slice(0, 4).forEach(x => sp.appendChild(plLink(x.url, (x.source || 'link') + (x.seen ? ' (' + fdate(x.seen, true) + ')' : ''))));
+      srcs.slice(0, 5).forEach(x => {
+        // An article's own date when the watch noted one, else the day it was seen.
+        const d = ((x.note || '').match(/dated (\d{4}-\d\d-\d\d)/) || [])[1] || x.seen;
+        sp.appendChild(plLink(x.url, (x.source || 'link') + (d ? ' (' + fdate(d, true) + ')' : '')));
+        // The watch's ticks, as evidence for her to judge: ✓ name ✗ place ...
+        const tk = ((x.note || '').match(/Ticks: ([^;]*)/) || [])[1];
+        if (tk || x.confidence) {
+          const ev = (x.confidence ? x.confidence : '') + (tk ? ' · ' + tk.replace(/(\S+(?: resale)?) (yes|no|\?)/g,
+            (m, k, v) => (v === 'yes' ? '✓' : v === 'no' ? '✗' : '?') + k).replace(/not resale/, 'not-resale') : '');
+          sp.appendChild(el('span', 'plev', ev));
+        }
+      });
       nm.appendChild(sp);
     }
     if (r.note) {
