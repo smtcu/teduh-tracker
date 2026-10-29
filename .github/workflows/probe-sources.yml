@@ -1,0 +1,46 @@
+name: Probe pre-launch sources
+
+# One-off test before designing a daily pre-launch watch: which websites
+# (property portals, Google, Lowyat, Bursa, developer sites) answer from
+# GitHub's servers at all? See scripts/probe_sources.py.
+#
+# It reads nothing from TEDUH, writes nothing to the repo and never commits --
+# results go to the run's summary page and a downloadable artifact. So it needs
+# no concurrency group: it cannot collide with the refresh.
+on:
+  push:
+    branches: ['claude/hopeful-newton-humuct']
+    paths:
+      - 'scripts/probe_sources.py'
+      - '.github/workflows/probe-sources.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install a headless browser
+        run: |
+          pip install --quiet playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Probe each source
+        run: python scripts/probe_sources.py
+
+      - name: Keep the saved pages
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-results
+          path: probe_out/
+          retention-days: 14
