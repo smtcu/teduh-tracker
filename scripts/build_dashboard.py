@@ -1025,6 +1025,19 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .plsrc summary{cursor:pointer;font-weight:700;color:var(--ink-2)}
 .plsrc a{display:block;margin-top:6px;font-weight:650;color:var(--blue);overflow-wrap:anywhere}
 .plev{display:block;font-size:11px;color:var(--muted)}
+.plcard.pltap{cursor:pointer;transition:border-color .12s,transform .12s}
+.plcard.pltap:hover,.plcard.pltap:focus-visible{border-color:var(--blue);transform:translateY(-1px)}
+.plmore{margin-top:auto;font-size:12px;font-weight:650;color:var(--blue)}
+#pldlg{border:none;padding:0;border-radius:16px;width:min(640px,94vw);max-height:90vh;overflow:auto;
+  background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#pldlg::backdrop{background:rgba(11,11,11,.5)}
+#pldlg .plcard{border:none;box-shadow:none;border-radius:0;padding:24px 24px 22px;gap:11px}
+#pldlg .plhead h3{font-size:21px;padding-right:34px}
+#pldlg .plwhen{font-size:18px}
+#pldlg .stg{align-self:flex-start;font-size:12.5px;padding:3px 12px}
+#pldlg .plfacts{font-size:14px}
+.plx{position:sticky;top:10px;float:right;margin:10px 12px 0 0;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--border);background:var(--sunk);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;z-index:2}
 .plquiet{display:flex;flex-wrap:wrap;gap:6px}
 .plq{background:var(--sunk);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:650;color:var(--ink-2)}
 .plq small{display:block;font-size:11px;font-weight:550;color:var(--muted)}
@@ -2187,7 +2200,7 @@ function prelaunchView() {
     h.appendChild(el('span', 'plcount', rows.length + (rows.length === 1 ? ' project' : ' projects')));
     host.appendChild(h);
     const grid = el('div', 'plgrid');
-    rows.forEach(r => grid.appendChild(plCard(r)));
+    rows.forEach(r => grid.appendChild(plCard(r, false)));
     host.appendChild(grid);
   });
   const quiet = shown.filter(r => !act(r));
@@ -2205,32 +2218,54 @@ function prelaunchView() {
     host.appendChild(box);
   }
   const focus = host.querySelector('.plfocus');
-  if (focus) { plFocus = ''; requestAnimationFrame(() => focus.scrollIntoView({ block: 'center' })); }
+  if (focus) {
+    plFocus = '';
+    requestAnimationFrame(() => focus.scrollIntoView({ block: 'center' }));
+    if (focus._pl) plOpen(focus._pl);
+  }
 }
-/* A project card: name, trackers, stage and date up top, the numbers as small
-   tiles, the source's short facts, her note, then pages and sources tucked
-   away. Only what was recorded is shown -- a blank field is left out. */
-function plCard(r) {
+/* A project card. In the grid it is a short summary -- name, tracker, date,
+   price, the first facts -- and a tap opens the full card in a pop-up: every
+   number, every fact, her note, the pages and each source with its ticks.
+   Only what was recorded is shown; a blank field is left out. */
+function plCard(r, full) {
   const f = r.latest || {};
-  const c = el('article', 'plcard' + (r.name === plFocus ? ' plfocus' : ''));
+  const c = el('article', 'plcard' + (full ? ' plfull' : ' pltap') + (!full && r.name === plFocus ? ' plfocus' : ''));
   const hd = el('div', 'plhead');
   hd.appendChild(el('h3', '', r.name));
   hd.appendChild(el('span', 'pltrk', r.trackerLabels.join(' · ')));
   c.appendChild(hd);
   if (r.units) c.appendChild(el('div', 'plunits', nf(r.units) + ' units · your total'));
+  if (full && f.stage) c.appendChild(stagePill(f.stage));
   if (f.event) c.appendChild(el('div', 'plwhen', fdate(f.event)));
   const stats = [['Price from', f.price], ['Ads', f.ads], ['Ad since', f.adSince ? fdate(f.adSince) : ''],
                  ['Permit', f.permit], ['By', f.by]].filter(([, v]) => v);
-  if (stats.length) {
+  const shownStats = full ? stats : stats.filter(([, v]) => !/^not (shown|stated)/i.test(v)).slice(0, 3);
+  if (shownStats.length) {
     const g = el('div', 'plstats');
-    stats.forEach(([k, v]) => { const s = el('div', 'plstat'); s.appendChild(el('span', '', k)); s.appendChild(el('b', '', v)); g.appendChild(s); });
+    shownStats.forEach(([k, v]) => { const s = el('div', 'plstat'); s.appendChild(el('span', '', k)); s.appendChild(el('b', '', v)); g.appendChild(s); });
     c.appendChild(g);
   }
   const facts = (f.note || '').split(';').map(x => x.trim()).filter(Boolean);
-  if (facts.length) {
+  const shownFacts = full ? facts : facts.slice(0, 2);
+  if (shownFacts.length) {
     const ul = el('ul', 'plfacts');
-    facts.forEach(x => ul.appendChild(el('li', '', x)));
+    shownFacts.forEach(x => ul.appendChild(el('li', '', x)));
     c.appendChild(ul);
+  }
+  const srcN = new Set(r.finds.map(x => x.url).filter(Boolean)).size;
+  if (!full) {
+    const more = [];
+    if (facts.length > 2) more.push((facts.length - 2) + ' more fact' + (facts.length > 3 ? 's' : ''));
+    if (srcN) more.push(srcN + ' source' + (srcN > 1 ? 's' : ''));
+    if (r.pages.length) more.push(r.pages.length + ' page' + (r.pages.length > 1 ? 's' : ''));
+    c.appendChild(el('div', 'plmore', (more.length ? more.join(' · ') + ' · ' : '') + 'Tap for details ›'));
+    c._pl = r;
+    c.tabIndex = 0;
+    c.setAttribute('role', 'button');
+    c.onclick = () => plOpen(r);
+    c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); plOpen(r); } };
+    return c;
   }
   if (r.note) {
     const yn = el('div', 'plnote');
@@ -2250,6 +2285,7 @@ function plCard(r) {
   r.finds.forEach(x => { if (x.url && !srcs.some(s => s.url === x.url)) srcs.push(x); });
   if (srcs.length) {
     const d = el('details', 'plsrc');
+    d.open = true;
     d.appendChild(el('summary', '', 'Sources (' + srcs.length + ')'));
     srcs.forEach(x => {
       const when = ((x.note || '').match(/dated (\d{4}-\d\d-\d\d)/) || [])[1] || x.seen;
@@ -2263,6 +2299,24 @@ function plCard(r) {
     c.appendChild(d);
   }
   return c;
+}
+/* The pop-up: the full card over a dimmed page. Closes with ×, Esc, or a tap
+   outside the card. */
+function plOpen(r) {
+  let dlg = $('#pldlg');
+  if (!dlg) {
+    dlg = el('dialog'); dlg.id = 'pldlg';
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    document.body.appendChild(dlg);
+  }
+  dlg.textContent = '';
+  const x = el('button', 'plx', '×');
+  x.setAttribute('aria-label', 'Close');
+  x.onclick = () => dlg.close();
+  dlg.appendChild(x);
+  dlg.appendChild(plCard(r, true));
+  if (!dlg.open) dlg.showModal();
+  dlg.scrollTop = 0;
 }
 
 function secnav() {
