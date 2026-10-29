@@ -975,6 +975,9 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 #pltab td.nm{min-width:210px;max-width:250px}
 #pltab tr.quiet td{color:var(--muted)}
 .plnote{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.35}
+.plfacts{margin:5px 0 0;padding-left:16px;font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.4}
+.plfacts li+li{margin-top:1px}
+.plnote b{font-weight:700;color:var(--ink-2)}
 .plph{display:none;font-size:12px;font-weight:600;color:var(--ink-2);margin-top:4px;line-height:1.45}
 .pllinks a{display:block;font-size:12.5px;font-weight:650;color:var(--blue);white-space:nowrap}
 .pllinks a+a{margin-top:2px}
@@ -2132,8 +2135,10 @@ function prelaunchView() {
     const f = r.latest || {};
     const tr = el('tr', act(r) ? '' : 'quiet');
     const nm = el('td', 'l nm', r.name);
-    const extra = [r.units ? nf(r.units) + ' units (your total)' : '', f.note || '', r.note ? 'Your note: ' + r.note : '']
-      .filter(Boolean).join(' ');
+    /* Three kinds of text, kept apart so a row reads at a glance: her total,
+       what the source said (a find's note is short facts split on ";"), and
+       her own projects.csv note. */
+    const facts = (f.note || '').split(';').map(x => x.trim()).filter(Boolean);
     /* Phones lose the columns, so the same facts ride under the name. */
     const ph = el('span', 'plph', r.trackerLabels.join(' · ') + ' · ' + (r.latest ? plSummary(r) : 'Nothing seen yet.'));
     if (r.pages.length) {
@@ -2141,7 +2146,18 @@ function prelaunchView() {
       ph.appendChild(pl);
     }
     nm.appendChild(ph);
-    if (extra) nm.appendChild(el('span', 'plnote', extra));
+    if (r.units) nm.appendChild(el('span', 'plnote', nf(r.units) + ' units · your total'));
+    if (facts.length) {
+      const ul = el('ul', 'plfacts');
+      facts.forEach(x => ul.appendChild(el('li', '', x)));
+      nm.appendChild(ul);
+    }
+    if (r.note) {
+      const yn = el('span', 'plnote');
+      yn.appendChild(el('b', '', 'Your note: '));
+      yn.appendChild(document.createTextNode(r.note));
+      nm.appendChild(yn);
+    }
     tr.appendChild(nm);
     tr.appendChild(el('td', 'l plw', r.trackerLabels.join(' · ')));
     const stc = el('td', 'l plw');
