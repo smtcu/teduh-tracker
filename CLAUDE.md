@@ -74,7 +74,6 @@ data/teduh_watch_resolved/       one file per answer: <code> = accept | dismiss
 prelaunch_sources.csv            pre-launch watch config: developer pages, sitemaps, Lowyat boards
 data/prelaunch_finds.csv         signs of life for no-code rows: ads, news, agent pages (see below)
 data/prelaunch_pages.csv         pages to keep looking at for no-code rows: agent sites, microsites
-data/prelaunch_influencers.csv   influencer (KOL) posts about a project, from the laptop runs
 scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
@@ -352,13 +351,8 @@ row leaves the list the day it gets a code; its finds stay in the files.
   floor plans, RSVP / landing pages, microsites). Store URLs **without**
   tracking codes (`gclid`, `gad_source`, `gbraid`): the agent sites she finds
   come from Google search ads and carry them.
-- `data/prelaunch_influencers.csv` -- influencer posts about a project from
-  laptop Runs A and C: platform, creator, followers, label, views, link. The
-  label records **what was shown** -- "paid partnership", "boosted ad", "#ad"
-  or "no label" -- never a judgment that an unlabelled post was paid. The
-  site shows a folded "KOL: N creators in the last 30 days" line per row.
-- All three are keyed by tracker + project name, the only key a no-code row
-  has; selftest.py fails a line that matches no row.
+- Both are keyed by tracker + project name, the only key a no-code row has;
+  selftest.py fails a line that matches no row.
 - The tracker that owns a row shows a blue "Seen:" line and a blue count on
   its button. Blue = information, nothing added. **Nothing in the pre-launch
   watch ever writes projects.csv** -- an accept (phase 4) is always hers.
