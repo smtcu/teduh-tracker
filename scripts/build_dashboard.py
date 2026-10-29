@@ -997,22 +997,40 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .stg.s2,.stg.s3{background:var(--hl);border-color:var(--blue);color:var(--blue)}
 .stg.s4{background:var(--blue);border-color:var(--blue);color:#fff}
 .ladder{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;font-size:12px;color:var(--muted)}
-#pltab td{vertical-align:top}
-#pltab td.l{white-space:normal}
-#pltab td.nm{min-width:210px;max-width:250px}
-#pltab tr.quiet td{color:var(--muted)}
-#pltab tr.plfocus{outline:2px solid var(--blue);outline-offset:-2px}
-#pltab .plev{display:block;font-size:11px;color:var(--muted);margin:0 0 4px}
-.plnote{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.35}
-.plfacts{margin:5px 0 0;padding-left:16px;font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.4}
-.plfacts li+li{margin-top:1px}
+/* Pre-launch cards: one per project, grouped under its stage. */
+.plsech{display:flex;align-items:center;gap:10px;margin:22px 0 10px;font-size:13px;font-weight:750;color:var(--ink-2)}
+.plsech .stg{font-size:12.5px;padding:3px 12px}
+.plcount{font-size:12px;font-weight:600;color:var(--muted)}
+.plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.plcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
+  display:flex;flex-direction:column;gap:9px;box-shadow:var(--shadow);min-width:0}
+.plcard.plfocus,.plq.plfocus{outline:2px solid var(--blue);outline-offset:2px}
+.plhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.plhead h3{margin:0;font-size:16.5px;font-weight:780;line-height:1.25;color:var(--ink)}
+.pltrk{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.plunits{font-size:12px;font-weight:600;color:var(--muted);margin-top:-5px}
+.plwhen{font-size:15px;font-weight:780;color:var(--blue)}
+.plstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:6px}
+.plstat{background:var(--sunk);border-radius:8px;padding:6px 9px;min-width:0}
+.plstat span{display:block;font-size:10px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.plstat b{display:block;font-size:13px;font-weight:720;color:var(--ink);overflow-wrap:anywhere}
+.plfacts{margin:0;padding-left:17px;font-size:13px;font-weight:550;color:var(--ink-2);line-height:1.45}
+.plfacts li+li{margin-top:2px}
+.plnote{font-size:12px;font-weight:500;color:var(--muted);line-height:1.4}
 .plnote b{font-weight:700;color:var(--ink-2)}
-.plph{display:none;font-size:12px;font-weight:600;color:var(--ink-2);margin-top:4px;line-height:1.45}
-.pllinks a{display:block;font-size:12.5px;font-weight:650;color:var(--blue);white-space:nowrap}
-.pllinks a+a{margin-top:2px}
+.plpages{display:flex;flex-wrap:wrap;gap:5px}
+.plpages a{background:var(--hl);color:var(--blue);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:650;
+  text-decoration:none;overflow-wrap:anywhere}
+.plsrc{border-top:1px solid var(--grid);padding-top:8px;font-size:12.5px}
+.plsrc summary{cursor:pointer;font-weight:700;color:var(--ink-2)}
+.plsrc a{display:block;margin-top:6px;font-weight:650;color:var(--blue);overflow-wrap:anywhere}
+.plev{display:block;font-size:11px;color:var(--muted)}
+.plquiet{display:flex;flex-wrap:wrap;gap:6px}
+.plq{background:var(--sunk);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:650;color:var(--ink-2)}
+.plq small{display:block;font-size:11px;font-weight:550;color:var(--muted)}
 @media(max-width:640px){
-  #pltab .plw{display:none}
-  .plph{display:block}
+  .plgrid{grid-template-columns:1fr}
+  .plhead{flex-direction:column;gap:2px}
 }
 </style>
 </head>
@@ -1107,7 +1125,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   <div class="watchnote" id="plnew" hidden></div>
   <div class="ladder" id="plladder"></div>
   <div class="chips" id="plchips"></div>
-  <div class="scroll" id="pltabwrap"></div>
+  <div id="pltabwrap"></div>
 </div>
 
 <div class="card" id="sec-dl">
@@ -2155,79 +2173,96 @@ function prelaunchView() {
       ch.appendChild(b);
     });
 
-  const tb = el('table'); tb.id = 'pltab';
-  const hr = el('tr');
-  [['PROJECT', 'l'], ['TRACKER', 'l plw'], ['STAGE', 'l plw'], ['EVENT DATE', 'l plw'], ['AD SINCE', 'l plw'],
-   ['PERMIT', 'l plw'], ['BY', 'l plw'], ['ADS', 'plw'], ['PRICE FROM', 'l plw'], ['PAGES', 'l plw']]
-    .forEach(([t, c]) => hr.appendChild(el('th', c, t)));
-  const th = el('thead'); th.appendChild(hr); tb.appendChild(th);
-  const bd = el('tbody');
-  PL.rows.filter(r => plFilter === 'all' || (plFilter === 'act') === !!act(r)).forEach(r => {
-    const f = r.latest || {};
-    const tr = el('tr', (act(r) ? '' : 'quiet') + (r.name === plFocus ? ' plfocus' : ''));
-    const nm = el('td', 'l nm', r.name);
-    /* Three kinds of text, kept apart so a row reads at a glance: her total,
-       what the source said (a find's note is short facts split on ";"), and
-       her own projects.csv note. */
-    const facts = (f.note || '').split(';').map(x => x.trim()).filter(Boolean);
-    /* Phones lose the columns, so the same facts ride under the name. */
-    const ph = el('span', 'plph', r.trackerLabels.join(' · ') + ' · ' + (r.latest ? plSummary(r) : 'Nothing seen yet.'));
-    if (r.pages.length) {
-      const pl = el('span', 'pllinks'); r.pages.forEach(p => pl.appendChild(plLink(p.url, p.label || p.url)));
-      ph.appendChild(pl);
-    }
-    nm.appendChild(ph);
-    if (r.units) nm.appendChild(el('span', 'plnote', nf(r.units) + ' units · your total'));
-    if (facts.length) {
-      const ul = el('ul', 'plfacts');
-      facts.forEach(x => ul.appendChild(el('li', '', x)));
-      nm.appendChild(ul);
-    }
-    /* Where each find came from -- the exact ad, post or article -- so a fact
-       can always be checked at its source. */
-    const srcs = [];
-    r.finds.forEach(x => { if (x.url && !srcs.some(s => s.url === x.url)) srcs.push(x); });
-    if (srcs.length) {
-      const sp = el('span', 'plnote pllinks');
-      sp.appendChild(el('b', '', 'Source: '));
-      srcs.slice(0, 5).forEach(x => {
-        // An article's own date when the watch noted one, else the day it was seen.
-        const d = ((x.note || '').match(/dated (\d{4}-\d\d-\d\d)/) || [])[1] || x.seen;
-        sp.appendChild(plLink(x.url, (x.source || 'link') + (d ? ' (' + fdate(d, true) + ')' : '')));
-        // The watch's ticks, as evidence for her to judge: ✓ name ✗ place ...
-        const tk = ((x.note || '').match(/Ticks: ([^;]*)/) || [])[1];
-        if (tk || x.confidence) {
-          const ev = (x.confidence ? x.confidence : '') + (tk ? ' · ' + tk.replace(/(\S+(?: resale)?) (yes|no|\?)/g,
-            (m, k, v) => (v === 'yes' ? '✓' : v === 'no' ? '✗' : '?') + k).replace(/not resale/, 'not-resale') : '');
-          sp.appendChild(el('span', 'plev', ev));
-        }
-      });
-      nm.appendChild(sp);
-    }
-    if (r.note) {
-      const yn = el('span', 'plnote');
-      yn.appendChild(el('b', '', 'Your note: '));
-      yn.appendChild(document.createTextNode(r.note));
-      nm.appendChild(yn);
-    }
-    tr.appendChild(nm);
-    tr.appendChild(el('td', 'l plw', r.trackerLabels.join(' · ')));
-    const stc = el('td', 'l plw');
-    if (f.stage) stc.appendChild(stagePill(f.stage)); else stc.textContent = act(r) ? '' : 'Nothing seen yet';
-    tr.appendChild(stc);
-    [f.event ? fdate(f.event) : '', f.adSince ? fdate(f.adSince) : '', f.permit || '', f.by || ''].forEach(v =>
-      tr.appendChild(el('td', 'l plw', v)));
-    tr.appendChild(el('td', 'plw', f.ads || ''));
-    tr.appendChild(el('td', 'l plw', f.price || ''));
-    const pc = el('td', 'l plw pllinks');
-    r.pages.forEach(p => pc.appendChild(plLink(p.url, (p.kind ? p.kind + ': ' : '') + (p.label || p.url))));
-    tr.appendChild(pc);
-    bd.appendChild(tr);
+  /* One card per project, grouped under its furthest stage, closest to launch
+     first -- read like slides rather than scanned like a spreadsheet. Rows
+     nothing has turned up for are just names at the bottom. */
+  const shown = PL.rows.filter(r => plFilter === 'all' || (plFilter === 'act') === !!act(r));
+  const host = $('#pltabwrap'); host.textContent = '';
+  const groups = [...PL.stages].reverse().map(st => [st, shown.filter(r => act(r) && r.latest && r.latest.stage === st)]);
+  groups.push(['Seen, stage not stated', shown.filter(r => act(r) && !(r.latest && PL.stages.includes(r.latest.stage)))]);
+  groups.forEach(([st, rows]) => {
+    if (!rows.length) return;
+    const h = el('div', 'plsech');
+    if (PL.stages.includes(st)) h.appendChild(stagePill(st)); else h.appendChild(el('span', '', st));
+    h.appendChild(el('span', 'plcount', rows.length + (rows.length === 1 ? ' project' : ' projects')));
+    host.appendChild(h);
+    const grid = el('div', 'plgrid');
+    rows.forEach(r => grid.appendChild(plCard(r)));
+    host.appendChild(grid);
   });
-  tb.appendChild(bd);
-  const host = $('#pltabwrap'); host.textContent = ''; host.appendChild(tb);
-  const focus = tb.querySelector('tr.plfocus');
+  const quiet = shown.filter(r => !act(r));
+  if (quiet.length) {
+    const h = el('div', 'plsech');
+    h.appendChild(el('span', '', 'Nothing seen yet'));
+    h.appendChild(el('span', 'plcount', quiet.length + ' projects'));
+    host.appendChild(h);
+    const box = el('div', 'plquiet');
+    quiet.forEach(r => {
+      const q = el('span', 'plq' + (r.name === plFocus ? ' plfocus' : ''), r.name);
+      q.appendChild(el('small', '', r.trackerLabels.join(' · ') + (r.units ? ' · ' + nf(r.units) + ' units' : '')));
+      box.appendChild(q);
+    });
+    host.appendChild(box);
+  }
+  const focus = host.querySelector('.plfocus');
   if (focus) { plFocus = ''; requestAnimationFrame(() => focus.scrollIntoView({ block: 'center' })); }
+}
+/* A project card: name, trackers, stage and date up top, the numbers as small
+   tiles, the source's short facts, her note, then pages and sources tucked
+   away. Only what was recorded is shown -- a blank field is left out. */
+function plCard(r) {
+  const f = r.latest || {};
+  const c = el('article', 'plcard' + (r.name === plFocus ? ' plfocus' : ''));
+  const hd = el('div', 'plhead');
+  hd.appendChild(el('h3', '', r.name));
+  hd.appendChild(el('span', 'pltrk', r.trackerLabels.join(' · ')));
+  c.appendChild(hd);
+  if (r.units) c.appendChild(el('div', 'plunits', nf(r.units) + ' units · your total'));
+  if (f.event) c.appendChild(el('div', 'plwhen', fdate(f.event)));
+  const stats = [['Price from', f.price], ['Ads', f.ads], ['Ad since', f.adSince ? fdate(f.adSince) : ''],
+                 ['Permit', f.permit], ['By', f.by]].filter(([, v]) => v);
+  if (stats.length) {
+    const g = el('div', 'plstats');
+    stats.forEach(([k, v]) => { const s = el('div', 'plstat'); s.appendChild(el('span', '', k)); s.appendChild(el('b', '', v)); g.appendChild(s); });
+    c.appendChild(g);
+  }
+  const facts = (f.note || '').split(';').map(x => x.trim()).filter(Boolean);
+  if (facts.length) {
+    const ul = el('ul', 'plfacts');
+    facts.forEach(x => ul.appendChild(el('li', '', x)));
+    c.appendChild(ul);
+  }
+  if (r.note) {
+    const yn = el('div', 'plnote');
+    yn.appendChild(el('b', '', 'Your note: '));
+    yn.appendChild(document.createTextNode(r.note));
+    c.appendChild(yn);
+  }
+  if (r.pages.length) {
+    const pg = el('div', 'plpages');
+    r.pages.forEach(p => pg.appendChild(plLink(p.url, (p.kind ? p.kind + ': ' : '') + (p.label || p.url))));
+    c.appendChild(pg);
+  }
+  /* Where each find came from -- the exact ad, post or article -- with the
+     watch's level and ticks as evidence for her to judge. Folded, so the card
+     stays short; a tap opens it. */
+  const srcs = [];
+  r.finds.forEach(x => { if (x.url && !srcs.some(s => s.url === x.url)) srcs.push(x); });
+  if (srcs.length) {
+    const d = el('details', 'plsrc');
+    d.appendChild(el('summary', '', 'Sources (' + srcs.length + ')'));
+    srcs.forEach(x => {
+      const when = ((x.note || '').match(/dated (\d{4}-\d\d-\d\d)/) || [])[1] || x.seen;
+      d.appendChild(plLink(x.url, (x.source || 'link') + (when ? ' (' + fdate(when, true) + ')' : '')));
+      const tk = ((x.note || '').match(/Ticks: ([^;]*)/) || [])[1];
+      if (tk || x.confidence) {
+        d.appendChild(el('span', 'plev', (x.confidence || '') + (tk ? ' · ' + tk.replace(/(\S+(?: resale)?) (yes|no|\?)/g,
+          (m, k, v) => (v === 'yes' ? '✓' : v === 'no' ? '✗' : '?') + k).replace(/not resale/, 'not-resale') : '')));
+      }
+    });
+    c.appendChild(d);
+  }
+  return c;
 }
 
 function secnav() {
