@@ -1,4 +1,4 @@
 run,label,last_run,note
-web,"Daily web watch (news, developer sites, Lowyat)",,Written by scripts/watch_prelaunch.py after each GitHub run.
+web,"Daily web watch (news, developer sites, Lowyat)",2026-10-30 09:00,"92 sources asked, 1 failed, 0 new finds"
 laptop,"Weekly laptop check (Facebook ads, social media)",2026-10-29,Runs A + B + C. Update this date at the end of each laptop session.
 google_ads,Monthly Google ads check,2026-10-30,Run D. Update this date at the end of each run.
