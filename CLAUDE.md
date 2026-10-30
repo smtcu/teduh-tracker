@@ -71,6 +71,9 @@ scripts/apply_resolutions.py     applies her Resolve answers to purple Check not
 data/teduh_watch.csv             what the watch has found (and is still waiting on)
 data/teduh_watch_extra.csv       extra things to watch that projects.csv cannot imply
 data/teduh_watch_resolved/       one file per answer: <code> = accept | dismiss
+prelaunch_sources.csv            pre-launch watch config: developer pages, sitemaps, Lowyat boards
+data/prelaunch_finds.csv         signs of life for no-code rows: ads, news, agent pages (see below)
+data/prelaunch_pages.csv         pages to keep looking at for no-code rows: agent sites, microsites
 scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
@@ -329,6 +332,79 @@ run, and the watch must never cost the day's sales figures. On a day it finds
 nothing it commits nothing: the site rebuild and the commit are skipped, since a
 timestamp-only commit is what collided with the refresh on 28 Sep 2026. Sabah, Vietnam and industrial projects can never appear
 here: they are outside TEDUH entirely.
+
+## Pre-launch watch -- rows with no code yet
+
+Added 29 Oct 2026, phase 1 of 6 (design agreed with her the same day). The
+site's **Pre-launch** button (in the Areas row) lists every projects.csv row
+with no TEDUH code, with what has been seen of it, closest to launch first. A
+row leaves the list the day it gets a code; its finds stay in the files.
+
+- `data/prelaunch_finds.csv` -- one line per sign of life (an ad, a news item,
+  an agent page): stage, event date, ad start date, permit, developer or agent
+  page, number of ads, price from, note. Stage is one of `STAGES` in
+  build_dashboard.py: Register interest, Private viewing / VVIP, Gallery opens,
+  Official launch, Launched. Fields not stated in the source stay **blank or
+  "not shown" / "not stated" -- never a guess**. A blank `project` means a new
+  project in one of her areas, not on any tracker: a purple Check notice.
+- `data/prelaunch_pages.csv` -- pages to keep looking at (agent sites with
+  floor plans, RSVP / landing pages, microsites). Store URLs **without**
+  tracking codes (`gclid`, `gad_source`, `gbraid`): the agent sites she finds
+  come from Google search ads and carry them.
+- Both are keyed by tracker + project name, the only key a no-code row has;
+  selftest.py fails a line that matches no row.
+- The tracker that owns a row shows a blue "Seen:" line and a blue count on
+  its button. Blue = information, nothing added. **Nothing in the pre-launch
+  watch ever writes projects.csv** -- an accept (phase 4) is always hers.
+
+Her own method, which the watch copies: search the project or area keywords,
+collect agent sites and Lowyat threads (Property Talk and Property Q&A), then
+**verify** each one -- the same name can be another project (Shang Villa,
+the Melaka Shang Height projects), and a correct find can carry a different
+name (HAN-YA). Verification is shown as evidence for her to judge, never
+decided silently.
+
+**Phase 2, the daily GitHub sources** (built 30 Oct 2026, approved plan):
+`scripts/watch_prelaunch.py`, a step in watch-launches.yml after the
+developer watch, 10-minute cap, `continue-on-error`. It reads Google News RSS
+(one search per no-code row, one per area word), the `developer` / `sitemap`
+/ `forum` rows of prelaunch_sources.csv (rows whose probe says blocked,
+browser only, laptop or untested are skipped; social rows are for the laptop
+Run C) and the saved pages. It writes only data/prelaunch_finds.csv (status
+"new") and its memory, data/prelaunch_seen.json -- **the first run with no
+memory file is a silent baseline**. Ticks per find: name, place, developer,
+size, current (6 months), not resale; Strong = name + place + developer +
+current + not resale (her rule, 29 Oct). Place words come from the name after
+"@", an area tracker's words, and data/prelaunch_places.csv (projects.csv has
+no place column). One-word names ("The Eclipse", "Permas") count only next to
+their developer. `--report FILE` lists what it would find and writes nothing.
+Strong-find emails (a GitHub issue) are **not switched on yet**: her choice
+was to watch the page for a week first.
+
+On the page, a row pools its finds: stage and event date from the furthest
+stage, the other columns from the newest find that stated something, facts
+merged, and a Source line linking each find's exact ad, post or article. A
+"Seen:" line on a tracker opens Pre-launch at that row, outlined.
+
+**Phase 4, her Accept / Dismiss** (built 30 Oct 2026): each purple "Check:
+new in ..." notice has a "Resolve…" link (Add to the area tracker / dismiss),
+and each source in a project's pop-up has "Wrong project? Dismiss this
+source". Like the developer watch, each opens GitHub's new-file page for
+`data/prelaunch_resolved/<find id>` = accept | dismiss; committing it is the
+answer. The refresh runs scripts/apply_prelaunch_resolutions.py right after
+apply_resolutions.py: dismiss marks the find dismissed; accept on a
+new-in-area check adds a **code-less row** to that area tracker (name,
+developer, units from the notice; "accept Other Name" overrides the name);
+accept on a row's own find marks it accepted. The find id is a hash of
+seen, tracker, url and note (never project or status, which an answer
+changes) -- `find_id()`, shared with build_dashboard.py. selftest flags an
+answer file whose find has gone.
+
+Still to come: crt.sh and a search API. From GitHub,
+PropertyGuru, iProperty, EdgeProp listings, Bursa and six developer sites
+(Armani, UEM, Lagenda, Shang Height, Maxim, Majestic Gen) are blocked --
+tested 29 Oct 2026 with scripts/probe_sources.py (Shang Height's address was
+wrong then; shangheight.com is untested).
 
 ## Suggest a project -- filling a placeholder row
 

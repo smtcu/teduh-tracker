@@ -6,8 +6,11 @@ one HTML file with no network calls, no CDN, and no build step.
 
 Usage: python3 scripts/build_dashboard.py
 """
-import csv, json, os, re, html
+import csv, json, os, re, html, sys
 from datetime import datetime, timezone, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import apply_prelaunch_resolutions as PR      # the find-id recipe her answers use
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -234,6 +237,130 @@ def remark_for(project, generated, sold=None):
     if stale_remark(project, sold, "note_prefix"):
         caveat = ""
     return " ".join(part for part in (caveat, generated) if part)
+
+
+# Pre-launch stages, earliest first. A find's stage is the furthest one its
+# source mentions; the Pre-launch view sorts the closest-to-launch rows first.
+STAGES = ["Register interest", "Private viewing / VVIP", "Gallery opens",
+          "Official launch", "Launched"]
+
+
+def prelaunch(projects):
+    """Every projects.csv row with no TEDUH code, with what the pre-launch
+    watch has seen of it: data/prelaunch_finds.csv (signs of life -- an ad, a
+    news item, an agent page) and data/prelaunch_pages.csv (pages to keep
+    looking at). Rows are matched by tracker + project name, the only key a
+    code-less row has. A row leaves this list the day it gets a code; its
+    finds stay in the files as the record.
+
+    Finds with a blank project are new projects in one of her areas, not yet
+    on any tracker -- a question for her, so they come back separately."""
+    finds = [f for f in read("data/prelaunch_finds.csv")
+             if (f.get("status") or "").strip() != "dismissed"]
+    pages = read("data/prelaunch_pages.csv")
+
+    def key(tracker, project):
+        return ((tracker or "").strip(), (project or "").replace("\n", " ").strip().upper())
+
+    rows, by_name = [], {}
+    for p in projects:
+        if (p.get("code") or "").strip():
+            continue
+        name = (p.get("project") or "").replace("\n", " ").strip()
+        # Horizon 27 sits on both the Ukay and Setia Awan trackers: one row
+        # here, carrying both tracker labels.
+        r = by_name.get(name.upper())
+        if r is None:
+            r = {"name": name, "trackers": [], "trackerLabels": [], "keys": [],
+                 "developer": (p.get("developer") or "").strip(),
+                 "units": to_int(p.get("total_units")),
+                 "note": " ".join(x for x in ((p.get("note_prefix") or "").strip(),
+                                              (p.get("remarks") or "").strip()) if x),
+                 "finds": [], "pages": []}
+            by_name[name.upper()] = r
+            rows.append(r)
+        r["trackers"].append(p["tracker"])
+        r["trackerLabels"].append(tracker_label(p["tracker"], p.get("tracker_label", "")))
+        r["keys"].append(key(p["tracker"], name))
+
+    owner = {k: r for r in rows for k in r["keys"]}
+    stage_rank = {s.lower(): i for i, s in enumerate(STAGES)}
+
+    def find_of(f):
+        out = {k: (f.get(c) or "").strip() for k, c in (
+            ("seen", "seen"), ("source", "source"), ("kind", "kind"), ("url", "url"),
+            ("stage", "stage"), ("event", "event_date"), ("adSince", "ad_since"),
+            ("permit", "permit"), ("by", "by"), ("ads", "ads"), ("price", "price_from"),
+            ("confidence", "confidence"), ("status", "status"), ("note", "note"),
+            ("tracker", "tracker"), ("project", "project"))}
+        # The id her Accept / Dismiss answer is filed under; the same recipe
+        # as scripts/apply_prelaunch_resolutions.py.
+        out["id"] = PR.find_id(f)
+        return out
+
+    new_in_area = []
+    for f in finds:
+        if not (f.get("project") or "").strip():
+            new_in_area.append(find_of(f))
+            continue
+        r = owner.get(key(f.get("tracker"), f.get("project")))
+        if r is not None:
+            r["finds"].append(find_of(f))
+    for pg in pages:
+        r = owner.get(key(pg.get("tracker"), pg.get("project")))
+        if r is not None:
+            r["pages"].append({k: (pg.get(c) or "").strip() for k, c in (
+                ("url", "url"), ("kind", "kind"), ("label", "label"),
+                ("via", "found_via"), ("seen", "first_seen"), ("note", "note"))})
+
+    def blankish(v):
+        return not v or v.lower().startswith(("not shown", "not stated"))
+
+    for r in rows:
+        r["finds"].sort(key=lambda f: f["seen"], reverse=True)
+        staged = [f for f in r["finds"] if f["stage"].lower() in stage_rank]
+        best = max(staged, key=lambda f: (stage_rank[f["stage"].lower()], f["seen"]), default=None)
+        top = best or (r["finds"][0] if r["finds"] else None)
+        # The row shows one line, but finds add up: a screenshot gives the
+        # launch date, a later ad gives the price. Stage and event date come
+        # from the furthest stage; every other column takes the newest find
+        # that actually stated something, and the short facts are pooled.
+        if top:
+            top = dict(top)
+            if not top["event"]:
+                top["event"] = next((f["event"] for f in r["finds"]
+                                     if f["stage"] == top["stage"] and f["event"]), "")
+            for k in ("adSince", "permit", "by", "ads", "price"):
+                if blankish(top[k]):
+                    top[k] = next((f[k] for f in r["finds"] if not blankish(f[k])), top[k])
+            # A news find's headline is one fact; three outlets carrying the
+            # same story would repeat it, so only the top find's headline is
+            # pooled. The watch's working notes (article date, ticks) belong
+            # on the Source line, not among the facts.
+            facts = []
+            for f in [top] + [f for f in r["finds"] if f["kind"] != "news"]:
+                for x in f["note"].split(";"):
+                    x = x.strip()
+                    if x and x not in facts and not x.startswith(("Ticks:", "dated ")):
+                        facts.append(x)
+            top["note"] = "; ".join(facts)
+        r["latest"] = top
+        r["stageRank"] = stage_rank.get(best["stage"].lower(), -1) if best else -1
+        del r["keys"]
+    # Stable sorts, least important first: area trackers before developer
+    # ones, then newest sign of life, then furthest stage, and anything seen
+    # at all above the rows nothing has turned up for yet.
+    order = {k: i for i, k in enumerate(AREA_TRACKERS)}
+    rows.sort(key=lambda r: (min(order.get(t, 99) for t in r["trackers"]), r["name"].lower()))
+    rows.sort(key=lambda r: r["latest"]["seen"] if r["latest"] else "", reverse=True)
+    rows.sort(key=lambda r: (0 if (r["finds"] or r["pages"]) else 1, -r["stageRank"]))
+    new_in_area.sort(key=lambda f: f["seen"], reverse=True)
+    # The pre-launch checks keep their own clock -- the web watch runs after
+    # the morning refresh, the laptop and Google ads checks when she runs
+    # them -- so the page says when each last ran, apart from the TEDUH date.
+    runs = [{"label": (r.get("label") or "").strip(), "last": (r.get("last_run") or "").strip()}
+            for r in read("data/prelaunch_runs.csv")]
+    return {"stages": STAGES, "rows": rows, "newInArea": new_in_area, "runs": runs}
 
 
 def build_payload():
@@ -525,6 +652,7 @@ def build_payload():
     return {
         "trackers": areas + devs,
         "watch": watch,
+        "prelaunch": prelaunch(projects),
         "repo": os.environ.get("GITHUB_REPOSITORY") or "smtcu/teduh-tracker",
         "downloads": downloads(),
         # %-I (no-leading-zero hour) is Unix-only; strip the zero by hand so the
@@ -827,6 +955,9 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .fchip{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:60;display:flex;align-items:center;gap:9px;
   background:var(--surface);border:1.5px solid var(--orange);border-radius:22px;padding:8px 10px 8px 14px;
   font-size:13px;font-weight:700;color:var(--ink);box-shadow:0 6px 22px rgba(0,0,0,.16);max-width:88vw}
+/* Both set display:flex, which beats the hidden attribute, so an empty chip
+   showed as a small blob and the section bar stayed up on Pre-launch. */
+.fchip[hidden],.secnav[hidden]{display:none}
 .fchip .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fchip .dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex:0 0 auto}
 .fchip button{border:0;background:var(--sunk);border-radius:50%;width:22px;height:22px;font:inherit;
@@ -868,6 +999,69 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   .scroll.tall{max-height:64vh}
 }
 @media print{.ghost,.chips,.tip{display:none!important}.card{break-inside:avoid;box-shadow:none}}
+/* Pre-launch view: every tracker row with no TEDUH code, and what the
+   pre-launch watch has seen of it. Blue = information (nothing was added);
+   purple stays reserved for questions waiting on her. */
+.plus.ad{background:var(--blue)}
+.wnrow.seen{border-left-color:var(--blue)}
+.stg{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:750;white-space:nowrap;
+  border:1px solid var(--rule);background:var(--sunk);color:var(--ink-2)}
+.stg.s2,.stg.s3{background:var(--hl);border-color:var(--blue);color:var(--blue)}
+.stg.s4{background:var(--blue);border-color:var(--blue);color:#fff}
+.ladder{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 12px;font-size:12px;color:var(--muted)}
+/* Pre-launch cards: one per project, grouped under its stage. */
+.plsech{display:flex;align-items:center;gap:10px;margin:22px 0 10px;font-size:13px;font-weight:750;color:var(--ink-2)}
+.plsech .stg{font-size:12.5px;padding:3px 12px}
+.plcount{font-size:12px;font-weight:600;color:var(--muted)}
+.plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.plcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
+  display:flex;flex-direction:column;gap:9px;box-shadow:var(--shadow);min-width:0}
+.plcard.plfocus,.plq.plfocus{outline:2px solid var(--blue);outline-offset:2px}
+.plhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.plhead h3{margin:0;font-size:16.5px;font-weight:780;line-height:1.25;color:var(--ink)}
+.pltrk{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.plunits{font-size:12px;font-weight:600;color:var(--muted);margin-top:-5px}
+.plwhen{font-size:15px;font-weight:780;color:var(--blue)}
+.plstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:6px}
+.plstat{background:var(--sunk);border-radius:8px;padding:6px 9px;min-width:0}
+.plstat span{display:block;font-size:10px;font-weight:750;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.plstat b{display:block;font-size:13px;font-weight:720;color:var(--ink);overflow-wrap:anywhere}
+.plfacts{margin:0;padding-left:17px;font-size:13px;font-weight:550;color:var(--ink-2);line-height:1.45}
+.plfacts li+li{margin-top:2px}
+.plnote{font-size:12px;font-weight:500;color:var(--muted);line-height:1.4}
+.plnote b{font-weight:700;color:var(--ink-2)}
+.plpages{display:flex;flex-wrap:wrap;gap:5px}
+.plpages a{background:var(--hl);color:var(--blue);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:650;
+  text-decoration:none;overflow-wrap:anywhere}
+.plsrc{border-top:1px solid var(--grid);padding-top:8px;font-size:12.5px}
+.plsrc summary{cursor:pointer;font-weight:700;color:var(--ink-2)}
+.plsrc a{display:block;margin-top:6px;font-weight:650;color:var(--blue);overflow-wrap:anywhere}
+.plev{display:block;font-size:11px;color:var(--muted)}
+.plsrc a.pldis{display:inline-block;margin:2px 0 4px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:underline}
+.plcard.pltap{cursor:pointer;transition:border-color .12s,transform .12s}
+.plcard.pltap:hover,.plcard.pltap:focus-visible{border-color:var(--blue);transform:translateY(-1px)}
+.plmore{margin-top:auto;font-size:12px;font-weight:650;color:var(--blue)}
+#pldlg{border:none;padding:0;border-radius:16px;width:min(640px,94vw);max-height:90vh;overflow:auto;
+  background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#pldlg::backdrop{background:rgba(11,11,11,.5)}
+#pldlg .plcard{border:none;box-shadow:none;border-radius:0;padding:24px 24px 22px;gap:11px}
+#pldlg .plhead h3{font-size:21px;padding-right:34px}
+#pldlg .plwhen{font-size:18px}
+#pldlg .stg{align-self:flex-start;font-size:12.5px;padding:3px 12px}
+#pldlg .plfacts{font-size:14px}
+.plx{position:sticky;top:10px;float:right;margin:10px 12px 0 0;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--border);background:var(--sunk);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;z-index:2}
+.plruns{background:var(--sunk);border-radius:10px;padding:9px 13px;margin:0 0 12px;font-size:12.5px;color:var(--ink-2)}
+.plruns>b{display:block;font-size:11px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.plrun{display:block;line-height:1.55}
+.plrun b{font-weight:750;color:var(--ink)}
+.plquiet{display:flex;flex-wrap:wrap;gap:6px}
+.plq{background:var(--sunk);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:650;color:var(--ink-2)}
+.plq small{display:block;font-size:11px;font-weight:550;color:var(--muted)}
+@media(max-width:640px){
+  .plgrid{grid-template-columns:1fr}
+  .plhead{flex-direction:column;gap:2px}
+}
 </style>
 </head>
 <body>
@@ -890,6 +1084,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 
 <div class="secnav" id="secnav" hidden></div>
 
+<div id="mainview">
 <div class="card" id="sec-table">
   <h2>Weekly tracker</h2>
   <p class="note" id="tblnote"></p>
@@ -948,6 +1143,20 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   <h2>Cumulative units sold over time</h2>
   <p class="note">One panel per project. A steep line means fast selling, a flat line means nothing is moving. Each panel has its own scale, so read the numbers, not the height. A sharp dip to zero is a gap in the imported history, not a real reversal.</p>
   <div class="sm" id="trends"></div>
+</div>
+
+</div>
+
+<div class="card" id="sec-prelaunch" hidden>
+  <h2>Pre-launch</h2>
+  <p class="note">Every tracker row with no TEDUH code yet, and what has been seen of it: ads, agent sites,
+    news. Closest to launch first. A row leaves this list the day it gets a code. Nothing here is ever added
+    to a tracker by itself.</p>
+  <div class="plruns" id="plruns"></div>
+  <div class="watchnote" id="plnew" hidden></div>
+  <div class="ladder" id="plladder"></div>
+  <div class="chips" id="plchips"></div>
+  <div id="pltabwrap"></div>
 </div>
 
 <div class="card" id="sec-dl">
@@ -1101,10 +1310,23 @@ function trackerBar() {
       const nCheck = fs.filter(needsCheck).length, nAuto = fs.length - nCheck;
       if (nAuto) { const s = el('span', 'plus', '+' + nAuto); s.title = 'Added automatically'; b.appendChild(s); }
       if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check — not added'; b.appendChild(s); }
+      const nSeen = plSeen(t.key).length;
+      if (nSeen) { const s = el('span', 'plus ad', String(nSeen)); s.title = 'Rows with no TEDUH code that are advertising or have pages — see Pre-launch'; b.appendChild(s); }
       b.setAttribute('aria-pressed', String(t.key === tracker));
       b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; tableMore = false; render(); };
       btns.appendChild(b);
     });
+    if (kind === 'area') {
+      /* Pre-launch sits with the area sheets because it is read with them each morning. */
+      const b = el('button', 'ghost', 'Pre-launch');
+      const nAct = PL.rows.filter(r => r.finds.length || r.pages.length).length;
+      if (nAct) { const s = el('span', 'plus ad', String(nAct)); s.title = 'Rows with something seen'; b.appendChild(s); }
+      const nNew = PL.newInArea.filter(f => f.status !== 'accepted').length;
+      if (nNew) { const s = el('span', 'plus check', '+' + nNew); s.title = 'New in your areas — needs your check'; b.appendChild(s); }
+      b.setAttribute('aria-pressed', String(tracker === 'prelaunch'));
+      b.onclick = () => { tracker = 'prelaunch'; pickedKey = null; FOCUS = null; render(); };
+      btns.appendChild(b);
+    }
     row.appendChild(btns); host.appendChild(row);
   });
 }
@@ -1148,7 +1370,19 @@ function table() {
     if (needsHer) row.appendChild(resolveLinks(f));
     wn.appendChild(row);
   });
-  wn.hidden = !finds.length;
+  const seen = plSeen(tracker);
+  seen.forEach(r => {
+    const row = el('div', 'wnrow seen');
+    row.appendChild(el('b', '', 'Seen: '));
+    row.appendChild(document.createTextNode(r.name + ' (no TEDUH code yet) — ' + plSummary(r) + ' '));
+    const a = el('button', 'wnlink', 'Pre-launch ›');
+    a.style.color = 'var(--blue)';
+    // Straight to this project's row, outlined, not just the top of the list.
+    a.onclick = () => { tracker = 'prelaunch'; plFilter = 'all'; plFocus = r.name; render(); };
+    row.appendChild(a);
+    wn.appendChild(row);
+  });
+  wn.hidden = !finds.length && !seen.length;
 
   const tb = el('table');
   const r1 = el('tr'), r2 = el('tr');
@@ -1917,6 +2151,236 @@ $('#foot').textContent = 'Generated ' + DATA.generated +
   ' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my)';
 /* Sticky shortcuts to each section, with the sold-out toggle on the right.
    The pages run 8,000px tall on the big developer trackers; nobody scrolls that. */
+/* ---------- Pre-launch: tracker rows with no TEDUH code ---------- */
+const PL = DATA.prelaunch || { stages: [], rows: [], newInArea: [] };
+let plFilter = 'all';
+let plFocus = '';     // a row a "Seen:" link asked for, outlined and scrolled to once
+const plSeen = key => PL.rows.filter(r => r.trackers.includes(key) && r.latest);
+function stagePill(stage) {
+  const i = PL.stages.indexOf(stage);
+  return el('span', 'stg' + (i >= 0 ? ' s' + i : ''), stage);
+}
+/* One line for a find: stage, event date, who, permit. Only what was recorded --
+   a blank field is left out rather than shown as a guess. */
+function plSummary(r) {
+  const f = r.latest; if (!f) return '';
+  const bits = [];
+  if (f.stage) bits.push(f.stage + (f.event ? ', ' + fdate(f.event) : ''));
+  else if (f.event) bits.push(fdate(f.event));
+  if (f.by) bits.push(f.by.toLowerCase() + ' page');
+  if (f.permit) bits.push('permit ' + f.permit);
+  if (f.source) bits.push('seen in ' + f.source + (f.seen ? ' on ' + fdate(f.seen, true) : ''));
+  return bits.join(' · ') + '.';
+}
+/* Her answer to a pre-launch find, the same way as the developer watch's
+   "Resolve…": a link to GitHub's new-file page with
+   data/prelaunch_resolved/<find id> = accept | dismiss filled in. Committing
+   it is the answer; scripts/apply_prelaunch_resolutions.py applies it at the
+   next refresh, and only then does anything change. */
+function plResolve(f, choices) {
+  const box = el('span', 'wnres');
+  const more = el('button', 'wnlink', 'Resolve…');
+  const opts = el('span', 'wnopts'); opts.hidden = true;
+  choices.forEach(([text, answer]) => {
+    const a = el('a', 'wnlink', text);
+    a.href = 'https://github.com/' + DATA.repo + '/new/main/data/prelaunch_resolved?filename='
+      + encodeURIComponent(f.id) + '&value=' + answer;
+    a.target = '_blank'; a.rel = 'noopener';
+    a.onclick = e => e.stopPropagation();
+    opts.appendChild(a);
+  });
+  opts.appendChild(el('span', 'wnhint', 'Opens GitHub — tap Commit there to confirm. ' +
+    (choices.some(c => c[1] === 'accept') ? 'To use another name, change the text to “accept Proper Name”.' : '')));
+  more.onclick = e => { e.stopPropagation(); opts.hidden = !opts.hidden; more.textContent = opts.hidden ? 'Resolve…' : 'Cancel'; };
+  box.appendChild(more); box.appendChild(opts);
+  return box;
+}
+function plLink(url, text) {
+  const a = el('a', '', text);
+  if (/^https?:\/\//.test(url)) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; }
+  return a;
+}
+function prelaunchView() {
+  const ru = $('#plruns'); ru.textContent = '';
+  if ((PL.runs || []).length) {
+    ru.appendChild(el('b', '', 'Updated on its own schedule, not with the TEDUH figures'));
+    PL.runs.forEach(x => {
+      const d = x.last ? fdate(x.last.slice(0, 10)) + (x.last.length > 10 ? ', ' + x.last.slice(11, 16) : '') : 'not run yet';
+      const line = el('span', 'plrun');
+      line.appendChild(document.createTextNode(x.label + ': '));
+      line.appendChild(el('b', '', d));
+      ru.appendChild(line);
+    });
+  }
+  const nw = $('#plnew'); nw.textContent = '';
+  const open = PL.newInArea.filter(f => f.status !== 'accepted');
+  open.forEach(f => {
+    const area = f.tracker ? ((TRACKERS.find(t => t.key === f.tracker) || {}).label || f.tracker) : 'your areas';
+    const row = el('div', 'wnrow check');
+    row.appendChild(el('b', '', 'Check: '));
+    row.appendChild(document.createTextNode('new in ' + area
+      + (f.note ? ' — ' + f.note : '') + (f.stage ? ' · ' + f.stage : '') + (f.event ? ', ' + fdate(f.event) : '') + ' '));
+    if (f.url) row.appendChild(plLink(f.url, 'link'));
+    row.appendChild(plResolve(f, [['Add to the ' + area + ' tracker', 'accept'], ['Not new / not relevant — dismiss', 'dismiss']]));
+    nw.appendChild(row);
+  });
+  nw.hidden = !open.length;
+
+  const lad = $('#plladder'); lad.textContent = '';
+  PL.stages.forEach((st, i) => { if (i) lad.appendChild(document.createTextNode('›')); lad.appendChild(stagePill(st)); });
+
+  const act = r => r.finds.length || r.pages.length;
+  const counts = { all: PL.rows.length, act: PL.rows.filter(act).length };
+  counts.quiet = counts.all - counts.act;
+  const ch = $('#plchips'); ch.textContent = '';
+  [['all', 'All ' + counts.all], ['act', 'Something seen ' + counts.act], ['quiet', 'Nothing yet ' + counts.quiet]]
+    .forEach(([k, label]) => {
+      const b = el('button', 'chip', label);
+      b.setAttribute('aria-pressed', String(plFilter === k));
+      b.onclick = () => { plFilter = k; prelaunchView(); };
+      ch.appendChild(b);
+    });
+
+  /* One card per project, grouped under its furthest stage, closest to launch
+     first -- read like slides rather than scanned like a spreadsheet. Rows
+     nothing has turned up for are just names at the bottom. */
+  const shown = PL.rows.filter(r => plFilter === 'all' || (plFilter === 'act') === !!act(r));
+  const host = $('#pltabwrap'); host.textContent = '';
+  const groups = [...PL.stages].reverse().map(st => [st, shown.filter(r => act(r) && r.latest && r.latest.stage === st)]);
+  groups.push(['Seen, stage not stated', shown.filter(r => act(r) && !(r.latest && PL.stages.includes(r.latest.stage)))]);
+  groups.forEach(([st, rows]) => {
+    if (!rows.length) return;
+    const h = el('div', 'plsech');
+    if (PL.stages.includes(st)) h.appendChild(stagePill(st)); else h.appendChild(el('span', '', st));
+    h.appendChild(el('span', 'plcount', rows.length + (rows.length === 1 ? ' project' : ' projects')));
+    host.appendChild(h);
+    const grid = el('div', 'plgrid');
+    rows.forEach(r => grid.appendChild(plCard(r, false)));
+    host.appendChild(grid);
+  });
+  const quiet = shown.filter(r => !act(r));
+  if (quiet.length) {
+    const h = el('div', 'plsech');
+    h.appendChild(el('span', '', 'Nothing seen yet'));
+    h.appendChild(el('span', 'plcount', quiet.length + ' projects'));
+    host.appendChild(h);
+    const box = el('div', 'plquiet');
+    quiet.forEach(r => {
+      const q = el('span', 'plq' + (r.name === plFocus ? ' plfocus' : ''), r.name);
+      q.appendChild(el('small', '', r.trackerLabels.join(' · ') + (r.units ? ' · ' + nf(r.units) + ' units' : '')));
+      box.appendChild(q);
+    });
+    host.appendChild(box);
+  }
+  const focus = host.querySelector('.plfocus');
+  if (focus) {
+    plFocus = '';
+    requestAnimationFrame(() => focus.scrollIntoView({ block: 'center' }));
+    if (focus._pl) plOpen(focus._pl);
+  }
+}
+/* A project card. In the grid it is a short summary -- name, tracker, date,
+   price, the first facts -- and a tap opens the full card in a pop-up: every
+   number, every fact, her note, the pages and each source with its ticks.
+   Only what was recorded is shown; a blank field is left out. */
+function plCard(r, full) {
+  const f = r.latest || {};
+  const c = el('article', 'plcard' + (full ? ' plfull' : ' pltap') + (!full && r.name === plFocus ? ' plfocus' : ''));
+  const hd = el('div', 'plhead');
+  hd.appendChild(el('h3', '', r.name));
+  hd.appendChild(el('span', 'pltrk', r.trackerLabels.join(' · ')));
+  c.appendChild(hd);
+  if (r.units) c.appendChild(el('div', 'plunits', nf(r.units) + ' units · your total'));
+  if (full && f.stage) c.appendChild(stagePill(f.stage));
+  if (f.event) c.appendChild(el('div', 'plwhen', fdate(f.event)));
+  const stats = [['Price from', f.price], ['Ads', f.ads], ['Ad since', f.adSince ? fdate(f.adSince) : ''],
+                 ['Permit', f.permit], ['By', f.by]].filter(([, v]) => v);
+  const shownStats = full ? stats : stats.filter(([, v]) => !/^not (shown|stated)/i.test(v)).slice(0, 3);
+  if (shownStats.length) {
+    const g = el('div', 'plstats');
+    shownStats.forEach(([k, v]) => { const s = el('div', 'plstat'); s.appendChild(el('span', '', k)); s.appendChild(el('b', '', v)); g.appendChild(s); });
+    c.appendChild(g);
+  }
+  const facts = (f.note || '').split(';').map(x => x.trim()).filter(Boolean);
+  const shownFacts = full ? facts : facts.slice(0, 2);
+  if (shownFacts.length) {
+    const ul = el('ul', 'plfacts');
+    shownFacts.forEach(x => ul.appendChild(el('li', '', x)));
+    c.appendChild(ul);
+  }
+  const srcN = new Set(r.finds.map(x => x.url).filter(Boolean)).size;
+  if (!full) {
+    const more = [];
+    if (facts.length > 2) more.push((facts.length - 2) + ' more fact' + (facts.length > 3 ? 's' : ''));
+    if (srcN) more.push(srcN + ' source' + (srcN > 1 ? 's' : ''));
+    if (r.pages.length) more.push(r.pages.length + ' page' + (r.pages.length > 1 ? 's' : ''));
+    c.appendChild(el('div', 'plmore', (more.length ? more.join(' · ') + ' · ' : '') + 'Tap for details ›'));
+    c._pl = r;
+    c.tabIndex = 0;
+    c.setAttribute('role', 'button');
+    c.onclick = () => plOpen(r);
+    c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); plOpen(r); } };
+    return c;
+  }
+  if (r.note) {
+    const yn = el('div', 'plnote');
+    yn.appendChild(el('b', '', 'Your note: '));
+    yn.appendChild(document.createTextNode(r.note));
+    c.appendChild(yn);
+  }
+  if (r.pages.length) {
+    const pg = el('div', 'plpages');
+    r.pages.forEach(p => pg.appendChild(plLink(p.url, (p.kind ? p.kind + ': ' : '') + (p.label || p.url))));
+    c.appendChild(pg);
+  }
+  /* Where each find came from -- the exact ad, post or article -- with the
+     watch's level and ticks as evidence for her to judge. Folded, so the card
+     stays short; a tap opens it. */
+  const srcs = [];
+  r.finds.forEach(x => { if (x.url && !srcs.some(s => s.url === x.url)) srcs.push(x); });
+  if (srcs.length) {
+    const d = el('details', 'plsrc');
+    d.open = true;
+    d.appendChild(el('summary', '', 'Sources (' + srcs.length + ')'));
+    srcs.forEach(x => {
+      const when = ((x.note || '').match(/dated (\d{4}-\d\d-\d\d)/) || [])[1] || x.seen;
+      d.appendChild(plLink(x.url, (x.source || 'link') + (when ? ' (' + fdate(when, true) + ')' : '')));
+      const tk = ((x.note || '').match(/Ticks: ([^;]*)/) || [])[1];
+      if (tk || x.confidence) {
+        d.appendChild(el('span', 'plev', (x.confidence || '') + (tk ? ' · ' + tk.replace(/(\S+(?: resale)?) (yes|no|\?)/g,
+          (m, k, v) => (v === 'yes' ? '✓' : v === 'no' ? '✗' : '?') + k).replace(/not resale/, 'not-resale') : '')));
+      }
+      // A source that turns out to be another project (the Shang Villa /
+      // Villaria lesson) can be dismissed on its own; the card keeps the rest.
+      const no = el('a', 'pldis', 'Wrong project? Dismiss this source ›');
+      no.href = 'https://github.com/' + DATA.repo + '/new/main/data/prelaunch_resolved?filename='
+        + encodeURIComponent(x.id) + '&value=dismiss';
+      no.target = '_blank'; no.rel = 'noopener';
+      d.appendChild(no);
+    });
+    c.appendChild(d);
+  }
+  return c;
+}
+/* The pop-up: the full card over a dimmed page. Closes with ×, Esc, or a tap
+   outside the card. */
+function plOpen(r) {
+  let dlg = $('#pldlg');
+  if (!dlg) {
+    dlg = el('dialog'); dlg.id = 'pldlg';
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    document.body.appendChild(dlg);
+  }
+  dlg.textContent = '';
+  const x = el('button', 'plx', '×');
+  x.setAttribute('aria-label', 'Close');
+  x.onclick = () => dlg.close();
+  dlg.appendChild(x);
+  dlg.appendChild(plCard(r, true));
+  if (!dlg.open) dlg.showModal();
+  dlg.scrollTop = 0;
+}
+
 function secnav() {
   const host = $('#secnav'); if (!host) return;
   host.textContent = '';
@@ -1962,7 +2426,14 @@ function fchip() {
   host.appendChild(x);
 }
 
-function render() { trackerBar(); secnav(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip(); }
+function render() {
+  const pre = tracker === 'prelaunch';
+  $('#mainview').hidden = pre;
+  $('#sec-prelaunch').hidden = !pre;
+  trackerBar();
+  if (pre) { $('#secnav').hidden = true; prelaunchView(); fchip(); return; }
+  secnav(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip();
+}
 
 /* ---------- search: marketing names, registered TEDUH names, codes ----------
    The two name worlds rarely agree (Trinity Sensoria is BAYU CERIA on TEDUH,

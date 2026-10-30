@@ -13,7 +13,7 @@ Run it locally the same way CI does:
 
     python scripts/selftest.py
 """
-import csv, json, os, sys
+import csv, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
@@ -337,6 +337,65 @@ if projects and have["config"]:
             k = k.strip()
             if k:
                 ck(k in known, f"unit_types {k!r} ({p['project']}) is defined in unit_types.json")
+
+# --------------------------------------------------------------------------
+section("pre-launch files point at real rows")
+# --------------------------------------------------------------------------
+# A find or page whose tracker + project matches no projects.csv row is
+# silently dropped from the Pre-launch view -- a typo would hide it -- so
+# every one must resolve. Rows that have since got a code still count: their
+# finds stay as the record.
+BD = mods.get("build_dashboard")
+if projects and BD:
+    rows = {((p.get("tracker") or "").strip(),
+             (p.get("project") or "").replace("\n", " ").strip().upper()) for p in projects}
+    tracking = re.compile(r"[?&](utm_\w+|gclid|gbraid|wbraid|gad_source|fbclid)=")
+    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv", "data/prelaunch_places.csv"):
+        path = os.path.join(ROOT, f)
+        if not os.path.exists(path):
+            continue
+        with open(path, newline="", encoding="utf-8") as fh:
+            for i, r in enumerate(csv.DictReader(fh), 2):
+                proj = (r.get("project") or "").strip()
+                if proj:          # blank = new in an area, not on a tracker yet
+                    ck(((r.get("tracker") or "").strip(), proj.upper()) in rows,
+                       f"{f} line {i}: {r.get('tracker')} / {proj} is a projects.csv row")
+                url = (r.get("url") or "").strip()
+                if url:
+                    ck(url.startswith(("http://", "https://")), f"{f} line {i}: url is a web address")
+                    ck(not tracking.search(url), f"{f} line {i}: url carries no tracking code")
+                stage = (r.get("stage") or "").strip()
+                if stage:
+                    ck(stage in BD.STAGES, f"{f} line {i}: stage {stage!r} is one of {BD.STAGES}")
+                if f.endswith("finds.csv"):
+                    ck((r.get("confidence") or "").strip() in ("", "strong", "possible", "weak"),
+                       f"{f} line {i}: confidence is strong, possible or weak")
+                    ck((r.get("status") or "").strip() in ("new", "accepted", "dismissed"),
+                       f"{f} line {i}: status is new, accepted or dismissed")
+
+# The pre-launch watch must never write projects.csv: adding a project is
+# always her Accept. A cheap guard against a future edit that forgets.
+wp = os.path.join(ROOT, "scripts", "watch_prelaunch.py")
+if os.path.exists(wp):
+    src = open(wp, encoding="utf-8").read()
+    ck(not re.search(r"open\(\s*PROJECTS[^)]*['\"][wa]", src) and "write_projects" not in src,
+       "watch_prelaunch.py never writes projects.csv")
+
+# Her pre-launch answers: each file in data/prelaunch_resolved/ is named by
+# a find id and says accept or dismiss. A file whose find has gone (a note
+# edited after she answered) would silently do nothing, so it is flagged.
+rdir = os.path.join(ROOT, "data", "prelaunch_resolved")
+if os.path.isdir(rdir) and projects:
+    import apply_prelaunch_resolutions as APR
+    with open(os.path.join(ROOT, "data", "prelaunch_finds.csv"), newline="", encoding="utf-8") as fh:
+        ids = {APR.find_id(r) for r in csv.DictReader(fh)}
+    answers = APR.read_answers(rdir)
+    for name in sorted(os.listdir(rdir)):
+        if name.startswith("."):
+            continue
+        fid = os.path.splitext(name)[0].lower()
+        ck(fid in answers, f"data/prelaunch_resolved/{name}: says accept or dismiss")
+        ck(fid in ids, f"data/prelaunch_resolved/{name}: matches a line in prelaunch_finds.csv")
 
 print()
 if FAILS:

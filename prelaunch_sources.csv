@@ -1,0 +1,115 @@
+kind,url,developer,tracker,probe
+forum,https://forum.lowyat.net/PropertyTalk,Lowyat Property Talk,,her link 29 Oct
+forum,https://forum.lowyat.net/PropertyQ&A,Lowyat Property Q&A,,ok 29 Oct
+developer,https://www.mahsing.com.my/,Mah Sing,mahsing,ok
+developer,https://www.simedarbyproperty.com/,Sime Darby Property,simedarby,ok
+developer,https://ecoworld.my/,Eco World,ecoworld,ok
+developer,https://www.lbs.com.my/,LBS,lbs,ok
+developer,https://spsetia.com/,S P Setia,spsetia,ok
+developer,https://avaland.com.my/,Avaland,avaland,ok
+developer,https://www.binastra.com.my/,Binastra,binastra,ok
+developer,https://www.brdb.com.my/,BRDB,brdb,ok
+developer,https://chinhinproperty.com/,Chin Hin Property,chinhin,ok
+developer,https://ksl.my/,KSL,ksl,ok
+developer,https://magma.my/,Magma,magma,ok
+developer,https://www.malton.com.my/,Malton,malton,ok
+developer,https://mbworld.com.my/,MB World,mbworld,ok
+developer,https://myra.com.my/,Myra,myra,ok
+developer,https://paramountproperty.my/,Paramount Property,paramount,ok
+developer,https://platinumvictory.com/,Platinum Victory,platinumvictory,ok
+developer,https://radiumdevelopment.com/,Radium,radium,ok
+developer,https://www.scientex.com.my/,Scientex,scientex,ok
+developer,https://skyworld.my/,SkyWorld,skyworld,ok
+developer,https://trinitygroup.com.my/,Trinity Group,trinitygroup,ok
+developer,https://tslawland.com/,TS Law,tslaw,ok
+developer,https://sksgroup.com.my/property/,SKS Group,sks,ok
+developer,https://exsim.com.my/our-developments/,Exsim,exsim,browser only
+developer,https://setiaawan.com/residential/,Setia Awan,setiaawan,ok
+developer,https://www.sunwayproperty.com/,Sunway Property,,browser only
+developer,https://www.oskproperty.com.my/,OSK Property,,ok
+developer,https://www.titijaya.com.my/,Titijaya,,ok
+developer,https://armanigroup.com.my/our-developments/,Armani,armani,blocked -- laptop
+developer,https://www.uemsunrise.com/,UEM Sunrise,uem,blocked -- laptop
+developer,https://lagendaproperties.com/,Lagenda,lagenda,blocked -- laptop
+developer,https://maximglobal.com.my/,Maxim Global,maxim,blocked -- laptop
+developer,https://majesticgen.com.my/,Majestic Gen,majesticgen,blocked -- laptop
+developer,https://www.shangheight.com/,Shang Height,status13,untested -- was shangheight.com.my (wrong address) until 29 Oct
+developer,https://www.cpiland.com/,CPI Land,cpiland,untested -- site found 29 Oct
+sitemap,https://www.mahsing.com.my/sitemap.xml,Mah Sing,mahsing,ok
+sitemap,https://paramountproperty.my/sitemap_index.xml,Paramount Property,paramount,ok
+facebook,https://www.facebook.com/armanigroup,Armani,armani,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/armanigroupmalaysia,Armani,armani,laptop -- Run C; her link 29 Oct
+facebook,https://www.facebook.com/AvalandBerhadMsia,Avaland,avaland,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/aetas.my,Avaland,avaland,laptop -- Run C; FB search 29 Oct (posts checked)
+instagram,https://www.instagram.com/avalandberhad,Avaland,avaland,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/aetas_avaland,Avaland,avaland,laptop -- Run C; her link 29 Oct
+facebook,https://www.facebook.com/BRDB.Int,BRDB,brdb,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/brdbdevelopments,BRDB,brdb,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/BinastraLand,Binastra,binastra,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/binastraland,Binastra,binastra,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/chinhinpropertyofficial,Chin Hin Property,chinhin,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/chinhinpropertyofficial,Chin Hin Property,chinhin,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/EcoWorldGroup,Eco World,ecoworld,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/ecoworldgroup,Eco World,ecoworld,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@ecoworldgroup,Eco World,ecoworld,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/exsimgroup,Exsim,exsim,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/exsimgroup,Exsim,exsim,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/kslproperties,KSL,ksl,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/kslproperties,KSL,ksl,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/LBSBinaGroup,LBS,lbs,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/lbsbinagroup,LBS,lbs,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@lbsbinagroup,LBS,lbs,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/lagendaprop,Lagenda,lagenda,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/lagendapropertiesberhad,Lagenda,lagenda,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@lagendaproperties,Lagenda,lagenda,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/mbworldgroupberhad,MB World,mbworld,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/profile.php?id=61561006536643,Magma,magma,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/magmagroupmy,Magma,magma,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/mahsing,Mah Sing,mahsing,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/mahsinggroup,Mah Sing,mahsing,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/MajesticGen.Official,Majestic Gen,majesticgen,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/majesticgenmy,Majestic Gen,majesticgen,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/maximgroupofcompanies,Maxim Global,maxim,laptop -- Run C; her link 29 Oct
+facebook,https://www.facebook.com/MaltonPropertiesMy,Malton,malton,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/maltonberhad,Malton,malton,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/askmyra,Myra,myra,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/_askmyra,Myra,myra,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/ParamountPropertyMalaysia,Paramount Property,paramount,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/paramountpropertymy,Paramount Property,paramount,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@paramountproperty,Paramount Property,paramount,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/platinumvictory,Platinum Victory,platinumvictory,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/platinumvictory.my,Platinum Victory,platinumvictory,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@platinumvictory.my,Platinum Victory,platinumvictory,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/radiumdevelopment.my,Radium,radium,laptop -- Run C; FB search 29 Oct (posts checked)
+linkedin,https://www.linkedin.com/company/sksgroupmalaysia,SKS Group,sks,her link 29 Oct -- needs login; not read yet
+facebook,https://www.facebook.com/ScientexSelangor,Scientex,scientex,laptop -- Run C; her link 29 Oct
+instagram,https://www.instagram.com/scientexselangor,Scientex,scientex,laptop -- Run C; her link 29 Oct
+facebook,https://www.facebook.com/setiaawanland,Setia Awan,setiaawan,laptop -- Run C; her link 29 Oct
+instagram,https://www.instagram.com/setiaawangroup,Setia Awan,setiaawan,laptop -- Run C; her link 29 Oct
+facebook,https://www.facebook.com/spsetia,S P Setia,spsetia,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/spsetiabhd,S P Setia,spsetia,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@spsetia,S P Setia,spsetia,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/shangheightrealty,Shang Height,status13,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/shangheightrealty,Shang Height,status13,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@shang_height,Shang Height,status13,laptop -- Run C; site footer 29 Oct
+xiaohongshu,https://www.xiaohongshu.com/user/profile/68649336000000001d014320,Shang Height,status13,laptop -- Run C; needs XHS login
+facebook,https://www.facebook.com/SimeDarbyProperty,Sime Darby Property,simedarby,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/simedarbyproperty,Sime Darby Property,simedarby,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@simedarbyproperty,Sime Darby Property,simedarby,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/SkyWorldDevelopment,SkyWorld,skyworld,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/skyworldmy,SkyWorld,skyworld,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/tslawland,TS Law,tslaw,laptop -- Run C; FB search 29 Oct (posts checked)
+facebook,https://www.facebook.com/TrinityGroupMY,Trinity Group,trinitygroup,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/trinity_group_my,Trinity Group,trinitygroup,laptop -- Run C; site footer 29 Oct
+facebook,https://www.facebook.com/UEMSunrise,UEM Sunrise,uem,laptop -- Run C; site footer 29 Oct
+instagram,https://www.instagram.com/uem_sunrise,UEM Sunrise,uem,laptop -- Run C; site footer 29 Oct
+tiktok,https://www.tiktok.com/@uem_sunrise,UEM Sunrise,uem,laptop -- Run C; site footer 29 Oct
+threads,https://www.threads.com/@_askmyra,Myra,myra,laptop -- Run C; posting (latest 5 Oct 2026)
+threads,https://www.threads.com/@scientexselangor,Scientex,scientex,laptop -- Run C; posting (latest 27 Oct 2026)
+threads,https://www.threads.com/@mahsinggroup,Mah Sing,mahsing,laptop -- Run C; profile but no posts on 30 Oct
+threads,https://www.threads.com/@armanigroupmalaysia,Armani,armani,laptop -- Run C; profile but no posts on 30 Oct
+threads,https://www.threads.com/@avalandberhad,Avaland,avaland,laptop -- Run C; profile but no posts on 30 Oct
+threads,https://www.threads.com/@lbsbinagroup,LBS,lbs,laptop -- Run C; profile but no posts on 30 Oct
+threads,https://www.threads.com/@shangheightrealty,Shang Height,status13,laptop -- Run C; profile but no posts on 30 Oct
+instagram,https://www.instagram.com/accent_avaland,Avaland,avaland,laptop -- Run C; her link 30 Oct (Accent PJ project account)
+facebook,https://www.facebook.com/accentpetalingjaya,Avaland,avaland,laptop -- Run C; her link 30 Oct (Accent PJ project page)
