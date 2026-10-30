@@ -22,6 +22,11 @@ page's key facts (prices, dates, launch words). The first run, with no
 memory file, is a silent baseline: it records what is already out there and
 makes no finds, so day one is not hundreds of old items.
 
+The news search looks back 30 days, except once per no-code row: the first
+run that sees a row searches all its news, so a project unveiled long ago
+(The Eclipse, Nov 2025) still turns up once. seen.json's "backfilled" list
+records which rows have had that search.
+
 It never writes projects.csv -- adding a project is always her Accept. One
 request per source, a pause between each, nothing retried, and a time
 budget: a slow or broken source is skipped for the day and caught tomorrow.
@@ -146,6 +151,14 @@ def has(text, phrase):
     return re.search(r"(?<![\w])" + re.escape(phrase.lower()) + r"(?![\w])", text) is not None
 
 
+def too_broad(key):
+    """'The Eclipse', 'Permas', 'Damansara Heights': a name that alone matches
+    unrelated stories (solar eclipses, area news). It is searched and counted
+    only next to its developer -- the HAN-YA lesson in reverse."""
+    core = re.sub(r"^the\s+", "", key)
+    return key in AREA_LOWER or " " not in core or len(core) < 8
+
+
 # ---------------------------------------------------------------- fetching
 
 class Fetcher:
@@ -201,8 +214,8 @@ def rss_items(xml):
     return items
 
 
-def gnews(query):
-    q = urllib.parse.quote_plus(query + " when:30d")
+def gnews(query, recent=True):
+    q = urllib.parse.quote_plus(query + (" when:30d" if recent else ""))
     return f"https://news.google.com/rss/search?q={q}&hl=en-MY&gl=MY&ceid=MY:en"
 
 
@@ -316,6 +329,7 @@ def main():
             seen = json.load(fh)
     baseline = seen is None and not report
     seen = seen or {"links": {}, "pages": {}}
+    backfilled = seen.setdefault("backfilled", {})
 
     fetch = Fetcher(args.budget)
     items = []          # every item read today: dicts with title, url, date, text, via, kind, own
@@ -323,11 +337,17 @@ def main():
     # 1. Google News: one search per no-code name, one per area word.
     for key, p in by_name.items():
         q = f'"{simple(p["project"])}"'
-        if " " not in simple(p["project"]) or len(simple(p["project"])) < 8:
-            q += " " + (developer_words(p) or [""])[0]       # 'Permas', 'MA Land' alone are too broad
-        xml = fetch.get(gnews(q), "Google News " + q)
+        dev = developer_words(p)
+        if too_broad(key) and dev:
+            q += f' "{dev[0]}"'                     # '"The Eclipse" "Chin Hin"', not solar eclipses
+        # A row's first search has no 30-day limit (not on the silent baseline,
+        # which would bury the old news it is meant to surface).
+        backfill = not baseline and key not in backfilled
+        xml = fetch.get(gnews(q, recent=not backfill), "Google News " + q + (" (all dates)" if backfill else ""))
+        if backfill and xml is not None:
+            backfilled[key] = today.isoformat()
         for it in rss_items(xml or ""):
-            items.append(dict(it, kind="news", own=None))
+            items.append(dict(it, kind="news", own=None, backfill=backfill))
     for tracker, words in AREA_WORDS.items():
         for w in words:
             xml = fetch.get(gnews(f'"{w}" ("new launch" OR "pelancaran" OR "preview" OR "register interest")'),
@@ -393,7 +413,8 @@ def main():
             continue
         is_new = url not in seen["links"]
         seen["links"].setdefault(url, today.isoformat())
-        if baseline or (not report and not is_new) or url in known_urls or url in taken:
+        # An all-dates story may already be in memory from the silent baseline; it still counts once.
+        if baseline or (not report and not is_new and not it.get("backfill")) or url in known_urls or url in taken:
             continue
         text = (it["title"] + " " + it["text"]).lower()
         if not text.strip():
@@ -402,10 +423,7 @@ def main():
         for key, p in by_name.items():
             if not has(text, key):
                 continue
-            # 'Permas', 'Villaria', 'Damansara Heights': a one-word or area-word
-            # name only counts next to its developer -- the HAN-YA lesson in reverse.
-            core = re.sub(r"^the\s+", "", key)
-            if (key in AREA_LOWER or " " not in core or len(core) < 8) and it["own"] != p["tracker"] and \
+            if too_broad(key) and it["own"] != p["tracker"] and \
                     not any(has(text, w.lower()) for w in developer_words(p)):
                 continue
             hit = p
@@ -415,6 +433,8 @@ def main():
             t = ticks_for(hit, text, it, today, bool(it["own"]) and it["own"] == hit["tracker"], places)
             if (hit["tracker"], hit["project"], stage, event) in dismissed:
                 continue
+            if it.get("backfill") and level(t) == "weak":
+                continue                # old name-only stories: a fish farm in Manitoba, not Sapphire Springs
             if it["kind"] == "news":
                 n = news_count.get(hit["project"], 0)
                 if n >= NEWS_PER_ROW:
@@ -422,6 +442,8 @@ def main():
                 news_count[hit["project"]] = n + 1
             row = {"tracker": hit["tracker"], "project": hit["project"], "confidence": level(t), "ticks": t}
         else:
+            if it.get("backfill"):
+                continue                # all-dates searches are for their row only, not area news from 2017
             area = next((tr for tr, ws in AREA_WORDS.items() if any(has(text, w) for w in ws)), None)
             if not area or not any(has(text, w) for w in LAUNCH_WORDS):
                 continue
