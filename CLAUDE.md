@@ -382,8 +382,11 @@ memory file is a silent baseline**. Ticks per find: name, place, developer,
 size, current (6 months), not resale; Strong = name + place + developer +
 current + not resale (her rule, 29 Oct). Place words come from the name after
 "@", an area tracker's words, and data/prelaunch_places.csv (projects.csv has
-no place column). One-word names ("The Eclipse", "Permas") count only next to
-their developer. `--report FILE` lists what it would find and writes nothing.
+no place column). One-word names ("The Eclipse", "Permas") are searched and
+count only next to their developer (`"The Eclipse"` alone is solar eclipses).
+News looks back 30 days, except each no-code row's first search, which has no
+date limit (seen.json "backfilled" lists the rows done; name-only and area
+matches from it are dropped). `--report FILE` lists what it would find and writes nothing.
 Strong-find emails (a GitHub issue) are **not switched on yet**: her choice
 was to watch the page for a week first.
 
