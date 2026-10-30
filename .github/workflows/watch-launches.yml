@@ -78,7 +78,7 @@ jobs:
             git --no-pager diff --stat -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv
             echo "any=yes" >> "$GITHUB_OUTPUT"
           fi
-          if [ -n "$(git status --porcelain -- data/prelaunch_seen.json)" ]; then
+          if [ -n "$(git status --porcelain -- data/prelaunch_seen.json data/prelaunch_runs.csv)" ]; then
             echo "mem=yes" >> "$GITHUB_OUTPUT"
           fi
 
@@ -98,7 +98,7 @@ jobs:
           # to its developer tracker automatically. The pre-launch watch never
           # writes it; its two files ride along when they changed.
           git add data/teduh_watch.csv projects.csv docs
-          git add data/prelaunch_finds.csv data/prelaunch_seen.json 2>/dev/null || true
+          git add data/prelaunch_finds.csv data/prelaunch_seen.json data/prelaunch_runs.csv 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "Nothing new to commit."
             exit 0

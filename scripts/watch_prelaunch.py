@@ -31,7 +31,7 @@ the laptop runs (prelaunch_sources.csv rows marked "blocked", "browser only",
 """
 import argparse, csv, html as htmlmod, json, os, re, sys, time
 import urllib.error, urllib.parse, urllib.request
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +41,7 @@ FINDS = os.path.join(ROOT, "data", "prelaunch_finds.csv")
 PAGES = os.path.join(ROOT, "data", "prelaunch_pages.csv")
 SEEN = os.path.join(ROOT, "data", "prelaunch_seen.json")
 PLACES = os.path.join(ROOT, "data", "prelaunch_places.csv")
+RUNS = os.path.join(ROOT, "data", "prelaunch_runs.csv")   # when each pre-launch check last ran
 NEWS_PER_ROW = 3        # one story is often carried by four outlets
 FIELDS = ["seen", "tracker", "project", "source", "kind", "url", "stage", "event_date",
           "ad_since", "permit", "by", "ads", "price_from", "confidence", "status", "note"]
@@ -267,6 +268,23 @@ def tick_line(t):
     return "Ticks: " + " ".join(k + (" ?" if v is None else " yes" if v else " no") for k, v in t.items())
 
 
+def mark_run(note):
+    """Stamp the 'web' row of data/prelaunch_runs.csv with now in Malaysian
+    time. The site shows it, because the pre-launch checks run on their own
+    clock, not with the morning TEDUH refresh."""
+    rows = read(RUNS)
+    now = datetime.now(timezone.utc) + timedelta(hours=8)
+    for r in rows:
+        if r["run"] == "web":
+            r["last_run"] = now.strftime("%Y-%m-%d %H:%M")
+            r["note"] = note
+    if rows:
+        with open(RUNS, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+            w.writeheader()
+            w.writerows(rows)
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -460,6 +478,7 @@ def main():
     with open(SEEN, "w", encoding="utf-8") as fh:
         json.dump(seen, fh, indent=0, sort_keys=True, ensure_ascii=False)
         fh.write("\n")
+    mark_run(f"{fetch.asked} sources asked, {len(fetch.errors)} failed, {len(new_rows) if not baseline else 0} new finds")
     if baseline:
         print(f"baseline: remembered {len(seen['links'])} links and {len(seen['pages'])} pages; no finds on the first run")
         return

@@ -348,7 +348,12 @@ def prelaunch(projects):
     rows.sort(key=lambda r: r["latest"]["seen"] if r["latest"] else "", reverse=True)
     rows.sort(key=lambda r: (0 if (r["finds"] or r["pages"]) else 1, -r["stageRank"]))
     new_in_area.sort(key=lambda f: f["seen"], reverse=True)
-    return {"stages": STAGES, "rows": rows, "newInArea": new_in_area}
+    # The pre-launch checks keep their own clock -- the web watch runs after
+    # the morning refresh, the laptop and Google ads checks when she runs
+    # them -- so the page says when each last ran, apart from the TEDUH date.
+    runs = [{"label": (r.get("label") or "").strip(), "last": (r.get("last_run") or "").strip()}
+            for r in read("data/prelaunch_runs.csv")]
+    return {"stages": STAGES, "rows": rows, "newInArea": new_in_area, "runs": runs}
 
 
 def build_payload():
@@ -1038,6 +1043,10 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 #pldlg .plfacts{font-size:14px}
 .plx{position:sticky;top:10px;float:right;margin:10px 12px 0 0;width:34px;height:34px;border-radius:50%;
   border:1px solid var(--border);background:var(--sunk);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;z-index:2}
+.plruns{background:var(--sunk);border-radius:10px;padding:9px 13px;margin:0 0 12px;font-size:12.5px;color:var(--ink-2)}
+.plruns>b{display:block;font-size:11px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.plrun{display:block;line-height:1.55}
+.plrun b{font-weight:750;color:var(--ink)}
 .plquiet{display:flex;flex-wrap:wrap;gap:6px}
 .plq{background:var(--sunk);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:650;color:var(--ink-2)}
 .plq small{display:block;font-size:11px;font-weight:550;color:var(--muted)}
@@ -1135,6 +1144,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   <p class="note">Every tracker row with no TEDUH code yet, and what has been seen of it: ads, agent sites,
     news. Closest to launch first. A row leaves this list the day it gets a code. Nothing here is ever added
     to a tracker by itself.</p>
+  <div class="plruns" id="plruns"></div>
   <div class="watchnote" id="plnew" hidden></div>
   <div class="ladder" id="plladder"></div>
   <div class="chips" id="plchips"></div>
@@ -2160,6 +2170,17 @@ function plLink(url, text) {
   return a;
 }
 function prelaunchView() {
+  const ru = $('#plruns'); ru.textContent = '';
+  if ((PL.runs || []).length) {
+    ru.appendChild(el('b', '', 'Updated on its own schedule, not with the TEDUH figures'));
+    PL.runs.forEach(x => {
+      const d = x.last ? fdate(x.last.slice(0, 10)) + (x.last.length > 10 ? ', ' + x.last.slice(11, 16) : '') : 'not run yet';
+      const line = el('span', 'plrun');
+      line.appendChild(document.createTextNode(x.label + ': '));
+      line.appendChild(el('b', '', d));
+      ru.appendChild(line);
+    });
+  }
   const nw = $('#plnew'); nw.textContent = '';
   PL.newInArea.forEach(f => {
     const row = el('div', 'wnrow check');
