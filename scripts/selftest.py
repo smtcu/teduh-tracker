@@ -381,6 +381,22 @@ if os.path.exists(wp):
     ck(not re.search(r"open\(\s*PROJECTS[^)]*['\"][wa]", src) and "write_projects" not in src,
        "watch_prelaunch.py never writes projects.csv")
 
+# Her pre-launch answers: each file in data/prelaunch_resolved/ is named by
+# a find id and says accept or dismiss. A file whose find has gone (a note
+# edited after she answered) would silently do nothing, so it is flagged.
+rdir = os.path.join(ROOT, "data", "prelaunch_resolved")
+if os.path.isdir(rdir) and projects:
+    import apply_prelaunch_resolutions as APR
+    with open(os.path.join(ROOT, "data", "prelaunch_finds.csv"), newline="", encoding="utf-8") as fh:
+        ids = {APR.find_id(r) for r in csv.DictReader(fh)}
+    answers = APR.read_answers(rdir)
+    for name in sorted(os.listdir(rdir)):
+        if name.startswith("."):
+            continue
+        fid = os.path.splitext(name)[0].lower()
+        ck(fid in answers, f"data/prelaunch_resolved/{name}: says accept or dismiss")
+        ck(fid in ids, f"data/prelaunch_resolved/{name}: matches a line in prelaunch_finds.csv")
+
 print()
 if FAILS:
     print(f"{len(FAILS)} check(s) FAILED")

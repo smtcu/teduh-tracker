@@ -6,8 +6,11 @@ one HTML file with no network calls, no CDN, and no build step.
 
 Usage: python3 scripts/build_dashboard.py
 """
-import csv, json, os, re, html
+import csv, json, os, re, html, sys
 from datetime import datetime, timezone, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import apply_prelaunch_resolutions as PR      # the find-id recipe her answers use
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -284,12 +287,16 @@ def prelaunch(projects):
     stage_rank = {s.lower(): i for i, s in enumerate(STAGES)}
 
     def find_of(f):
-        return {k: (f.get(c) or "").strip() for k, c in (
+        out = {k: (f.get(c) or "").strip() for k, c in (
             ("seen", "seen"), ("source", "source"), ("kind", "kind"), ("url", "url"),
             ("stage", "stage"), ("event", "event_date"), ("adSince", "ad_since"),
             ("permit", "permit"), ("by", "by"), ("ads", "ads"), ("price", "price_from"),
             ("confidence", "confidence"), ("status", "status"), ("note", "note"),
             ("tracker", "tracker"), ("project", "project"))}
+        # The id her Accept / Dismiss answer is filed under; the same recipe
+        # as scripts/apply_prelaunch_resolutions.py.
+        out["id"] = PR.find_id(f)
+        return out
 
     new_in_area = []
     for f in finds:
@@ -1030,6 +1037,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .plsrc summary{cursor:pointer;font-weight:700;color:var(--ink-2)}
 .plsrc a{display:block;margin-top:6px;font-weight:650;color:var(--blue);overflow-wrap:anywhere}
 .plev{display:block;font-size:11px;color:var(--muted)}
+.plsrc a.pldis{display:inline-block;margin:2px 0 4px;font-size:11px;font-weight:600;color:var(--muted);text-decoration:underline}
 .plcard.pltap{cursor:pointer;transition:border-color .12s,transform .12s}
 .plcard.pltap:hover,.plcard.pltap:focus-visible{border-color:var(--blue);transform:translateY(-1px)}
 .plmore{margin-top:auto;font-size:12px;font-weight:650;color:var(--blue)}
@@ -2164,6 +2172,29 @@ function plSummary(r) {
   if (f.source) bits.push('seen in ' + f.source + (f.seen ? ' on ' + fdate(f.seen, true) : ''));
   return bits.join(' · ') + '.';
 }
+/* Her answer to a pre-launch find, the same way as the developer watch's
+   "Resolve…": a link to GitHub's new-file page with
+   data/prelaunch_resolved/<find id> = accept | dismiss filled in. Committing
+   it is the answer; scripts/apply_prelaunch_resolutions.py applies it at the
+   next refresh, and only then does anything change. */
+function plResolve(f, choices) {
+  const box = el('span', 'wnres');
+  const more = el('button', 'wnlink', 'Resolve…');
+  const opts = el('span', 'wnopts'); opts.hidden = true;
+  choices.forEach(([text, answer]) => {
+    const a = el('a', 'wnlink', text);
+    a.href = 'https://github.com/' + DATA.repo + '/new/main/data/prelaunch_resolved?filename='
+      + encodeURIComponent(f.id) + '&value=' + answer;
+    a.target = '_blank'; a.rel = 'noopener';
+    a.onclick = e => e.stopPropagation();
+    opts.appendChild(a);
+  });
+  opts.appendChild(el('span', 'wnhint', 'Opens GitHub — tap Commit there to confirm. ' +
+    (choices.some(c => c[1] === 'accept') ? 'To use another name, change the text to “accept Proper Name”.' : '')));
+  more.onclick = e => { e.stopPropagation(); opts.hidden = !opts.hidden; more.textContent = opts.hidden ? 'Resolve…' : 'Cancel'; };
+  box.appendChild(more); box.appendChild(opts);
+  return box;
+}
 function plLink(url, text) {
   const a = el('a', '', text);
   if (/^https?:\/\//.test(url)) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; }
@@ -2182,15 +2213,18 @@ function prelaunchView() {
     });
   }
   const nw = $('#plnew'); nw.textContent = '';
-  PL.newInArea.forEach(f => {
+  const open = PL.newInArea.filter(f => f.status !== 'accepted');
+  open.forEach(f => {
+    const area = f.tracker ? ((TRACKERS.find(t => t.key === f.tracker) || {}).label || f.tracker) : 'your areas';
     const row = el('div', 'wnrow check');
     row.appendChild(el('b', '', 'Check: '));
-    row.appendChild(document.createTextNode('new in ' + (f.tracker ? ((TRACKERS.find(t => t.key === f.tracker) || {}).label || f.tracker) : 'your areas')
+    row.appendChild(document.createTextNode('new in ' + area
       + (f.note ? ' — ' + f.note : '') + (f.stage ? ' · ' + f.stage : '') + (f.event ? ', ' + fdate(f.event) : '') + ' '));
     if (f.url) row.appendChild(plLink(f.url, 'link'));
+    row.appendChild(plResolve(f, [['Add to the ' + area + ' tracker', 'accept'], ['Not new / not relevant — dismiss', 'dismiss']]));
     nw.appendChild(row);
   });
-  nw.hidden = !PL.newInArea.length;
+  nw.hidden = !open.length;
 
   const lad = $('#plladder'); lad.textContent = '';
   PL.stages.forEach((st, i) => { if (i) lad.appendChild(document.createTextNode('›')); lad.appendChild(stagePill(st)); });
@@ -2316,6 +2350,13 @@ function plCard(r, full) {
         d.appendChild(el('span', 'plev', (x.confidence || '') + (tk ? ' · ' + tk.replace(/(\S+(?: resale)?) (yes|no|\?)/g,
           (m, k, v) => (v === 'yes' ? '✓' : v === 'no' ? '✗' : '?') + k).replace(/not resale/, 'not-resale') : '')));
       }
+      // A source that turns out to be another project (the Shang Villa /
+      // Villaria lesson) can be dismissed on its own; the card keeps the rest.
+      const no = el('a', 'pldis', 'Wrong project? Dismiss this source ›');
+      no.href = 'https://github.com/' + DATA.repo + '/new/main/data/prelaunch_resolved?filename='
+        + encodeURIComponent(x.id) + '&value=dismiss';
+      no.target = '_blank'; no.rel = 'noopener';
+      d.appendChild(no);
     });
     c.appendChild(d);
   }

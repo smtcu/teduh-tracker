@@ -25,9 +25,11 @@ on:
   # refresh already running.
   # A file in data/teduh_watch_resolved/ is her answer to a purple "Check:"
   # notice on the site (see scripts/apply_resolutions.py); it refreshes too.
+  # So is a file in data/prelaunch_resolved/ -- her Accept / Dismiss on a
+  # pre-launch find (scripts/apply_prelaunch_resolutions.py).
   push:
     branches: [main]
-    paths: ["projects.csv", "data/teduh_watch_resolved/**"]
+    paths: ["projects.csv", "data/teduh_watch_resolved/**", "data/prelaunch_resolved/**"]
   workflow_dispatch:        # the Cloudflare Worker, or you from the Actions tab
     inputs:
       apdl:
@@ -94,6 +96,12 @@ jobs:
       # and is scraped in this run; a dismiss changes no code and only rebuilds.
       - name: Apply answers to the site's Check notices
         run: python scripts/apply_resolutions.py
+
+      # Her Accept / Dismiss on pre-launch finds. An accepted "new in your
+      # area" check adds a code-less row to that area tracker; no code means
+      # nothing new to scrape, so it only rebuilds.
+      - name: Apply answers to pre-launch finds
+        run: python scripts/apply_prelaunch_resolutions.py
 
       - name: Decide whether TEDUH needs scraping
         id: mode

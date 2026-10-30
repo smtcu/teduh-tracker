@@ -386,7 +386,21 @@ stage, the other columns from the newest find that stated something, facts
 merged, and a Source line linking each find's exact ad, post or article. A
 "Seen:" line on a tracker opens Pre-launch at that row, outlined.
 
-Still to come: accept/dismiss buttons, crt.sh and a search API. From GitHub,
+**Phase 4, her Accept / Dismiss** (built 30 Oct 2026): each purple "Check:
+new in ..." notice has a "Resolve…" link (Add to the area tracker / dismiss),
+and each source in a project's pop-up has "Wrong project? Dismiss this
+source". Like the developer watch, each opens GitHub's new-file page for
+`data/prelaunch_resolved/<find id>` = accept | dismiss; committing it is the
+answer. The refresh runs scripts/apply_prelaunch_resolutions.py right after
+apply_resolutions.py: dismiss marks the find dismissed; accept on a
+new-in-area check adds a **code-less row** to that area tracker (name,
+developer, units from the notice; "accept Other Name" overrides the name);
+accept on a row's own find marks it accepted. The find id is a hash of
+seen, tracker, url and note (never project or status, which an answer
+changes) -- `find_id()`, shared with build_dashboard.py. selftest flags an
+answer file whose find has gone.
+
+Still to come: crt.sh and a search API. From GitHub,
 PropertyGuru, iProperty, EdgeProp listings, Bursa and six developer sites
 (Armani, UEM, Lagenda, Shang Height, Maxim, Majestic Gen) are blocked --
 tested 29 Oct 2026 with scripts/probe_sources.py (Shang Height's address was
