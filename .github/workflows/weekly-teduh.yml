@@ -32,6 +32,18 @@ on:
     paths: ["projects.csv", "data/teduh_watch_resolved/**", "data/prelaunch_resolved/**"]
   workflow_dispatch:        # the Cloudflare Worker, or you from the Actions tab
     inputs:
+      # "Rebuild the site only" skips everything that talks to TEDUH (the
+      # scrape and the APDL fill) and rebuilds from the data already in the
+      # repo -- a few minutes instead of ~17, for when only the site needs to
+      # catch up (a merged change, a pre-launch edit). The Worker's daily
+      # dispatches send no value, so they keep the default and still scrape.
+      what:
+        description: "What to run"
+        type: choice
+        default: "Scrape TEDUH and rebuild"
+        options:
+          - "Scrape TEDUH and rebuild"
+          - "Rebuild the site only (no scrape)"
       apdl:
         description: "APDL dates"
         type: choice
@@ -71,7 +83,10 @@ jobs:
         id: when
         run: |
           DOW=$(TZ=Asia/Kuala_Lumpur date +%u)
-          if [ "$DOW" = "5" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          # A manual run counts as weekly, except "Rebuild the site only",
+          # which leaves the weekly files alone unless it is Friday anyway.
+          if [ "$DOW" = "5" ] || { [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+               && [ "${{ startsWith(inputs.what, 'Rebuild') }}" != "true" ]; }; then
             echo "weekly=yes" >> "$GITHUB_OUTPUT"
           else
             echo "weekly=no" >> "$GITHUB_OUTPUT"
@@ -107,7 +122,10 @@ jobs:
         id: mode
         run: |
           MODE=scrape
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ startsWith(inputs.what, 'Rebuild') }}" = "true" ]; then
+            MODE=build
+            echo "Rebuild the site only was chosen; TEDUH is not scraped."
+          elif [ "${{ github.event_name }}" = "push" ]; then
             BEFORE="${{ github.event.before }}"
             if git fetch --no-tags --depth=1 origin "$BEFORE" 2>/dev/null                && git show "$BEFORE:projects.csv" > /tmp/projects_before.csv 2>/dev/null; then
               python scripts/needs_scrape.py /tmp/projects_before.csv projects.csv | tee /tmp/mode.txt
@@ -145,7 +163,8 @@ jobs:
       # the scrape failed, so the site never goes stale) while letting Cancel
       # actually stop the run.
       - name: Fill any missing APDL dates
-        if: ${{ !cancelled() }}
+        # Skipped by "Rebuild the site only": it asks TEDUH for permit dates.
+        if: ${{ !cancelled() && !startsWith(inputs.what, 'Rebuild') }}
         timeout-minutes: 10
         continue-on-error: true
         run: |
