@@ -16,6 +16,18 @@ on:
     workflows: ["TEDUH tracker refresh"]
     types: [completed]
   workflow_dispatch:      # you, from the Actions tab
+    inputs:
+      # "Pre-launch web watch only" skips the ~40-minute developer watch and
+      # runs just the pre-launch web watch, a few minutes -- for a manual
+      # check without paying for the TEDUH probing. The morning run (a
+      # workflow_run) has no inputs, so it always does both.
+      what:
+        description: "What to run"
+        type: choice
+        default: "Developer watch + pre-launch web watch"
+        options:
+          - "Developer watch + pre-launch web watch"
+          - "Pre-launch web watch only"
 
 permissions:
   contents: write
@@ -48,6 +60,7 @@ jobs:
       # so there is nothing to pip install.
 
       - name: Watch for new developer launches
+        if: ${{ !startsWith(inputs.what, 'Pre-launch') }}
         timeout-minutes: 40      # ~20 minutes on a healthy day
         run: python scripts/watch_developers.py
 
