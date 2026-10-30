@@ -94,6 +94,12 @@ called once a day by a Cloudflare Worker (`cloudflare-worker/`, deployed as
 |---|---|---|
 | `17 23 * * *` | 23:17 | 07:17 next day |
 
+From the Actions tab, **Run workflow → What to run → "Rebuild the site only
+(no scrape)"** (added 30 Oct 2026) rebuilds from the data already in the repo
+in a few minutes: no scrape, no APDL fill, and no weekly files unless it is
+Friday. The Worker's dispatches send no value, so they keep the default and
+still scrape.
+
 A second refresh at 16:00 MYT (`0 8 * * *`) ran until **9 Oct 2026** and was
 removed on her call, to keep Actions minutes down for a private repo.
 It was deleted as a Cron Trigger in the Cloudflare dashboard (Worker ->
