@@ -135,6 +135,20 @@ def detail_email(detail):
     return (pm.get("emel") or pm.get("email") or "") if isinstance(pm, dict) else ""
 
 
+def belongs_elsewhere(pemaju, email, own, dev_labels, domains):
+    """True when a name-watch hit is visibly another tracked developer's SPV.
+
+    The SPV's name carrying another tracker's name is the sign (D'NURI's
+    EXSIM MX4 is not BRDB's), unless its email says it is the searching
+    tracker's own. MAXIM HEIGHTS (11606) registers @mahsing.com.my and is Mah
+    Sing's: M Mira (11606-3) was dropped as Maxim's on 31 Oct 2026.
+    """
+    if domains.get(email_domain(email)) == own:
+        return False
+    pemaju = (pemaju or "").upper()
+    return any(lbl in pemaju for t, lbl in dev_labels.items() if t != own)
+
+
 def name_search(token):
     """TEDUH's q= search: registered project names containing the token."""
     url = ("https://teduh.kpkt.gov.my/api/projek-swasta?q="
@@ -520,8 +534,8 @@ def main():
             if not reached or detail is None:
                 continue
             row = detail_row(hid, detail)
-            pemaju = (row.get("pemaju") or "").upper()
-            if any(lbl in pemaju for t, lbl in dev_labels.items() if t != own):
+            if belongs_elsewhere(row.get("pemaju"), detail_email(detail), own,
+                                 dev_labels, domains):
                 continue
             row.update(first_seen=today, kind="name-match",
                        trackers=own,

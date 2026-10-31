@@ -297,6 +297,13 @@ locally with hyphens and apostrophes closed up. Hanya Wahyu (31436-1) is why:
 TEDUH registered it as RESIDENSI HAN-YA WAHYU, and its `q=` search for "hanya"
 does not match HAN-YA.
 
+A name-watch hit whose SPV name carries **another** tracker's name is dropped
+as that developer's launch (D'NURI's EXSIM MX4 was once offered to BRDB) --
+unless the SPV's email domain belongs to the tracker doing the search. Since
+31 Oct 2026: M Mira (11606-3) was found by "mira" and then dropped, because its
+SPV is MAXIM HEIGHTS SDN. BHD. -- but it registers `@mahsing.com.my` and is
+Mah Sing's (so is 11606-2, M Adora).
+
 The SPV sweep also matches on **email domain** when the SPV's name carries no
 family name. TS Law's SPVs (PLAZA SENTOSA PROPERTIES, L & T REALTY, SKYLINE
 EMBASSY, and 31436's) never say TS LAW, but all register `@tslawland.com`. The

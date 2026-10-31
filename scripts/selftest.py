@@ -169,6 +169,16 @@ try:
     ck("sunway.com.my" not in doms, "a joint venture's partner domain (@sunway.com.my) is not borrowed")
     ck("gmail.com" not in doms and WD.email_domain("x@gmail.com") == "",
        "webmail domains never match a developer")
+    # A name-watch hit whose SPV carries another tracker's name is dropped,
+    # unless its email is the searching tracker's own (M Mira, 31 Oct 2026).
+    ck(doms.get("mahsing.com.my") == "mahsing", "@mahsing.com.my -> mahsing")
+    labels = {"maxim": "MAXIM", "exsim": "EXSIM", "mahsing": "MAH SING", "brdb": "BRDB"}
+    ck(not WD.belongs_elsewhere("MAXIM HEIGHTS SDN. BHD.", "MMira@mahsing.com.my",
+                                "mahsing", labels, doms),
+       "MAXIM HEIGHTS with a @mahsing.com.my email is kept for Mah Sing")
+    ck(WD.belongs_elsewhere("EXSIM MX4 SDN. BHD.", "syazana.sahimi@exsim.my",
+                            "brdb", labels, doms),
+       "EXSIM MX4 is still dropped from BRDB's name watch")
     ck(WD.name_tokens("Hanya Wahyu @ Taman Wahyu") == ["hanya", "wahyu"],
        f"every distinctive word is searched -> {WD.name_tokens('Hanya Wahyu @ Taman Wahyu')}")
     ck("hanya" in WD.words_of("RESIDENSI HAN-YA WAHYU"), "HAN-YA reads as hanya")
