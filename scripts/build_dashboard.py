@@ -1016,7 +1016,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .plcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
   display:flex;flex-direction:column;gap:9px;box-shadow:var(--shadow);min-width:0}
-.plcard.plfocus,.plq.plfocus{outline:2px solid var(--blue);outline-offset:2px}
+.plcard.plfocus,.plq.plfocus,.wnrow.plfocus{outline:2px solid var(--blue);outline-offset:2px}
 .plhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .plhead h3{margin:0;font-size:16.5px;font-weight:780;line-height:1.25;color:var(--ink)}
 .pltrk{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
@@ -2195,6 +2195,7 @@ function plResolve(f, choices) {
   box.appendChild(more); box.appendChild(opts);
   return box;
 }
+const plArea = f => f.tracker ? ((TRACKERS.find(t => t.key === f.tracker) || {}).label || f.tracker) : 'your areas';
 function plLink(url, text) {
   const a = el('a', '', text);
   if (/^https?:\/\//.test(url)) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; }
@@ -2215,8 +2216,8 @@ function prelaunchView() {
   const nw = $('#plnew'); nw.textContent = '';
   const open = PL.newInArea.filter(f => f.status !== 'accepted');
   open.forEach(f => {
-    const area = f.tracker ? ((TRACKERS.find(t => t.key === f.tracker) || {}).label || f.tracker) : 'your areas';
-    const row = el('div', 'wnrow check');
+    const area = plArea(f);
+    const row = el('div', 'wnrow check' + (plFocus === 'find:' + f.id ? ' plfocus' : ''));
     row.appendChild(el('b', '', 'Check: '));
     row.appendChild(document.createTextNode('new in ' + area
       + (f.note ? ' — ' + f.note : '') + (f.stage ? ' · ' + f.stage : '') + (f.event ? ', ' + fdate(f.event) : '') + ' '));
@@ -2272,7 +2273,8 @@ function prelaunchView() {
     });
     host.appendChild(box);
   }
-  const focus = host.querySelector('.plfocus');
+  // A "Seen:" link or a search pick asked for this card or Check line.
+  const focus = $('#sec-prelaunch').querySelector('.plfocus');
   if (focus) {
     plFocus = '';
     requestAnimationFrame(() => focus.scrollIntoView({ block: 'center' }));
@@ -2445,7 +2447,22 @@ function render() {
   if (!q || !box) return;
   const hay = p => (p.name + ' ' + (p.teduhName || '') + ' ' + (p.codes || []).join(' ') + ' '
                     + (p.developer || '') + ' ' + (p.trackerLabel || '')).toLowerCase();
+  /* Pre-launches: a tracker row with no TEDUH code has nothing on its
+     tracker yet, so it opens its card on the Pre-launch page instead; a
+     "new in your area" find is on no tracker at all, so it is searched by
+     its note and opens its Check line there. */
+  const plRow = p => !p.code && PL.rows.find(r => r.name.toUpperCase() === p.name.toUpperCase());
+  const PLNEW = PL.newInArea.filter(f => f.status !== 'accepted').map(f => ({
+    name: f.note.split(' -- ')[0].slice(0, 80) || 'New project',
+    find: f, hay: (f.note + ' ' + plArea(f) + ' pre-launch').toLowerCase()
+  }));
+  const toPrelaunch = focus => {
+    tracker = 'prelaunch'; plFilter = 'all'; plFocus = focus; pickedKey = null; FOCUS = null;
+    q.value = ''; box.hidden = true; render();
+  };
   const jump = p => {
+    const r = plRow(p);
+    if (r) { toPrelaunch(r.name); return; }
     tracker = p.tracker;
     /* Focus follows the pick through every section: the table row glows, the
        weekly chart switches to it, and its bars and trend panel are outlined
@@ -2479,17 +2496,33 @@ function render() {
     const s = q.value.trim().toLowerCase();
     box.textContent = '';
     if (s.length < 2) { box.hidden = true; return; }
-    const hits = ALL.filter(p => hay(p).includes(s)).slice(0, 8);
+    // Horizon 27 is on two trackers but has one pre-launch card: list it once.
+    const plShown = new Set();
+    const hits = ALL.filter(p => hay(p).includes(s)).filter(p => {
+      const r = plRow(p);
+      if (!r) return true;
+      if (plShown.has(r.name)) return false;
+      plShown.add(r.name); return true;
+    }).slice(0, 8);
     hits.forEach(p => {
       const b = el('button', 'qrow');
       b.appendChild(el('span', 'qn', p.name));
-      b.appendChild(el('span', 'qd',
+      const r = plRow(p);
+      b.appendChild(el('span', 'qd', r ? ['Pre-launch', r.trackerLabels.join(' · ')].join('  ·  ') :
         [(p.teduhName && p.teduhName.toLowerCase() !== p.name.toLowerCase()) ? p.teduhName : '',
          p.codeDisp || p.code, p.trackerLabel].filter(Boolean).join('  ·  ')));
       b.onclick = () => jump(p);
       box.appendChild(b);
     });
-    if (!hits.length) box.appendChild(el('div', 'qnone', 'Nothing matches — registered TEDUH names are searched too.'));
+    const newHits = PLNEW.filter(n => n.hay.includes(s)).slice(0, Math.max(0, 8 - hits.length));
+    newHits.forEach(n => {
+      const b = el('button', 'qrow');
+      b.appendChild(el('span', 'qn', n.name));
+      b.appendChild(el('span', 'qd', 'Pre-launch  ·  new in ' + plArea(n.find) + ', not on a tracker yet'));
+      b.onclick = () => toPrelaunch('find:' + n.find.id);
+      box.appendChild(b);
+    });
+    if (!hits.length && !newHits.length) box.appendChild(el('div', 'qnone', 'Nothing matches — registered TEDUH names and pre-launches are searched too.'));
     box.hidden = false;
   };
   q.addEventListener('input', show);
