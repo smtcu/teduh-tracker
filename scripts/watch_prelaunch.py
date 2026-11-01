@@ -188,6 +188,20 @@ def text_of(html):
     return re.sub(r"\s+", " ", htmlmod.unescape(re.sub(r"(?s)<[^>]+>", " ", html))).strip()
 
 
+def summary_of(html):
+    """The page's own description (meta description, og:description). Sites built
+    by JavaScript, like eclipsejb.com, show nothing else to a plain fetch."""
+    out = []
+    for tag in re.findall(r"(?is)<meta\b[^>]*>", html):
+        if re.search(r"""(?i)(?:name|property)\s*=\s*["'](?:description|og:description|twitter:description)["']""", tag):
+            m = re.search(r"""(?is)content\s*=\s*(["'])(.*?)\1""", tag)
+            if m:
+                text = re.sub(r"\s+", " ", htmlmod.unescape(m.group(2))).strip()
+                if text and text not in out:
+                    out.append(text)
+    return " ".join(out)
+
+
 def links_of(html, base):
     """(absolute url, anchor text) for every link on the page."""
     out = []
@@ -391,7 +405,7 @@ def main():
         page = fetch.get(url, "page " + (pg.get("label") or url))
         if page is None:
             continue
-        txt = text_of(page)
+        txt = text_of(page) + " " + summary_of(page)
         facts = sorted(set(re.findall(r"\bRM\s?\d[\d,.]*\s?(?:k|mil|million)?\b", txt, re.I))
                        | {s for s, ws in STAGE_WORDS if any(has(txt.lower(), w) for w in ws)}
                        | set(re.findall(r"\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+20\d\d\b", txt)))
