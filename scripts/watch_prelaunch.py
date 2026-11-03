@@ -27,6 +27,10 @@ run that sees a row searches all its news, so a project unveiled long ago
 (The Eclipse, Nov 2025) still turns up once. seen.json's "backfilled" list
 records which rows have had that search.
 
+data/prelaunch_teduh.csv ties a no-code row to TEDUH codes it hangs on but
+does not track (8 Conlay's suspended 14159-1/-2): each run reads them, and a
+changed name, permit, SPV, status or sold count is a find -- see teduh_watch().
+
 It never writes projects.csv -- adding a project is always her Accept. One
 request per source, a pause between each, nothing retried, and a time
 budget: a slow or broken source is skipped for the day and caught tomorrow.
@@ -47,6 +51,12 @@ PAGES = os.path.join(ROOT, "data", "prelaunch_pages.csv")
 SEEN = os.path.join(ROOT, "data", "prelaunch_seen.json")
 PLACES = os.path.join(ROOT, "data", "prelaunch_places.csv")
 RUNS = os.path.join(ROOT, "data", "prelaunch_runs.csv")   # when each pre-launch check last ran
+TEDUH_WATCH = os.path.join(ROOT, "data", "prelaunch_teduh.csv")   # TEDUH codes a no-code row hangs on
+TEDUH_API = "https://teduh.kpkt.gov.my/api/projek-swasta/{}"
+TEDUH_UNITS = "https://teduh.kpkt.gov.my/api/unit-projek-swasta/{}"
+TEDUH_UA = "Mozilla/5.0 (compatible; teduh-tracker/1.0)"         # what fill_apdl.py sends
+TEDUH_PAUSE = 1.1                                                  # scrape_teduh.py's pace
+TEDUH_NEXT_MAX = 3      # new phases probed past the highest known, per developer code
 NEWS_PER_ROW = 3        # one story is often carried by four outlets
 FIELDS = ["seen", "tracker", "project", "source", "kind", "url", "stage", "event_date",
           "ad_since", "permit", "by", "ads", "price_from", "confidence", "status", "note"]
@@ -182,6 +192,26 @@ class Fetcher:
             self.errors.append(f"{label}: {getattr(e, 'code', '') or type(e).__name__} {getattr(e, 'reason', '')}".strip())
             return None
 
+    def teduh(self, url, label):
+        """(json, reached) from TEDUH. A 404 is an answer ("no such code"),
+        not a failure, so it is not listed among the day's problems."""
+        if time.time() - self.start > self.budget:
+            self.skipped.append(label)
+            return None, False
+        time.sleep(TEDUH_PAUSE)
+        self.asked += 1
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": TEDUH_UA, "Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=45) as r:
+                return json.loads(r.read().decode("utf-8")), True
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None, True
+            self.errors.append(f"{label}: {e.code}")
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            self.errors.append(f"{label}: {type(e).__name__} {getattr(e, 'reason', '')}".strip())
+        return None, False
+
 
 def text_of(html):
     html = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", html)
@@ -295,6 +325,156 @@ def tick_line(t):
     return "Ticks: " + " ".join(k + (" ?" if v is None else " yes" if v else " no") for k, v in t.items())
 
 
+# ---------------------------------------------------------------- TEDUH status
+
+def loose(d, *names):
+    """First matching key of a dict, ignoring case and underscores: TEDUH
+    mixes permitMula and permit_mula in the same payload."""
+    if not isinstance(d, dict):
+        return ""
+    table = {re.sub(r"[^a-z0-9]", "", k.lower()): v for k, v in d.items()}
+    for n in names:
+        v = table.get(re.sub(r"[^a-z0-9]", "", n.lower()))
+        if v not in (None, "", [], {}) and not isinstance(v, (dict, list)):
+            return str(v).strip()
+    return ""
+
+
+def iso_date(v):
+    """'2024-01-06', '2024-01-06T00:00:00' or '06 Jan 2024' -> '2024-01-06', else as given."""
+    v = (v or "").strip()
+    m = re.match(r"(\d{4}-\d\d-\d\d)", v)
+    if m:
+        return m.group(1)
+    for fmt in ("%d %b %Y", "%d %B %Y", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(v, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return v
+
+
+def teduh_status(fetch, code):
+    """What TEDUH says about one code today, as a flat dict; None if the code
+    does not exist; False if TEDUH could not be asked."""
+    detail, reached = fetch.teduh(TEDUH_API.format(code), "TEDUH " + code)
+    if not reached:
+        return False
+    if not isinstance(detail, dict):
+        return None
+    proj = detail.get("projek") if isinstance(detail.get("projek"), dict) else {}
+    pem = detail.get("pemaju") if isinstance(detail.get("pemaju"), dict) else {}
+    st = {"name": loose(proj, "nama") or loose(detail, "nama", "namaPemajuan"),
+          "spv": loose(pem, "nama", "nama_pemaju"),
+          "status": loose(detail, "status") or loose(proj, "status"),
+          "permit_from": iso_date(loose(proj, "permitMula") or loose(detail, "permitMula")),
+          "permit_to": iso_date(loose(proj, "permitTamat") or loose(detail, "permitTamat")),
+          "permits": str(1 + len([r for r in detail.get("lesen_records") or [] if isinstance(r, dict)])),
+          "units": loose(detail.get("unitSummary") or {}, "unit"),
+          "sold": ""}
+    units, reached = fetch.teduh(TEDUH_UNITS.format(code), "TEDUH units " + code)
+    if reached and isinstance(units, dict):
+        groups = [g for g in units.get("unitGroups") or [] if isinstance(g, dict)]
+        alls = [u for g in groups for u in g.get("units") or [] if isinstance(u, dict)]
+        if alls:
+            st["sold"] = str(sum(1 for u in alls if u.get("status") == "sold"))
+            st["units"] = st["units"] or str(len(alls))
+    return st
+
+
+STATUS_WORDS = {"name": "registered name", "spv": "SPV", "status": "TEDUH status",
+                "permit_from": "permit start", "permit_to": "permit end",
+                "permits": "permits on record", "units": "units", "sold": "sold"}
+
+
+def permit_text(st, today):
+    if not st.get("permit_to"):
+        return "no permit shown" if not st.get("permit_from") else "from " + st["permit_from"]
+    live = st["permit_to"] >= today.isoformat()
+    return f"{st.get('permit_from') or '?'} to {st['permit_to']} ({'current' if live else 'expired'})"
+
+
+def teduh_watch(fetch, seen, today, nocode_keys):
+    """data/prelaunch_teduh.csv ties a no-code row to TEDUH codes it hangs on:
+    8 Conlay's suspended 14159-1 and 14159-2, which are not tracked. Each run
+    reads what TEDUH says about them and makes a find when any of it changes --
+    a new permit, a new registered name (a relaunch often renames), new sales,
+    a new SPV. A bare developer code (14159) is also probed one phase past the
+    highest known, so a relaunch registered as 14159-3 shows up too.
+
+    The first reading of a code is a find as well: it is the row's TEDUH
+    status, which is what she asked the watch to report. Nothing here writes
+    projects.csv; putting a code on the row stays hers."""
+    mem = seen.setdefault("teduh", {})          # code -> last reading
+    reads = {}                                  # today's readings, so no code is asked twice
+
+    def status(code):
+        if code not in reads:
+            reads[code] = teduh_status(fetch, code)
+        return reads[code]
+
+    nxt = seen.setdefault("teduh_next", {})     # developer code -> highest phase known
+    rows = []
+    watch = [r for r in read(TEDUH_WATCH)
+             if ((r.get("tracker") or "").strip(), (r.get("project") or "").strip().upper()) in nocode_keys]
+    codes = []                                   # (code, row) to read today
+    for r in watch:
+        v = (r.get("value") or "").strip()
+        if re.fullmatch(r"\d+-\d+", v):
+            codes.append((v, r))
+        elif v.isdigit():
+            # Highest phase already known: the codes listed, and any found earlier.
+            known = [int(c.split("-")[1]) for c, _ in codes if c.split("-")[0] == v]
+            known += [int(c.split("-")[1]) for c in mem if c.split("-")[0] == v]
+            high = max([nxt.get(v, 0)] + known)
+            for _ in range(TEDUH_NEXT_MAX):
+                code = f"{v}-{high + 1}"
+                st = status(code)
+                if not st:                       # None = not registered; False = not asked
+                    break
+                high += 1
+                codes.append((code, dict(r, label=f"new phase under {v}")))
+                mem.setdefault(code, None)       # a find on first reading below
+            nxt[v] = high
+            # Phases found on earlier days are followed like the listed codes.
+            for c in sorted(mem):
+                if c.split("-")[0] == v and c not in {x for x, _ in codes}:
+                    codes.append((c, dict(r, label=f"phase found under {v}")))
+    done = set()
+    for code, r in codes:
+        if code in done:
+            continue
+        done.add(code)
+        st = status(code)
+        if st is False or st is None:
+            continue
+        before = mem.get(code)
+        mem[code] = st
+        label = (r.get("label") or "").strip()
+        head = code + (f" ({label})" if label else "")
+        if not before:
+            facts = [f"TEDUH {head}: registered as {st['name'] or 'no name shown'}"
+                     + (f", {st['spv']}" if st["spv"] else ""),
+                     (f"{code}: {st['sold']} of {st['units']} sold" if st["sold"] and st["units"]
+                      else f"{code}: {st['units'] or '?'} units, sold not shown"),
+                     f"{code} permit: {permit_text(st, today)}"]
+            if st["status"]:
+                facts.append(f"{code} TEDUH status: {st['status']}")
+        else:
+            changed = [k for k in STATUS_WORDS if (before.get(k) or "") != (st.get(k) or "")]
+            if not changed:
+                continue
+            facts = [f"Changed on TEDUH: {head}"] + \
+                    [f"{code} {STATUS_WORDS[k]}: {before.get(k) or 'blank'} -> {st.get(k) or 'blank'}"
+                     for k in changed]
+        rows.append({"seen": today.isoformat(), "tracker": r["tracker"].strip(), "project": r["project"].strip(),
+                     "source": f"TEDUH {code}", "kind": "teduh", "url": TEDUH_API.format(code),
+                     "stage": "", "event_date": "", "ad_since": "", "permit": permit_text(st, today),
+                     "by": "", "ads": "", "price_from": "", "confidence": "strong", "status": "new",
+                     "note": "; ".join(f.replace(";", ",") for f in facts)})
+    return rows
+
+
 def mark_run(note):
     """Stamp the 'web' row of data/prelaunch_runs.csv with now in Malaysian
     time. The site shows it, because the pre-launch checks run on their own
@@ -347,6 +527,11 @@ def main():
 
     fetch = Fetcher(args.budget)
     items = []          # every item read today: dicts with title, url, date, text, via, kind, own
+
+    # 0. TEDUH codes a no-code row hangs on (data/prelaunch_teduh.csv). First,
+    # because it is a handful of requests and must not lose out to the budget.
+    nocode_keys = {(p["tracker"].strip(), p["project"].strip().upper()) for p in nocode}
+    teduh_rows = teduh_watch(fetch, seen, today, nocode_keys)
 
     # 1. Google News: one search per no-code name, one per area word.
     for key, p in by_name.items():
@@ -477,6 +662,8 @@ def main():
                          "event_date": event, "ad_since": "", "permit": "",
                          "by": "Developer" if it["own"] else "", "ads": "", "price_from": price,
                          "confidence": row["confidence"], "status": "new", "note": "; ".join(note)})
+
+    new_rows += teduh_rows
 
     for pg, added, txt in page_changes:
         stage = stage_of(" ".join(added).lower())
