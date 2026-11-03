@@ -29,6 +29,8 @@ developer,https://www.sunwayproperty.com/,Sunway Property,,browser only
 developer,https://www.oskproperty.com.my/,OSK Property,,ok
 developer,https://www.titijaya.com.my/,Titijaya,,ok
 developer,https://armanigroup.com.my/our-developments/,Armani,armani,blocked -- laptop
+developer,https://armanigroup.com.my/,Armani,armani,added 3 Nov 2026 -- tried daily; same host as our-developments (blocked from GitHub 29 Oct)
+developer,https://www.magnaprima.com.my/,Magna Prima (Hallson),armani,added 3 Nov 2026 -- tried daily; not probed yet
 developer,https://www.uemsunrise.com/,UEM Sunrise,uem,blocked -- laptop
 developer,https://lagendaproperties.com/,Lagenda,lagenda,blocked -- laptop
 developer,https://maximglobal.com.my/,Maxim Global,maxim,blocked -- laptop
