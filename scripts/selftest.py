@@ -37,7 +37,8 @@ section("modules import cleanly")
 mods = {}
 for name in ["unit_types", "scrape_teduh", "build_dashboard", "build_trackers",
              "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary",
-             "fill_apdl", "watch_developers", "survey_area", "apply_resolutions"]:
+             "fill_apdl", "watch_developers", "survey_area", "apply_resolutions",
+             "watch_prelaunch"]:
     try:
         mods[name] = __import__(name)
         ck(True, name)
@@ -360,7 +361,8 @@ if projects and BD:
     rows = {((p.get("tracker") or "").strip(),
              (p.get("project") or "").replace("\n", " ").strip().upper()) for p in projects}
     tracking = re.compile(r"[?&](utm_\w+|gclid|gbraid|wbraid|gad_source|fbclid)=")
-    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv", "data/prelaunch_places.csv"):
+    for f in ("data/prelaunch_finds.csv", "data/prelaunch_pages.csv", "data/prelaunch_places.csv",
+              "data/prelaunch_teduh.csv"):
         path = os.path.join(ROOT, f)
         if not os.path.exists(path):
             continue
@@ -382,6 +384,53 @@ if projects and BD:
                        f"{f} line {i}: confidence is strong, possible or weak")
                     ck((r.get("status") or "").strip() in ("new", "accepted", "dismissed"),
                        f"{f} line {i}: status is new, accepted or dismissed")
+
+# data/prelaunch_teduh.csv values are a full code (14159-1) or a bare
+# developer code (14159); anything else would be silently skipped.
+tp = os.path.join(ROOT, "data", "prelaunch_teduh.csv")
+if os.path.exists(tp):
+    with open(tp, newline="", encoding="utf-8") as fh:
+        for i, r in enumerate(csv.DictReader(fh), 2):
+            v = (r.get("value") or "").strip()
+            ck(re.fullmatch(r"\d+(-\d+)?", v) is not None,
+               f"data/prelaunch_teduh.csv line {i}: {v!r} is a code or a developer code")
+
+# The TEDUH status watch against a fake TEDUH: first reading is a find, a
+# quiet day is not, a changed permit or a new phase is. No network.
+WPm = mods.get("watch_prelaunch")
+if WPm:
+    from datetime import date as _d
+    _world = {}
+    def _pl(name, frm, to, n, sold):
+        return ({"projek": {"nama": name, "permitMula": frm, "permitTamat": to},
+                 "pemaju": {"nama": "SPV SDN. BHD."}, "unitSummary": {"unit": n}},
+                {"unitGroups": [{"units": [{"status": "sold"}] * sold + [{"status": "avail"}] * (n - sold)}]})
+    class _F(WPm.Fetcher):
+        def teduh(self, url, label):
+            code = url.rsplit("/", 1)[1]
+            if code not in _world:
+                return None, True
+            return _world[code][1 if "unit-projek" in url else 0], True
+    _pause, WPm.TEDUH_PAUSE = WPm.TEDUH_PAUSE, 0
+    _read, WPm.read = WPm.read, lambda path: ([{"tracker": "t", "project": "P", "value": "900-1", "label": "A"},
+                                                {"tracker": "t", "project": "P", "value": "900", "label": ""}]
+                                               if path == WPm.TEDUH_WATCH else _read(path))
+    try:
+        _seen, _k = {}, {("t", "P")}
+        _world["900-1"] = _pl("OLD", "2024-01-06", "2025-01-05", 10, 4)
+        r1 = WPm.teduh_watch(_F(99), _seen, _d(2026, 11, 4), _k)
+        r2 = WPm.teduh_watch(_F(99), _seen, _d(2026, 11, 5), _k)
+        _world["900-1"] = _pl("NEW NAME", "2027-01-10", "2028-01-09", 10, 5)
+        _world["900-2"] = _pl("PHASE 2", "", "", 6, 0)
+        r3 = WPm.teduh_watch(_F(99), _seen, _d(2026, 11, 6), _k)
+        ck(len(r1) == 1 and "4 of 10 sold" in r1[0]["note"] and "(expired)" in r1[0]["permit"],
+           "TEDUH watch: first reading reports name, sold and an expired permit")
+        ck(r2 == [], "TEDUH watch: an unchanged day makes no find")
+        ck(len(r3) == 2 and "OLD -> NEW NAME" in r3[0]["note"] and "(current)" in r3[0]["permit"]
+           and "900-2" in r3[1]["note"], "TEDUH watch: a rename, a new permit and a new phase are each reported")
+        ck(_seen["teduh_next"] == {"900": 2}, "TEDUH watch: the phase probe remembers 900-2")
+    finally:
+        WPm.TEDUH_PAUSE, WPm.read = _pause, _read
 
 # The pre-launch watch must never write projects.csv: adding a project is
 # always her Accept. A cheap guard against a future edit that forgets.

@@ -74,6 +74,7 @@ data/teduh_watch_resolved/       one file per answer: <code> = accept | dismiss
 prelaunch_sources.csv            pre-launch watch config: developer pages, sitemaps, Lowyat boards
 data/prelaunch_finds.csv         signs of life for no-code rows: ads, news, agent pages (see below)
 data/prelaunch_pages.csv         pages to keep looking at for no-code rows: agent sites, microsites
+data/prelaunch_teduh.csv         TEDUH codes a no-code row hangs on (8 Conlay's suspended 14159-1/-2)
 scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
@@ -415,6 +416,25 @@ accept on a row's own find marks it accepted. The find id is a hash of
 seen, tracker, url and note (never project or status, which an answer
 changes) -- `find_id()`, shared with build_dashboard.py. selftest flags an
 answer file whose find has gone.
+
+**TEDUH status for a no-code row** (built 03 Nov 2026): some no-code rows
+hang on TEDUH codes that are deliberately not tracked. 8 Conlay (Armani) is
+KSK Land's suspended project, 14159-1 Block A and 14159-2 Block B under
+DAMAI CITY SDN. BHD., being taken over by Magna Prima (to be renamed Hallson
+Group); her suspended-era figures are in its `note_prefix`. A relaunch may
+rename it, which the "Conlay" name watch would miss, so
+`data/prelaunch_teduh.csv` (`tracker,project,value,label`) lists the codes
+and `watch_prelaunch.py` reads them first every run: registered name, SPV,
+TEDUH status, current permit start/end, permits on record, units and sold
+(one detail + one unit-list request per code). The first reading is a find
+(the row's TEDUH status); after that a find is made only when one of those
+changes, listing old -> new. A bare developer code (`14159`) is also probed
+up to 3 phases past the highest known, so a 14159-3 shows up and is followed
+from then on. Finds are kind `teduh`, stage blank, with the permit in the
+Permit column; memory is seen.json `teduh` / `teduh_next`. Like everything
+in the pre-launch watch it never writes projects.csv -- the codes go on the
+row only when she says so. Not in teduh_watch_extra.csv on purpose: there
+the old expired permit would read as a new one and auto-add a duplicate row.
 
 Still to come: crt.sh and a search API. From GitHub,
 PropertyGuru, iProperty, EdgeProp listings, Bursa and six developer sites
