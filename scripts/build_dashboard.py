@@ -773,6 +773,11 @@ html[data-theme="dark"] tr.found td{animation-name:rowglowd}
 .wnopts[hidden]{display:none}
 .wnlink{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--check);text-decoration:underline;cursor:pointer}
 .wnhint{color:var(--muted);font-weight:500}
+.wnrow.check b.plnm{color:var(--ink)}
+.plnewmore{margin-top:6px;font-weight:500}
+.plnewmore[hidden]{display:none}
+.plnewmore .plfacts{margin:0 0 4px;padding-left:18px}
+.plnewsrc{color:var(--muted)}
 .wnrow b{font-weight:750}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:16px}
@@ -2195,6 +2200,25 @@ function plResolve(f, choices) {
   box.appendChild(more); box.appendChild(opts);
   return box;
 }
+/* A new-in-area note reads "Name (Developer) -- details; more; more".
+   Split it into the bold name, the developer and the facts behind "See more".
+   A note without " -- " keeps its first phrase (up to a comma) as the name. */
+function plHead(note) {
+  const facts = (note || '').split(';').map(x => x.trim()).filter(Boolean);
+  let first = facts.shift() || '', rest = '';
+  const cut = first.indexOf(' -- ');
+  if (cut >= 0) { rest = first.slice(cut + 4).trim(); first = first.slice(0, cut).trim(); }
+  let name = first, dev = '';
+  const m = first.match(/^(.*?)\s*\(([^()]*)\)\s*(.*)$/);
+  if (m && m[1]) { name = m[1]; dev = m[2]; if (m[3]) rest = [m[3].replace(/^[,\s]+/, ''), rest].filter(Boolean).join(', '); }
+  if (cut < 0 && name.length > 60 && name.includes(',')) {
+    const c = name.indexOf(',');
+    rest = [name.slice(c + 1).trim(), rest].filter(Boolean).join(', ');
+    name = name.slice(0, c).trim();
+  }
+  if (rest) facts.unshift(rest);
+  return { name, dev, facts };
+}
 const plArea = f => f.tracker ? ((TRACKERS.find(t => t.key === f.tracker) || {}).label || f.tracker) : 'your areas';
 function plLink(url, text) {
   const a = el('a', '', text);
@@ -2219,10 +2243,33 @@ function prelaunchView() {
     const area = plArea(f);
     const row = el('div', 'wnrow check' + (plFocus === 'find:' + f.id ? ' plfocus' : ''));
     row.appendChild(el('b', '', 'Check: '));
-    row.appendChild(document.createTextNode('new in ' + area
-      + (f.note ? ' — ' + f.note : '') + (f.stage ? ' · ' + f.stage : '') + (f.event ? ', ' + fdate(f.event) : '') + ' '));
-    if (f.url) row.appendChild(plLink(f.url, 'link'));
-    row.appendChild(plResolve(f, [['Add to the ' + area + ' tracker', 'accept'], ['Not new / not relevant — dismiss', 'dismiss']]));
+    /* One short line -- the project and developer in bold -- and the rest
+       behind "See more" (her call, 3 Nov 2026: the whole note was too long). */
+    const h = plHead(f.note);
+    row.appendChild(document.createTextNode('new in ' + area + (h.name ? ' — ' : '')));
+    if (h.name) row.appendChild(el('b', 'plnm', h.name));
+    if (h.dev) { row.appendChild(document.createTextNode(' (')); row.appendChild(el('b', 'plnm', h.dev)); row.appendChild(document.createTextNode(')')); }
+    const more = el('div', 'plnewmore'); more.hidden = true;
+    if (h.facts.length) {
+      const ul = el('ul', 'plfacts');
+      h.facts.forEach(x => ul.appendChild(el('li', '', x)));
+      more.appendChild(ul);
+    }
+    const when = [f.stage, f.event ? fdate(f.event) : ''].filter(Boolean).join(', ');
+    if (when || f.url) {
+      const ln = el('div', 'plnewsrc');
+      if (when) ln.appendChild(document.createTextNode(when + (f.url ? ' · ' : '')));
+      if (f.url) ln.appendChild(plLink(f.url, f.source || 'source'));
+      more.appendChild(ln);
+    }
+    const res = plResolve(f, [['Add to the ' + area + ' tracker', 'accept'], ['Not new / not relevant — dismiss', 'dismiss']]);
+    if (more.childNodes.length) {
+      const btn = el('button', 'wnlink', 'See more');
+      btn.onclick = e => { e.stopPropagation(); more.hidden = !more.hidden; btn.textContent = more.hidden ? 'See more' : 'See less'; };
+      res.insertBefore(btn, res.firstChild);
+    }
+    row.appendChild(res);
+    row.appendChild(more);
     nw.appendChild(row);
   });
   nw.hidden = !open.length;
