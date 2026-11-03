@@ -7,7 +7,8 @@
 Reads a fixed list of free sources once a day, after the morning refresh:
 Google News RSS (one search per no-code projects.csv row and one per area
 word), the developer sites, sitemaps and Lowyat boards in
-prelaunch_sources.csv, and the pages saved in data/prelaunch_pages.csv.
+prelaunch_sources.csv (each developer's front page and up to three of its
+project-list pages one level down), and the pages saved in data/prelaunch_pages.csv.
 Anything new that names a no-code row, or that announces a launch in one of
 her area words, becomes a line in data/prelaunch_finds.csv with status "new".
 
@@ -240,6 +241,39 @@ def links_of(html, base):
             continue
         out.append((urllib.parse.urljoin(base, htmlmod.unescape(href)), text_of(inner)))
     return out
+
+
+# A developer's project list: the page its front page links to under one of
+# these words (BRDB /property, Mah Sing /projects/, KSL /developments/). Read
+# daily, one level down, so a project tile that is not on the front page --
+# BRDB's damansara-heights-coming-soon -- is still seen. Added 3 Nov 2026.
+LISTING_PATH = re.compile(r"/(?:propert(?:y|ies)|portfolio|projects?|developments?|our-developments|"
+                          r"residential|new-launch(?:es)?|upcoming|townships?)/?$", re.I)
+LISTING_MAX = 3         # listing pages followed per developer
+
+
+def listing_pages(links, host):
+    """The developer's own project-list pages among a front page's links:
+    same website, address ending in a listing word, no ?filter copies
+    (Chin Hin's ?category=Nature), at most LISTING_MAX, front page excluded."""
+    out = []
+    for link, _ in links:
+        u = urllib.parse.urlsplit(link)
+        if u.netloc != host or u.query or not LISTING_PATH.search(u.path):
+            continue
+        clean = urllib.parse.urlunsplit((u.scheme, u.netloc, u.path, "", ""))
+        if clean.rstrip("/") not in {x.rstrip("/") for x in out}:
+            out.append(clean)
+    return out[:LISTING_MAX]
+
+
+def slug_words(url):
+    """The last part of a link's address as words: .../damansara-heights-coming-soon
+    -> 'damansara heights coming soon'. Project tiles are often a picture with no
+    text, so the address is the only name the link carries."""
+    last = urllib.parse.urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1]
+    last = re.sub(r"\.(?:html?|php|aspx?)$", "", last, flags=re.I)
+    return re.sub(r"[-_+]+", " ", urllib.parse.unquote(last)).strip()
 
 
 def rss_items(xml):
@@ -571,15 +605,28 @@ def main():
                               "kind": "sitemap", "own": s.get("tracker")})
             continue
         host = urllib.parse.urlsplit(url).netloc
-        for link, anchor in links_of(page, url):
-            if kind == "forum" and "/topic/" not in link:
-                continue
-            if kind == "developer" and urllib.parse.urlsplit(link).netloc != host:
-                continue
-            items.append({"title": anchor, "url": link, "date": None, "text": "",
-                          "via": "Lowyat " + s["developer"].replace("Lowyat ", "") if kind == "forum" else s["developer"] + " website",
-                          "kind": "forum" if kind == "forum" else "developer page",
-                          "own": s.get("tracker") if kind == "developer" else None})
+        front = links_of(page, url)
+        if kind == "forum":
+            for link, anchor in front:
+                if "/topic/" in link:
+                    items.append({"title": anchor, "url": link, "date": None, "text": "",
+                                  "via": "Lowyat " + s["developer"].replace("Lowyat ", ""),
+                                  "kind": "forum", "own": None})
+            continue
+        # A developer site: the front page, then its project-list pages one level down.
+        pages = [(front, s["developer"] + " website")]
+        for lp in listing_pages(front, host):
+            sub = fetch.get(lp, f"listing {s['developer']} {urllib.parse.urlsplit(lp).path}")
+            if sub is not None:
+                pages.append((links_of(sub, lp), s["developer"] + " website " + urllib.parse.urlsplit(lp).path))
+        for links, via in pages:
+            for link, anchor in links:
+                if urllib.parse.urlsplit(link).netloc != host:
+                    continue
+                # The address counts as text too: a picture tile has no words.
+                items.append({"title": anchor or slug_words(link), "url": link, "date": None,
+                              "text": slug_words(link), "via": via,
+                              "kind": "developer page", "own": s.get("tracker")})
 
     # 3. Saved pages: a change in their key facts is the news.
     page_changes = []

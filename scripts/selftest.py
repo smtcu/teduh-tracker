@@ -432,6 +432,23 @@ if WPm:
     finally:
         WPm.TEDUH_PAUSE, WPm.read = _pause, _read
 
+# Developer sites one level down (3 Nov 2026): the listing pages it follows,
+# and a picture-only project tile matched by its address alone.
+if WPm:
+    _front = [("https://www.brdb.com.my/property", "Property"),
+              ("https://www.brdb.com.my/portfolio/eden", "Eden"),
+              ("https://chinhinproperty.com/properties", "x"),
+              ("https://chinhinproperty.com/properties?category=Nature", "Nature"),
+              ("https://www.brdb.com.my/property/", "again"),
+              ("https://other.example/projects", "agent")]
+    ck(WPm.listing_pages(_front, "www.brdb.com.my") == ["https://www.brdb.com.my/property"],
+       "pre-launch: listing pages are same-site, unfiltered, listed once")
+    _slug = WPm.slug_words("https://www.brdb.com.my/portfolio/damansara-heights-coming-soon")
+    ck(_slug == "damansara-heights-coming-soon".replace("-", " "),
+       "pre-launch: a link's address reads as words")
+    ck(WPm.has(_slug, "damansara heights"),
+       "pre-launch: a text-less tile still matches its no-code row by its address")
+
 # The pre-launch watch must never write projects.csv: adding a project is
 # always her Accept. A cheap guard against a future edit that forgets.
 wp = os.path.join(ROOT, "scripts", "watch_prelaunch.py")
