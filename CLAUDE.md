@@ -282,6 +282,15 @@ cannot imply: a dormant code to watch for a permit (`8763-2`), or a bare
 developer code to watch for phases. `trackers` is a semicolon list of tracker
 keys whose button should carry the badge.
 
+A bare developer code whose `label` is the exact name of a **code-less row**
+in one of its `trackers` (case aside) claims that row: `31361` -> THE SHANG
+RESIDENCE, `31510` (SUCCESS GLO SDN. BHD.) -> Majestic PD Township*. Since
+03 Nov 2026 (her call: "I want to confirm first") every phase found under a
+claimed code is a **`name-match` notice on that row** -- purple, never
+auto-added, permit or not. Her Accept fills the code into her row; Dismiss
+changes nothing. The claim lapses once the row has a code. Logic is
+`claimed_rows()` in watch_developers.py; selftest.py checks it.
+
 Since 04 Sep 2026 there is also a **name watch**: every projects.csv row with
 a blank code gets a TEDUH `q=` search on the most distinctive word of its
 marketing name (generic words -- taman, residensi, park -- are skipped). A hit
