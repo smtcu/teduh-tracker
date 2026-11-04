@@ -236,7 +236,7 @@ def write_projects(pcsv, cols, rows):
         w.writerows(rows)
 
 
-def auto_add(rows_to_add, pcsv, claims=None):
+def auto_add(rows_to_add, pcsv):
     """Append permit-holding finds to their developer tracker in projects.csv.
 
     Returns the codes actually added.
@@ -244,7 +244,7 @@ def auto_add(rows_to_add, pcsv, claims=None):
     if not rows_to_add:
         return []
     cols, rows = read_projects(pcsv)
-    added = add_rows(rows, cols, rows_to_add, claims)
+    added = add_rows(rows, cols, rows_to_add)
     if added:
         write_projects(pcsv, cols, rows)
         for code, t in added:
@@ -252,15 +252,34 @@ def auto_add(rows_to_add, pcsv, claims=None):
     return [c for c, _ in added]
 
 
-def add_rows(rows, cols, rows_to_add, claims=None):
-    """Append finds to their developer tracker, in memory. [(code, tracker)].
+def claimed_rows(extra, projects):
+    """{developer code: (trackers, project)} for bare codes in the extra file
+    whose label names a code-less projects.csv row.
 
-    claims maps a bare developer code from teduh_watch_extra.csv to the
-    (trackers, project) of the code-less row it belongs to. A find under that
-    developer fills that row instead -- area trackers included, since she
-    named the developer herself (The Shang Residence = 31361, 28 Oct 2026).
-    Her name and total units stay; blanks are filled from TEDUH.
+    She names these developers herself (The Shang Residence = 31361, 28 Oct;
+    Majestic PD Township* = SUCCESS GLO 31510, 03 Nov 2026), but "likely" is
+    not "confirmed": a phase found under one becomes a name-match notice on
+    that row -- purple, never auto-added -- so accepting it fills her row and
+    dismissing it changes nothing. Her call, 03 Nov 2026. A claim lapses once
+    the row has a code; later phases are then ordinary finds.
     """
+    out = {}
+    for x in extra:
+        v, label = (x.get("value") or "").strip(), (x.get("label") or "").strip()
+        if not (v.isdigit() and label):
+            continue
+        trackers = {t.strip() for t in (x.get("trackers") or "").split(";") if t.strip()}
+        row = next((p for p in projects
+                    if (p.get("tracker") or "").strip() in trackers
+                    and (p.get("project") or "").strip().upper() == label.upper()
+                    and not (p.get("code") or "").strip()), None)
+        if row is not None:
+            out[v] = (row["tracker"].strip(), row["project"].strip())
+    return out
+
+
+def add_rows(rows, cols, rows_to_add):
+    """Append finds to their developer tracker, in memory. [(code, tracker)]."""
     have = {c.strip() for r in rows for c in (r.get("code") or "").split(",") if c.strip()}
     by_tracker = {}
     for r in rows:
@@ -269,24 +288,6 @@ def add_rows(rows, cols, rows_to_add, claims=None):
     for find in rows_to_add:
         if find["kod_projek"] in have:
             continue
-        sp = split_code(find["kod_projek"])
-        claim = (claims or {}).get(sp[0] if sp else "")
-        if claim:
-            trackers, label = claim
-            row = next((r for r in rows
-                        if (r.get("tracker") or "").strip() in trackers
-                        and (r.get("project") or "").strip().upper() == label.upper()
-                        and not (r.get("code") or "").strip()), None)
-            if row is not None:
-                row["code"] = find["kod_projek"]
-                for col, val in (("developer", find.get("pemaju")),
-                                 ("apdl", find.get("permit_mula")),
-                                 ("total_units", find.get("units"))):
-                    if not (row.get(col) or "").strip() and str(val or "").strip():
-                        row[col] = str(val)
-                have.add(find["kod_projek"])
-                added.append((find["kod_projek"], row["tracker"].strip()))
-                continue
         targets = sorted(t for t in (find.get("trackers") or "").split(";")
                          if t and t not in AREA_TRACKERS and t in by_tracker)
         if not targets:
@@ -382,6 +383,7 @@ def main():
         learn(x.get("value"))
 
     net = {"pause": PAUSE}
+    claims = claimed_rows(extra, projects)
     finds, updated, unreachable = [], 0, 0
 
     # --- 1. walk one past each developer's highest known phase ---
@@ -396,10 +398,16 @@ def main():
             if detail is None:
                 break
             row = detail_row(code, detail)
-            row.update(first_seen=today,
-                       kind="new-phase" if row["permit_mula"] else "registered",
-                       trackers=";".join(sorted(t for t in dev_trackers[kod] if t)),
-                       label=dev_label.get(kod, ""))
+            if kod in claims:
+                # A developer she named for a code-less row: every phase is a
+                # guess for her while the row has no code -- never auto-added.
+                row.update(first_seen=today, kind="name-match",
+                           trackers=claims[kod][0], label=claims[kod][1])
+            else:
+                row.update(first_seen=today,
+                           kind="new-phase" if row["permit_mula"] else "registered",
+                           trackers=";".join(sorted(t for t in dev_trackers[kod] if t)),
+                           label=dev_label.get(kod, ""))
             finds.append(row)
             phase += 1
 
@@ -581,15 +589,7 @@ def main():
     licensed = [f for f in finds if f.get("permit_mula") and str(f.get("units") or "").strip()
                 and f.get("kind") not in GUESS_KINDS]
     licensed += [r for r in state if r.get("kind") == "permit-issued"]
-    # A bare developer code in the extra file whose label names a code-less
-    # row claims that row: its first licensed project fills it.
-    claims = {}
-    for x in extra:
-        v, label = (x.get("value") or "").strip(), (x.get("label") or "").strip()
-        if v.isdigit() and label:
-            claims[v] = ({t.strip() for t in (x.get("trackers") or "").split(";") if t.strip()},
-                         label)
-    added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"), claims)
+    added = [] if dry else auto_add(licensed, os.path.join(ROOT, "projects.csv"))
     for r in finds + state:
         if r["kod_projek"] in added:
             r["kind"] = "added"

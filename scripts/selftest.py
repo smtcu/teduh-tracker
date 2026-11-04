@@ -212,19 +212,28 @@ try:
        f"watch kinds -> {[w['kind'] for w in watch]}")
     AR.apply({"31436-1": "accept", "31999-1": "accept"}, watch, rows, cols)
     ck(len(rows) == 2, "applying the same answers again changes nothing")
-    # A developer code she named for a code-less area row (The Shang
-    # Residence = 31361) fills that row when its first permit lands.
+    # A developer code she named for a code-less row (The Shang Residence =
+    # 31361, Majestic PD Township* = 31510) is a guess for her to confirm:
+    # its phases become name-match notices on that row, never auto-added
+    # (her call, 03 Nov 2026). Accept fills her row; nothing else does.
     rows = [dict(zip(cols, ["status13", "", "13", "THE SHANG RESIDENCE", "",
                             "SHANG HEIGHT REALTY SDN. BHD.", "", "449", ""]))]
+    extra = [{"value": "31361", "label": "The Shang Residence", "trackers": "status13"},
+             {"value": "8763-2", "label": "Ukay Spring (Malton)", "trackers": "ukay"}]
+    claims = WD.claimed_rows(extra, rows)
+    ck(claims == {"31361": ("status13", "THE SHANG RESIDENCE")},
+       f"31361 claims the code-less Shang row, by her row's own name -> {claims}")
+    ck("add_rows" in dir(WD) and "claims" not in WD.add_rows.__code__.co_varnames,
+       "add_rows() has no claim path left -- nothing named by her is auto-filled")
     find = dict(base, kod_projek="31361-1", kod_pemaju="31361", nama="RESIDENSI SHANG",
                 units="450", permit_mula="2026-11-01", trackers="status13")
-    got = WD.add_rows(rows, cols, [find], {"31361": ({"status13"}, "The Shang Residence")})
-    ck(got == [("31361-1", "status13")] and len(rows) == 1 and rows[0]["code"] == "31361-1",
-       f"31361-1 filled the Shang row, no new row -> {got}")
-    ck(rows[0]["total_units"] == "449" and rows[0]["apdl"] == "2026-11-01",
-       "her 449 units kept, permit date filled")
-    ck(WD.add_rows([dict(rows[0], code="")], cols, [find]) == [],
-       "without the claim an area-only find is still never added")
+    ck(WD.add_rows(rows, cols, [find]) == [] and rows[0]["code"] == "",
+       "a licensed 31361-1 is not written into projects.csv by the watch")
+    watch = [dict(find, kind="name-match", label=claims["31361"][1])]
+    AR.apply({"31361-1": "accept"}, watch, rows, cols)
+    ck(len(rows) == 1 and rows[0]["code"] == "31361-1" and rows[0]["total_units"] == "449",
+       "her accept fills the Shang row and keeps her 449 units")
+    ck(WD.claimed_rows(extra, rows) == {}, "the claim lapses once the row has a code")
 except Exception as e:                                     # noqa: BLE001
     ck(False, f"resolution checks failed to run ({e})")
 
@@ -431,6 +440,23 @@ if WPm:
         ck(_seen["teduh_next"] == {"900": 2}, "TEDUH watch: the phase probe remembers 900-2")
     finally:
         WPm.TEDUH_PAUSE, WPm.read = _pause, _read
+
+# Developer sites one level down (3 Nov 2026): the listing pages it follows,
+# and a picture-only project tile matched by its address alone.
+if WPm:
+    _front = [("https://www.brdb.com.my/property", "Property"),
+              ("https://www.brdb.com.my/portfolio/eden", "Eden"),
+              ("https://chinhinproperty.com/properties", "x"),
+              ("https://chinhinproperty.com/properties?category=Nature", "Nature"),
+              ("https://www.brdb.com.my/property/", "again"),
+              ("https://other.example/projects", "agent")]
+    ck(WPm.listing_pages(_front, "www.brdb.com.my") == ["https://www.brdb.com.my/property"],
+       "pre-launch: listing pages are same-site, unfiltered, listed once")
+    _slug = WPm.slug_words("https://www.brdb.com.my/portfolio/damansara-heights-coming-soon")
+    ck(_slug == "damansara-heights-coming-soon".replace("-", " "),
+       "pre-launch: a link's address reads as words")
+    ck(WPm.has(_slug, "damansara heights"),
+       "pre-launch: a text-less tile still matches its no-code row by its address")
 
 # The pre-launch watch must never write projects.csv: adding a project is
 # always her Accept. A cheap guard against a future edit that forgets.
