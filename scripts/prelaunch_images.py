@@ -380,6 +380,10 @@ def main():
             # A site that fills its pictures in later (wikiproperty.my) shows a
             # plain fetch only its placeholder: that is no picture at all.
             pics = [u for u in pics if not re.search(r"placeholder|\.svg(?:$|\?)", u.lower())]
+            # Followed from a page or share link, so not her exact choice: a logo
+            # is still no picture (The Ashbourne's share.google link led to
+            # development-the-ashbourne-logo.gif, 5 Nov 2026).
+            pics = [u for u in pics if not re.search(r"(?<![a-z])logo(?![a-z])|\.gif(?:$|\?)", urllib.parse.unquote(u).lower())]
             if pics:
                 r.update(image=pics[0], status="ok", source="your pick (" + host_of(final) + ")")
             elif html is not None:
