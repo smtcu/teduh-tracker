@@ -3,7 +3,7 @@ name: Pre-launch pictures (test run)
 # A test of scripts/prelaunch_images.py that writes nothing: it lists the
 # building picture it would put on each pre-launch card, and why every other
 # page was not used. The result is the run's Summary page, pictures included.
-# Nothing is committed. Runs when the script changes on a claude/ branch, or
+# Nothing is committed. Also runs when her picks change. Runs when the script changes on a claude/ branch, or
 # from the Actions tab.
 
 on:
@@ -11,6 +11,7 @@ on:
     branches: ['claude/**']
     paths:
       - 'scripts/prelaunch_images.py'
+      - 'data/prelaunch_images_manual.csv'
       - '.github/workflows/prelaunch-images-test.yml'
   workflow_dispatch:
 
