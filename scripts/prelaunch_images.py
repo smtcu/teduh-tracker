@@ -360,8 +360,13 @@ def main():
             html, final = net.page(url, "her pick")
             pics = [urllib.parse.urljoin(final, v) for k in ("og:image:secure_url", "og:image", "twitter:image")
                     for v in (meta_tags(html).get(k, []) if html else [])]
+            # A site that fills its pictures in later (wikiproperty.my) shows a
+            # plain fetch only its placeholder: that is no picture at all.
+            pics = [u for u in pics if not re.search(r"placeholder|\.svg(?:$|\?)", u.lower())]
             if pics:
                 r.update(image=pics[0], status="ok", source="your pick (" + host_of(final) + ")")
+            elif html is not None:
+                r["reason"] = "page shows only a placeholder: copy the picture's own address instead"
             else:
                 r["reason"] = "page did not load" if html is None else "page has no preview picture"
         if r["image"] and image_id(r["image"]) in gone:
