@@ -790,6 +790,9 @@ html[data-theme="dark"] tr.found td{animation-name:rowglowd}
 .wnrow.check b.plnm{color:var(--ink)}
 .plnewmore{margin-top:6px;font-weight:500}
 .plnewmore[hidden]{display:none}
+.wnrow.plextra{display:none}
+#plnew.plall .wnrow.plextra{display:block}
+.plnewtog{align-self:flex-start;border:1.5px dashed var(--check);background:transparent;border-radius:9px;font:inherit;font-size:12.5px;font-weight:700;color:var(--check);padding:7px 12px;cursor:pointer}
 .plnewmore .plfacts{margin:0 0 4px;padding-left:18px}
 .plnewsrc{color:var(--muted)}
 .wnrow b{font-weight:750}
@@ -821,7 +824,10 @@ svg{display:block;overflow:visible}
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
 th,td{padding:9px 11px;text-align:right;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);white-space:nowrap;font-weight:600}
 th{color:var(--ink-2);font-weight:750;font-size:11.5px;letter-spacing:.02em;background:var(--sunk);position:sticky;top:0;z-index:3}
-th.r2{top:34px}
+/* Row 2 of the header sticks right under row 1. Its height changes with
+   font size and zoom, so table() measures it into --r1h; 34px was right on
+   desktop but left a 3px slit on phones that rows showed through. */
+th.r2{top:var(--r1h,34px)}
 th.l,td.l{text-align:left}
 td.nm{font-weight:700;color:var(--ink)}
 .grpcell{background:var(--sunk);font-weight:800;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);border-right:0}
@@ -895,7 +901,7 @@ tr:last-child td{border-bottom:0}
 .tip .key{width:14px;height:3px;border-radius:2px;flex:none}
 
 .sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px}
-.smc{padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--surface)}
+.smc{min-width:0;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--surface)}
 .smc .t{font-size:12.5px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .smc .m{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums;font-weight:650}
 .sel{display:none;width:100%;font:inherit;font-weight:650;color:var(--ink);background:var(--surface);
@@ -959,7 +965,9 @@ tr.soldout td{color:var(--muted)}
 tr.morerow td{padding:8px 10px;background:var(--sunk);border-right:0}
 tr.morerow .ghost{font-size:12px;padding:5px 11px}
 .pn .toptag,.smc .t .toptag,.ins h3 .toptag{vertical-align:middle}
-.ins th.best,.ins td.best{background:var(--hl)}
+.ins td.best{background:var(--hl)}
+/* Sticky header: opaque base plus the tint, or rows show through it. */
+.ins th.best{background-color:var(--sunk);background-image:linear-gradient(var(--hl),var(--hl))}
 .ins th.best{color:var(--blue)}
 .ins th.best .toptag{margin-left:5px;vertical-align:1px}
 .toptag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:20px;background:transparent;
@@ -991,7 +999,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   .card{padding:14px;border-radius:12px}
   .kpis{grid-template-columns:repeat(2,1fr);gap:9px}
   .kpi{padding:12px 13px} .kpi .v{font-size:25px} .hero .v{font-size:32px}
-  .sm{grid-template-columns:1fr 1fr;gap:8px}
+  .sm{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   table{font-size:12.5px} th,td{padding:8px 9px}
   th,td{padding:7px 7px}
   .stick{width:26px;min-width:26px}
@@ -1009,13 +1017,51 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   .stick4{left:112px}
   tr.noterow{display:table-row}
   tr.noterow td{background:var(--sunk);border-right:0;padding:0}
-  tr.noterow .notebox{position:sticky;left:0;width:calc(100vw - 46px);
+  tr.noterow .notebox{position:sticky;left:0;width:calc((100vw - 46px) / var(--z,1));
     white-space:normal;line-height:1.35;font-size:11.5px;font-weight:600;
     color:var(--ink-2);padding:7px 10px;box-sizing:border-box}
   tr.noterow .notebox b{font-weight:750;color:var(--muted);letter-spacing:.04em;font-size:10px}
   th{font-size:10.5px;letter-spacing:.01em}
   .sel{display:block} .chips{display:none}
   .scroll.tall{max-height:64vh}
+}
+/* Phone layouts for the weekly tracker: Cards (one project per card, every
+   week one tap away) or the Table, which can be zoomed out to fit more weeks.
+   Desktop never sees the switch. */
+.seg{display:inline-flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;flex:none}
+.seg button{border:0;background:var(--surface);font:inherit;font-size:12.5px;font-weight:700;
+  color:var(--ink-2);padding:7px 12px;min-height:38px;cursor:pointer}
+.seg button+button{border-left:1.5px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+#pcards{display:none}
+.tbar .vonly{display:none}
+.pgrp{font-weight:800;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);margin:16px 2px 7px}
+.pgrp:first-child{margin-top:2px}
+.pcard{border:1.5px solid var(--rule);border-radius:12px;background:var(--surface);padding:11px 12px 10px;margin-bottom:10px}
+.pcard.pinned{border-color:var(--blue);background:var(--pinbg)}
+.pcard.focused{border-color:var(--orange);box-shadow:0 0 0 1.5px var(--orange) inset}
+.pcard.soldout .pcn,.pcard.soldout td{color:var(--muted)}
+.pch{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pcn{font-weight:750;font-size:14.5px;line-height:1.3;color:var(--ink)}
+.pcu{flex:none;font-size:12px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.pcm{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px;line-height:1.35}
+table.pct{margin-top:9px;border:1px solid var(--grid);border-radius:9px;overflow:hidden;font-size:12.5px}
+table.pct th{position:static;padding:6px 9px;font-size:10.5px}
+table.pct td{padding:7px 9px}
+table.pct tr:last-child td{border-bottom:0}
+table.pct td.l{font-weight:700;color:var(--ink-2)}
+table.pct tr.live td.l{color:var(--orange)}
+.pcmore{display:block;width:100%;margin-top:8px;border:1.5px dashed var(--rule);background:transparent;
+  border-radius:9px;font:inherit;font-size:12.5px;font-weight:700;color:var(--blue);padding:8px;cursor:pointer}
+.pcnote{margin-top:8px;font-size:11.5px;line-height:1.38;font-weight:600;color:var(--ink-2)}
+.pcnote b{font-weight:750;color:var(--muted);letter-spacing:.04em;font-size:10px}
+.pcall{display:block;width:100%;margin-top:4px}
+@media(max-width:640px){
+  .tbar .vonly{display:inline-flex}
+  .tbar{align-items:center}
+  #table table{zoom:var(--z,1)}
+  #sec-table.cardmode #table,#sec-table.cardmode #zseg,#sec-table.cardmode #cols{display:none}
+  #sec-table.cardmode #pcards{display:block}
 }
 @media print{.ghost,.chips,.tip{display:none!important}.card{break-inside:avoid;box-shadow:none}}
 /* Pre-launch view: every tracker row with no TEDUH code, and what the
@@ -1118,8 +1164,13 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   <h2>Weekly tracker</h2>
   <p class="note" id="tblnote"></p>
   <div class="watchnote" id="watchnote" hidden></div>
-  <div class="tbar"><button class="ghost" id="cols">Show all columns</button></div>
+  <div class="tbar">
+    <div class="seg vonly" id="vseg"><button data-v="table">Table</button><button data-v="cards">Cards</button></div>
+    <div class="seg vonly" id="zseg"><button data-z="1">100%</button><button data-z="0.75">75%</button><button data-z="0.55">55%</button></div>
+    <button class="ghost" id="cols">Show all columns</button>
+  </div>
   <div class="scroll tall" id="table"></div>
+  <div id="pcards"></div>
 </div>
 
 <div class="card" id="sec-weekly">
@@ -1537,16 +1588,119 @@ function table() {
   }
   tb.appendChild(bd); host.appendChild(tb);
   host.classList.toggle('compact', compact);
-  /* The header is two rows of variable height, so measure it rather than guess. */
-  requestAnimationFrame(() => {
-    const head = tb.querySelector('thead');
-    const row = tb.querySelector('tr.pinned');
-    if (head && row) {
-      const top = head.getBoundingClientRect().height;
-      row.querySelectorAll('td').forEach(td => { td.style.top = top + 'px'; });
-    }
-  });
+  cards(weeks, live);
+  requestAnimationFrame(fixHead);
 }
+
+/* The header is two rows of variable height (and the table can be zoomed on
+   phones), so measure it rather than guess. Row 2 sticks under row 1 and the
+   pinned row under both. Floored, so the rows overlap by a hair instead of
+   leaving a slit that scrolling rows show through. */
+function fixHead() {
+  const tb = $('#table table'); if (!tb) return;
+  const r1 = tb.querySelector('thead tr'), head = tb.querySelector('thead');
+  if (!r1 || !r1.getBoundingClientRect().height) return;   // hidden (Cards view)
+  const z = parseFloat(getComputedStyle(tb).zoom) || 1;
+  tb.style.setProperty('--r1h', Math.floor(r1.getBoundingClientRect().height / z) + 'px');
+  const top = Math.floor(head.getBoundingClientRect().height / z);
+  tb.querySelectorAll('tr.pinned td').forEach(td => { td.style.top = top + 'px'; });
+}
+
+/* Phone Cards view: the same rows, order, group headers and Top-view folding
+   as the table, one card per project. Today and the newest week show; the
+   rest of the weekly record is one tap away, newest first. */
+function cards(weeks, live) {
+  const host = $('#pcards'); host.textContent = '';
+  let section = null, nMore = 0;
+  vis().forEach(p => {
+    if (p.group && p.group !== section) { section = p.group; host.appendChild(el('div', 'pgrp', section)); }
+    const folded = topOnly && !p.top && pkey(p) !== FOCUS;
+    const c = el('div', 'pcard' + (p.pin ? ' pinned' : '') + (soldOut(p) ? ' soldout' : '')
+                        + (FOCUS && pkey(p) === FOCUS ? ' focused' : ''));
+    if (folded) { c.classList.add('more'); if (!tableMore) c.classList.add('hide'); nMore++; }
+    c.dataset.proj = p.code || ('NOCODE-' + p.name);
+    const hd = el('div', 'pch'), nm = el('div', 'pcn', p.name);
+    if (p.top) nm.appendChild(el('span', 'toptag', '#' + p.rank));
+    if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
+    hd.appendChild(nm); hd.appendChild(el('div', 'pcu', nf(p.units) + ' units'));
+    c.appendChild(hd);
+    const meta = [p.apdl ? 'APDL ' + fdate(p.apdl) : '', p.codeDisp || p.code || '', p.developer || '']
+      .filter(Boolean).join(' · ');
+    if (meta) c.appendChild(el('div', 'pcm', meta));
+
+    const map = {}; p.weekly.forEach(s => map[s.d] = s.v);
+    const delta = {}; let prev = null;
+    DATA.weeks.forEach(d => {
+      const v = map[d]; if (v === undefined) return;
+      if (prev !== null) delta[d] = v - prev;
+      prev = v;
+    });
+    const t = el('table', 'pct'), hr = el('tr'), b = el('tbody');
+    ['', 'NEW', 'SOLD', '%'].forEach((h, i) => hr.appendChild(el('th', i ? '' : 'l', h)));
+    const th = el('thead'); th.appendChild(hr); t.appendChild(th);
+    const row = (label, cls, nw, sold, seed) => {
+      const r = el('tr', cls);
+      r.appendChild(el('td', 'l', label));
+      r.appendChild(el('td', '', nw));
+      const sc = el('td', '', sold === null ? '' : nf(sold));
+      if (seed) { sc.classList.add('seed'); sc.title = 'Seeded from today’s reading — this tracker has no weekly record yet.'; }
+      r.appendChild(sc);
+      r.appendChild(el('td', '', (sold === null || !p.units) ? '' : pf(sold / p.units)));
+      b.appendChild(r); return r;
+    };
+    if (live) row('Today ' + fdate(DATA.todayDate, true), 'live',
+                  p.todayNew === null || p.todayNew === undefined ? '' : sgn(p.todayNew),
+                  p.todaySold === null || p.todaySold === undefined ? null : p.todaySold);
+    weeks.forEach((d, i) => {
+      const v = map[d] === undefined ? null : map[d];
+      if (v === null && i > 0) return;          // no record that week: nothing to show
+      row(fdate(d, true), i === 0 ? 'new' : 'older hide', delta[d] === undefined ? '' : sgn(delta[d]),
+          v, p.seeded && v !== null);
+    });
+    t.appendChild(b); c.appendChild(t);
+    const older = b.querySelectorAll('tr.older'), n = older.length;
+    if (n) {
+      const lab = open => (open ? 'Hide ' : 'Show ') + n + ' earlier week' + (n > 1 ? 's' : '');
+      const btn = el('button', 'pcmore', lab(false));
+      btn.onclick = () => {
+        const open = btn.classList.toggle('open');
+        older.forEach(r => r.classList.toggle('hide', !open));
+        btn.textContent = lab(open);
+      };
+      c.appendChild(btn);
+    }
+    const noteText = (p.remarks || '').trim();
+    if (noteText && noteText !== '-') {
+      const nb = el('div', 'pcnote'); nb.appendChild(el('b', '', 'NOTE '));
+      nb.appendChild(document.createTextNode(noteText)); c.appendChild(nb);
+    }
+    host.appendChild(c);
+  });
+  if (nMore) {
+    const mb = el('button', 'ghost pcall', (tableMore ? 'Hide ' : 'Show ') + nMore + ' more project' + (nMore > 1 ? 's' : ''));
+    mb.onclick = () => { tableMore = !tableMore; table(); };
+    host.appendChild(mb);
+  }
+}
+
+/* Phone view (Cards or Table) and table zoom, remembered on this device. */
+/* Table is the first view (her call, 5 Nov 2026); Cards is one tap away.
+   New storage key so a phone that tried Cards in the first draft starts on
+   Table too. */
+let pview = 'table', tzoom = 1;
+try { pview = localStorage.getItem('teduh.pview2') || 'table'; tzoom = +(localStorage.getItem('teduh.tzoom') || 1) || 1; } catch (e) {}
+function applyView() {
+  $('#sec-table').classList.toggle('cardmode', pview === 'cards');
+  $('#vseg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === pview)));
+  $('#zseg').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.z === tzoom)));
+  $('#table').style.setProperty('--z', tzoom);
+  try { localStorage.setItem('teduh.pview2', pview); localStorage.setItem('teduh.tzoom', tzoom); } catch (e) {}
+  requestAnimationFrame(fixHead);
+}
+$('#vseg').onclick = e => { const v = e.target.dataset && e.target.dataset.v; if (v) { pview = v; applyView(); } };
+$('#zseg').onclick = e => { const z = e.target.dataset && e.target.dataset.z; if (z) { tzoom = +z; applyView(); } };
+applyView();
+addEventListener('resize', () => requestAnimationFrame(fixHead));
 
 /* Narrow screens start compact so the newest week's numbers are visible without scrolling. */
 let compact = innerWidth < 640;
@@ -2183,6 +2337,7 @@ $('#foot').textContent = 'Generated ' + DATA.generated +
 /* ---------- Pre-launch: tracker rows with no TEDUH code ---------- */
 const PL = DATA.prelaunch || { stages: [], rows: [], newInArea: [] };
 let plFilter = 'all';
+let plNewAll = false;  // all the purple Check banners, or only the first few
 let plFocus = '';     // a row a "Seen:" link asked for, outlined and scrolled to once
 const plSeen = key => PL.rows.filter(r => r.trackers.includes(key) && r.latest);
 function stagePill(stage) {
@@ -2263,9 +2418,14 @@ function prelaunchView() {
   }
   const nw = $('#plnew'); nw.textContent = '';
   const open = PL.newInArea.filter(f => f.status !== 'accepted');
-  open.forEach(f => {
+  /* Only the first PLNEW_SHOW checks show; the rest sit behind one toggle
+     (her call, 5 Nov 2026: fifteen purple banners pushed the cards off
+     screen). A banner opened from a link stays visible either way. */
+  const PLNEW_SHOW = 3;
+  open.forEach((f, i) => {
     const area = plArea(f);
-    const row = el('div', 'wnrow check' + (plFocus === 'find:' + f.id ? ' plfocus' : ''));
+    const focused = plFocus === 'find:' + f.id;
+    const row = el('div', 'wnrow check' + (focused ? ' plfocus' : '') + (i >= PLNEW_SHOW && !focused ? ' plextra' : ''));
     row.appendChild(el('b', '', 'Check: '));
     /* One short line -- the project and developer in bold -- and the rest
        behind "See more" (her call, 3 Nov 2026: the whole note was too long). */
@@ -2296,6 +2456,14 @@ function prelaunchView() {
     row.appendChild(more);
     nw.appendChild(row);
   });
+  const nExtra = nw.querySelectorAll('.plextra').length;
+  nw.classList.toggle('plall', plNewAll);
+  if (nExtra) {
+    const tog = el('button', 'plnewtog', plNewAll ? 'Show fewer' : 'Show ' + nExtra + ' more to check');
+    tog.onclick = () => { plNewAll = !plNewAll; nw.classList.toggle('plall', plNewAll);
+      tog.textContent = plNewAll ? 'Show fewer' : 'Show ' + nExtra + ' more to check'; };
+    nw.appendChild(tog);
+  }
   nw.hidden = !open.length;
 
   const lad = $('#plladder'); lad.textContent = '';

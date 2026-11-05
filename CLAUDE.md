@@ -629,6 +629,17 @@ that sticky on a `<td>` with a large `colspan` does not keep contents in view â€
 inner div has to be the sticky element. On screens under 640px the Remarks and `#`
 columns are hidden and the note moves to its own row.
 
+Since 05 Nov 2026 a phone has two layouts for the weekly tracker, switched by a
+**Table | Cards** button above it (phones only): **Table first** (her call), with
+a 100 / 75 / 55% zoom; Cards is one card per project with Today and the newest
+week, the rest one tap away. The choice is remembered per device
+(`teduh.pview2`). Row 2 of the sticky header is measured into `--r1h` by
+`fixHead()`, because a fixed 34px left a slit on phones. The cumulative small
+multiples use `minmax(0,1fr)` columns: plain `1fr` let nowrap titles push the
+whole page wider than the phone. Pre-launch shows the first 3 purple Check
+banners and folds the rest behind "Show N more to check". `docs/mobile-draft.html`
+is the static draft these came from; it is not rebuilt by the daily run.
+
 ## Practical constraints
 
 Samantha often works from an iPad, editing files directly in the GitHub web UI.
