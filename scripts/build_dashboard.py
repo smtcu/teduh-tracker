@@ -1042,6 +1042,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 /* The close button sits over the picture rather than beside it: a float would
    narrow the card and leave the picture short of the right edge. */
 #pldlg .plx{float:none;display:block;margin:10px 12px -44px auto}
+.plimg.pllogo{object-fit:contain;padding:18px 28px;background:var(--surface);border-bottom:1px solid var(--grid)}
 .plpic{font-size:11.5px;font-weight:600;color:var(--muted);margin-top:-4px}
 .plpic a{color:var(--muted)}
 .plhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -2365,6 +2366,7 @@ function plCard(r, full) {
     const im = el('img', 'plimg');
     im.loading = 'lazy'; im.decoding = 'async'; im.alt = ''; im.referrerPolicy = 'no-referrer';
     im.onerror = () => { im.remove(); const cr = c.querySelector('.plpic'); if (cr) cr.remove(); };
+    if (/(^|[^a-z])logo([^a-z]|$)/i.test(decodeURIComponent(r.image.src))) im.classList.add('pllogo');   // her Sapphire Springs pick
     im.src = r.image.src;
     c.appendChild(im);
   }
