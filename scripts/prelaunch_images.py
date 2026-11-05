@@ -127,6 +127,7 @@ class Net:
         raw, r = self._open(req, label, 3_000_000)
         if raw is None:
             return None, url
+        self.last_type = (r.headers.get_content_type() or "").lower()
         return raw.decode(r.headers.get_content_charset() or "utf-8", "replace"), r.geturl()
 
     def head_bytes(self, url, label):
@@ -362,6 +363,18 @@ def main():
             r.update(image=url, status="ok")
         else:
             html, final = net.page(url, "her pick")
+            # A share link (share.google/...) is followed to wherever it leads:
+            # the picture itself, or a Google page naming it (imgurl=...).
+            q = urllib.parse.parse_qs(urllib.parse.urlsplit(final).query)
+            if html is not None and getattr(net, "last_type", "").startswith("image/"):
+                html = '<meta property="og:image" content="%s">' % htmlmod.escape(final)
+            elif html is not None and q.get("imgurl"):
+                html = '<meta property="og:image" content="%s">' % htmlmod.escape(q["imgurl"][0])
+            elif html is not None and "google." in host_of(final):
+                # A Google page with the picture somewhere in it: its first large picture address.
+                m = re.search(r'https://[^"\'\s<>]+?\.(?:jpe?g|png|webp)(?:\?[^"\'\s<>]*)?', html)
+                if m and "gstatic" not in m.group(0):
+                    html = '<meta property="og:image" content="%s">' % htmlmod.escape(htmlmod.unescape(m.group(0)))
             pics = [urllib.parse.urljoin(final, v) for k in ("og:image:secure_url", "og:image", "twitter:image")
                     for v in (meta_tags(html).get(k, []) if html else [])]
             # A site that fills its pictures in later (wikiproperty.my) shows a
