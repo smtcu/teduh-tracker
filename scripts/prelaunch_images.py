@@ -225,16 +225,26 @@ def load_check(url):
     """How a picture answers a browser on another site: 'loads (type, WxH)' or why not.
     Asked twice, as the site sends it (no referrer) and as a plain browser."""
     out = []
+    safari = ("Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 "
+              "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1")
     for label, headers in (("no referrer", {"User-Agent": UA, "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"}),
+                           ("iPad Safari", {"User-Agent": safari, "Accept": "image/webp,image/avif,image/*,*/*;q=0.8",
+                                            "Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "no-cors",
+                                            "Sec-Fetch-Dest": "image"}),
                            ("as a browser on another site", {"User-Agent": UA, "Accept": "image/*",
                                                   "Referer": "https://teduh-tracker.pages.dev/",
                                                   "Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "no-cors",
                                                   "Sec-Fetch-Dest": "image"})):
         try:
-            req = urllib.request.Request(url, headers=dict(headers, Range="bytes=0-65535"))
+            # The whole file, as a browser asks for it (no Range): a server can
+            # answer a part request and a whole one differently.
+            req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-                b = r.read(65536)
+                b = r.read(8_000_000)
                 ctype = r.headers.get_content_type()
+                if r.geturl() != url:
+                    ctype += " via " + r.geturl()[:90]
+                ctype += f" {len(b) // 1024}KB"
             wh = size_of(b)
             # Headers a browser obeys and a server fetch does not: they can stop
             # a picture showing on another site even though it downloads fine.
