@@ -11,6 +11,10 @@ Her rules (5 Nov 2026):
   * stored as a link to the picture on the source site; nothing is copied.
 
 Where a picture comes from, best first:
+  0. her own picks in data/prelaunch_images_manual.csv -- a picture's own
+     address, used as it is, or a page, whose preview picture is used. Her
+     choice, so none of the rules below apply (5 Nov 2026: Aetas Taman Desa
+     from wikiproperty.my, THE SHANG RESIDENCE's render);
   1. the project's official pages in data/prelaunch_pages.csv (kind
      "official" -- Ukay Spring's ukayspring.com.my, BRDB's coming-soon page);
   2. finds in data/prelaunch_finds.csv (not dismissed, not weak) whose page is
@@ -55,6 +59,7 @@ PROJECTS = os.path.join(ROOT, "projects.csv")
 SOURCES = os.path.join(ROOT, "prelaunch_sources.csv")
 FINDS = os.path.join(ROOT, "data", "prelaunch_finds.csv")
 PAGES = os.path.join(ROOT, "data", "prelaunch_pages.csv")
+MANUAL = os.path.join(ROOT, "data", "prelaunch_images_manual.csv")   # her own picks, which always win
 IMAGES = os.path.join(ROOT, "data", "prelaunch_images.csv")
 REMOVED = os.path.join(ROOT, "data", "prelaunch_images_removed")
 FIELDS = ["tracker", "project", "page", "source", "kind", "image", "width", "height",
@@ -341,6 +346,28 @@ def main():
     gone = removed_ids()
     net = Net(args.budget)
     rows, used = [], {}
+    for m in read(MANUAL):
+        key = ((m.get("tracker") or "").strip(), (m.get("project") or "").strip())
+        url = (m.get("url") or "").strip()
+        if not url.startswith("https://"):
+            continue
+        r = {"tracker": key[0], "project": key[1], "page": url, "source": "your pick",
+             "kind": "her pick", "image": "", "width": "", "height": "", "status": "rejected",
+             "reason": "", "checked": today}
+        if re.search(r"\.(jpe?g|png|webp|avif)(?:$|\?)", urllib.parse.urlsplit(url).path.lower() + "?"):
+            r.update(image=url, status="ok")
+        else:
+            html, final = net.page(url, "her pick")
+            pics = [urllib.parse.urljoin(final, v) for k in ("og:image:secure_url", "og:image", "twitter:image")
+                    for v in (meta_tags(html).get(k, []) if html else [])]
+            if pics:
+                r.update(image=pics[0], status="ok", source="your pick (" + host_of(final) + ")")
+            else:
+                r["reason"] = "page did not load" if html is None else "page has no preview picture"
+        if r["image"] and image_id(r["image"]) in gone:
+            r.update(image="", status="rejected", reason="removed by her")
+        old.pop(url, None)
+        rows.append(r)
     for key, kind, f in candidates():
         page_url = clean_url(f["url"])
         if page_url in old:
@@ -383,7 +410,7 @@ def main():
         if r["status"] == "ok":
             owners.setdefault(r["image"], set()).add((r["tracker"], r["project"]))
     for r in rows:
-        if r["status"] == "ok" and len(owners[r["image"]]) > 1:
+        if r["status"] == "ok" and r["kind"] != "her pick" and len(owners[r["image"]]) > 1:
             r.update(status="rejected", reason="same picture used for several projects")
 
     chosen = {}
