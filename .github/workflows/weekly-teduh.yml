@@ -26,10 +26,14 @@ on:
   # A file in data/teduh_watch_resolved/ is her answer to a purple "Check:"
   # notice on the site (see scripts/apply_resolutions.py); it refreshes too.
   # So is a file in data/prelaunch_resolved/ -- her Accept / Dismiss on a
-  # pre-launch find (scripts/apply_prelaunch_resolutions.py).
+  # pre-launch find (scripts/apply_prelaunch_resolutions.py). And a file in
+  # data/prelaunch_images_removed/ -- her "Wrong picture? Remove" on a
+  # pre-launch card -- so the picture goes at once. Neither changes a code,
+  # so the decide step below only rebuilds.
   push:
     branches: [main]
-    paths: ["projects.csv", "data/teduh_watch_resolved/**", "data/prelaunch_resolved/**"]
+    paths: ["projects.csv", "data/teduh_watch_resolved/**", "data/prelaunch_resolved/**",
+            "data/prelaunch_images_removed/**"]
   workflow_dispatch:        # the Cloudflare Worker, or you from the Actions tab
     inputs:
       # "Rebuild the site only" skips everything that talks to TEDUH (the

@@ -10,16 +10,23 @@ Her rules (5 Nov 2026):
   * the whole building, not a logo.
   * stored as a link to the picture on the source site; nothing is copied.
 
-Where a picture comes from: the finds already in data/prelaunch_finds.csv for
-that row (not dismissed, not weak). A find counts when its page is on one of
-the developer websites in prelaunch_sources.csv (and is not the front page,
-whose picture is the company's, not the project's), or when it is a news
-story from one of NEWS_OUTLETS. A Google News link is first turned into the
-article's own address.
+Where a picture comes from, best first:
+  1. the project's official pages in data/prelaunch_pages.csv (kind
+     "official" -- Ukay Spring's ukayspring.com.my, BRDB's coming-soon page);
+  2. finds in data/prelaunch_finds.csv (not dismissed, not weak) whose page is
+     on a developer website in prelaunch_sources.csv -- not its front page,
+     whose picture is the company's, not the project's;
+  3. finds that are news stories from one of NEWS_OUTLETS. A Google News link
+     is first turned into the article's own address. The story must name the
+     project in its headline or summary (the LBS awards story found for
+     Sherwood did not), and a headline about an event -- an award, an opening
+     ceremony -- is skipped: its picture is people, not the building.
 
 The picture is the page's own preview picture (og:image / twitter:image) --
 the one the site chose to show when the page is shared. It is kept only if:
-  * its address and description carry none of LOGO_WORDS (logo, icon, ...);
+  * its address and description carry none of LOGO_WORDS (logo, icon, ...)
+    and none of EVENT_WORDS (ceremony, opening, award, ... -- The Eclipse's
+    "grandopeningceremony" picture, 5 Nov 2026);
   * it is a photo format (not .svg / .gif / .ico);
   * it is at least MIN_WIDTH pixels wide, read from the page's tags or from
     the first bytes of the picture itself;
@@ -41,12 +48,13 @@ import urllib.error, urllib.parse, urllib.request
 from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from watch_prelaunch import read, clean_url, UA, PAUSE, TIMEOUT  # noqa: E402
+from watch_prelaunch import read, clean_url, simple, has, UA, PAUSE, TIMEOUT  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECTS = os.path.join(ROOT, "projects.csv")
 SOURCES = os.path.join(ROOT, "prelaunch_sources.csv")
 FINDS = os.path.join(ROOT, "data", "prelaunch_finds.csv")
+PAGES = os.path.join(ROOT, "data", "prelaunch_pages.csv")
 IMAGES = os.path.join(ROOT, "data", "prelaunch_images.csv")
 REMOVED = os.path.join(ROOT, "data", "prelaunch_images_removed")
 FIELDS = ["tracker", "project", "page", "source", "kind", "image", "width", "height",
@@ -62,8 +70,17 @@ NEWS_OUTLETS = ["edgeprop", "the edge malaysia", "the edge markets", "the star",
 NEWS_HOSTS = ["edgeprop.my", "theedgemalaysia.com", "thestar.com.my", "starproperty.my", "nst.com.my",
               "malaymail.com", "bernama.com", "themalaysianreserve.com", "freemalaysiatoday.com",
               "thesun.my"]
+# Whole words in a picture's address or description. Not "brand": EdgeProp's
+# Selayang Mulia render was turned down for it on the first test run.
 LOGO_WORDS = ["logo", "icon", "favicon", "avatar", "profile", "placeholder", "default", "sprite",
-              "qr", "whatsapp", "brand", "badge", "author", "columnist", "headshot"]
+              "qr", "whatsapp", "badge", "author", "columnist", "headshot"]
+# Anywhere in a picture's address or description, run-together names included
+# ("theeclipsegrandopeningceremonythumb"): the picture is an event, not a building.
+EVENT_WORDS = ["ceremony", "opening", "award", "signing", "groundbreaking", "ground-breaking",
+               "handover", "gala", "launchingevent", "prize"]
+# Whole words in a news headline that make the story an event, not the project.
+EVENT_HEADLINE = ["award", "awards", "recognised", "recognized", "ceremony", "opening ceremony",
+                  "signing", "mou", "groundbreaking", "ground-breaking", "handover", "gala", "accolade"]
 
 
 def image_id(url):
@@ -198,6 +215,29 @@ def size_of(b):
     return None
 
 
+def headline_of(html):
+    tags = meta_tags(html)
+    title = (tags.get("og:title") or tags.get("twitter:title") or [""])[0]
+    if not title:
+        m = re.search(r"(?is)<title[^>]*>(.*?)</title>", html)
+        title = htmlmod.unescape(re.sub(r"\s+", " ", m.group(1))).strip() if m else ""
+    desc = " ".join(tags.get("og:description", []) + tags.get("description", []))
+    return title, desc
+
+
+def news_reason(html, project):
+    """Why a news story's picture cannot be the project's, or ''."""
+    title, desc = headline_of(html)
+    low = title.lower()
+    ev = next((w for w in EVENT_HEADLINE if has(low, w)), None)
+    if ev:
+        return f"headline is about an event ('{ev}'): {title[:90]}"
+    name = simple(project).lower()
+    if name and not has((title + " " + desc).lower(), name):
+        return f"story does not name {simple(project)}: {title[:90]}"
+    return ""
+
+
 def judge(net, html, page_url):
     """(image, width, height, '') for an acceptable picture, or ('', 0, 0, reason)."""
     tags = meta_tags(html)
@@ -217,6 +257,10 @@ def judge(net, html, page_url):
                      or re.search(r"(?<![a-z])" + w + r"(?![a-z])", alt)), None)
         if word:
             why.append(f"'{word}' in its name")
+            continue
+        ev = next((w for w in EVENT_WORDS if w in low or w in alt), None)
+        if ev:
+            why.append(f"an event picture ('{ev}' in its name)")
             continue
         if re.search(r"\.(svg|gif|ico)(?:$|\?)", low):
             why.append("not a photo format")
@@ -251,6 +295,12 @@ def candidates():
     nocode = {(p["tracker"].strip(), p["project"].strip()) for p in projects if not (p.get("code") or "").strip()}
     dev_hosts = {host_of(s["url"]) for s in read(SOURCES) if s.get("kind") == "developer"}
     out = []
+    for pg in read(PAGES):
+        key = ((pg.get("tracker") or "").strip(), (pg.get("project") or "").strip())
+        if key in nocode and (pg.get("kind") or "").strip() == "official" and pg.get("url"):
+            f = {"url": pg["url"], "source": "official site " + (pg.get("label") or host_of(pg["url"])),
+                 "seen": pg.get("first_seen") or "", "confidence": "strong"}
+            out.append(((-1, 0), f["seen"], key, "official", f))
     for f in read(FINDS):
         key = ((f.get("tracker") or "").strip(), (f.get("project") or "").strip())
         url = (f.get("url") or "").strip()
@@ -313,7 +363,10 @@ def main():
             r["reason"] = "page did not load"
             rows.append(r)
             continue
-        img, w, h, why = judge(net, html, final)
+        why = news_reason(html, key[1]) if kind == "news" else ""
+        img, w, h = "", 0, 0
+        if not why:
+            img, w, h, why = judge(net, html, final)
         r["source"] = r["source"] + (f" ({host_of(final)})" if kind == "news" else "")
         if img and image_id(img) in gone:
             img, why = "", "removed by her"

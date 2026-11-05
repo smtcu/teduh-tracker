@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import apply_prelaunch_resolutions as PR      # the find-id recipe her answers use
+import prelaunch_images as PI                 # the picture-id recipe her "Remove" uses
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(ROOT, "docs")
@@ -284,6 +285,12 @@ def prelaunch(projects):
         r["keys"].append(key(p["tracker"], name))
 
     owner = {k: r for r in rows for k in r["keys"]}
+    images = [{"key": key(i.get("tracker"), i.get("project")), "src": (i.get("image") or "").strip(),
+               "page": (i.get("page") or "").strip(), "source": (i.get("source") or "").strip(),
+               "id": PI.image_id((i.get("image") or "").strip())}
+              for i in read("data/prelaunch_images.csv")
+              if (i.get("status") or "").strip() == "ok" and (i.get("image") or "").startswith("https://")]
+    removed_pics = PI.removed_ids()
     stage_rank = {s.lower(): i for i, s in enumerate(STAGES)}
 
     def find_of(f):
@@ -346,6 +353,13 @@ def prelaunch(projects):
             top["note"] = "; ".join(facts)
         r["latest"] = top
         r["stageRank"] = stage_rank.get(best["stage"].lower(), -1) if best else -1
+        # One building picture, linked to the source site, never copied
+        # (scripts/prelaunch_images.py; her rules, 5 Nov 2026). The file is in
+        # best-first order; one she removed is skipped here too, so the next
+        # rebuild drops it without waiting for the watch.
+        pic = next((i for i in images if i["key"] in r["keys"] and i["id"] not in removed_pics), None)
+        if pic:
+            r["image"] = {k: pic[k] for k in ("src", "page", "source", "id")}
         del r["keys"]
     # Stable sorts, least important first: area trackers before developer
     # ones, then newest sign of life, then furthest stage, and anything seen
@@ -1022,6 +1036,14 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 .plcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
   display:flex;flex-direction:column;gap:9px;box-shadow:var(--shadow);min-width:0}
 .plcard.plfocus,.plq.plfocus,.wnrow.plfocus{outline:2px solid var(--blue);outline-offset:2px}
+.plimg{display:block;width:calc(100% + 32px);max-width:none;margin:-16px -16px 2px;aspect-ratio:16/9;object-fit:cover;
+  border-radius:12px 12px 0 0;background:var(--sunk)}
+#pldlg .plimg{width:calc(100% + 48px);margin:-24px -24px 4px;border-radius:0}
+/* The close button sits over the picture rather than beside it: a float would
+   narrow the card and leave the picture short of the right edge. */
+#pldlg .plx{float:none;display:block;margin:10px 12px -44px auto}
+.plpic{font-size:11.5px;font-weight:600;color:var(--muted);margin-top:-4px}
+.plpic a{color:var(--muted)}
 .plhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .plhead h3{margin:0;font-size:16.5px;font-weight:780;line-height:1.25;color:var(--ink)}
 .pltrk{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap}
@@ -1050,7 +1072,8 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
 #pldlg::backdrop{background:rgba(11,11,11,.5)}
 #pldlg .plcard{border:none;box-shadow:none;border-radius:0;padding:24px 24px 22px;gap:11px}
-#pldlg .plhead h3{font-size:21px;padding-right:34px}
+#pldlg .plhead{padding-right:30px}
+#pldlg .plhead h3{font-size:21px}
 #pldlg .plwhen{font-size:18px}
 #pldlg .stg{align-self:flex-start;font-size:12.5px;padding:3px 12px}
 #pldlg .plfacts{font-size:14px}
@@ -2335,6 +2358,16 @@ function prelaunchView() {
 function plCard(r, full) {
   const f = r.latest || {};
   const c = el('article', 'plcard' + (full ? ' plfull' : ' pltap') + (!full && r.name === plFocus ? ' plfocus' : ''));
+  /* The building picture: linked from the developer's site or the news story,
+     loaded only when the card scrolls into view. A picture the source has
+     since removed simply leaves the card without one. */
+  if (r.image) {
+    const im = el('img', 'plimg');
+    im.loading = 'lazy'; im.decoding = 'async'; im.alt = ''; im.referrerPolicy = 'no-referrer';
+    im.onerror = () => { im.remove(); const cr = c.querySelector('.plpic'); if (cr) cr.remove(); };
+    im.src = r.image.src;
+    c.appendChild(im);
+  }
   const hd = el('div', 'plhead');
   hd.appendChild(el('h3', '', r.name));
   hd.appendChild(el('span', 'pltrk', r.trackerLabels.join(' · ')));
@@ -2370,6 +2403,18 @@ function plCard(r, full) {
     c.onclick = () => plOpen(r);
     c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); plOpen(r); } };
     return c;
+  }
+  if (r.image) {
+    const cr = el('div', 'plpic');
+    cr.appendChild(document.createTextNode('Picture: '));
+    cr.appendChild(plLink(r.image.page, r.image.source || 'source'));
+    cr.appendChild(document.createTextNode(' · '));
+    const rm = el('a', '', 'Wrong picture? Remove ›');
+    rm.href = 'https://github.com/' + DATA.repo + '/new/main/data/prelaunch_images_removed?filename='
+      + encodeURIComponent(r.image.id) + '&value=remove';
+    rm.target = '_blank'; rm.rel = 'noopener';
+    cr.appendChild(rm);
+    c.appendChild(cr);
   }
   if (r.note) {
     const yn = el('div', 'plnote');
