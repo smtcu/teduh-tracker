@@ -226,15 +226,23 @@ def load_check(url):
     Asked twice, as the site sends it (no referrer) and as a plain browser."""
     out = []
     for label, headers in (("no referrer", {"User-Agent": UA, "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"}),
-                           ("from another site", {"User-Agent": UA, "Accept": "image/*",
-                                                  "Referer": "https://teduh-tracker.pages.dev/"})):
+                           ("as a browser on another site", {"User-Agent": UA, "Accept": "image/*",
+                                                  "Referer": "https://teduh-tracker.pages.dev/",
+                                                  "Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "no-cors",
+                                                  "Sec-Fetch-Dest": "image"})):
         try:
             req = urllib.request.Request(url, headers=dict(headers, Range="bytes=0-65535"))
             with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
                 b = r.read(65536)
                 ctype = r.headers.get_content_type()
             wh = size_of(b)
-            out.append(f"{label}: {r.status} {ctype}" + (f" {wh[0]}x{wh[1]}" if wh else " (size unreadable)"))
+            # Headers a browser obeys and a server fetch does not: they can stop
+            # a picture showing on another site even though it downloads fine.
+            blockers = [f"{h}: {r.headers.get(h)}" for h in ("Cross-Origin-Resource-Policy",
+                        "Cross-Origin-Embedder-Policy", "Content-Disposition", "X-Content-Type-Options")
+                        if r.headers.get(h)]
+            out.append(f"{label}: {r.status} {ctype}" + (f" {wh[0]}x{wh[1]}" if wh else " (size unreadable)")
+                       + (" {" + ", ".join(blockers) + "}" if blockers else ""))
         except urllib.error.HTTPError as e:
             out.append(f"{label}: refused {e.code}")
         except (urllib.error.URLError, OSError, ValueError) as e:
