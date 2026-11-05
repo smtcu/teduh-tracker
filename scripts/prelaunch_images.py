@@ -354,7 +354,10 @@ def main():
         r = {"tracker": key[0], "project": key[1], "page": url, "source": "your pick",
              "kind": "her pick", "image": "", "width": "", "height": "", "status": "rejected",
              "reason": "", "checked": today}
-        if re.search(r"\.(jpe?g|png|webp|avif)(?:$|\?)", urllib.parse.urlsplit(url).path.lower() + "?"):
+        # The picture itself: its address ends in a picture type, or it is a
+        # site's resizing link (ivygohproperty.com's /_next/image?url=...jpg).
+        if re.search(r"\.(jpe?g|png|webp|avif)(?:$|\?)", urllib.parse.urlsplit(url).path.lower() + "?") \
+                or re.search(r"/_next/image\?|\.(jpe?g|png|webp|avif)(?:&|$)", url.lower()):
             r.update(image=url, status="ok")
         else:
             html, final = net.page(url, "her pick")
