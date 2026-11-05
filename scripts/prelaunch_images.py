@@ -355,9 +355,10 @@ def main():
              "kind": "her pick", "image": "", "width": "", "height": "", "status": "rejected",
              "reason": "", "checked": today}
         # The picture itself: its address ends in a picture type, or it is a
-        # site's resizing link (ivygohproperty.com's /_next/image?url=...jpg).
+        # site's resizing link (ivygohproperty.com's /_next/image?url=...jpg), or a
+        # picture store's id (rezekihartanah.com's /_blob/<id>).
         if re.search(r"\.(jpe?g|png|webp|avif)(?:$|\?)", urllib.parse.urlsplit(url).path.lower() + "?") \
-                or re.search(r"/_next/image\?|\.(jpe?g|png|webp|avif)(?:&|$)", url.lower()):
+                or re.search(r"/_next/image\?|/_blob/[0-9a-f]{16,}$|\.(jpe?g|png|webp|avif)(?:&|$)", url.lower()):
             r.update(image=url, status="ok")
         else:
             html, final = net.page(url, "her pick")
