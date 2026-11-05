@@ -74,6 +74,17 @@ jobs:
         continue-on-error: true
         run: python scripts/watch_prelaunch.py
 
+      # One building picture per pre-launch card, from the project's official
+      # pages, the developer's website or an established news site, linked
+      # and never copied (see the script's docstring). Writes only
+      # data/prelaunch_images.csv. A page is read once, so most days this is
+      # a handful of requests; a failure never stops the commit below.
+      - name: Pre-launch pictures
+        if: ${{ !cancelled() }}
+        timeout-minutes: 6
+        continue-on-error: true
+        run: python scripts/prelaunch_images.py
+
       # Only a find is worth a site rebuild. Rebuilding on a quiet day
       # changes nothing but the "generated" timestamp, and that sits on the
       # same single JSON line the refresh rewrites -- a timestamp-only
@@ -84,11 +95,11 @@ jobs:
         id: found
         if: ${{ !cancelled() }}
         run: |
-          if [ -z "$(git status --porcelain -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv)" ]; then
+          if [ -z "$(git status --porcelain -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv data/prelaunch_images.csv)" ]; then
             echo "Nothing new. Skipping the site rebuild."
             echo "any=no" >> "$GITHUB_OUTPUT"
           else
-            git --no-pager diff --stat -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv
+            git --no-pager diff --stat -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv data/prelaunch_images.csv
             echo "any=yes" >> "$GITHUB_OUTPUT"
           fi
           if [ -n "$(git status --porcelain -- data/prelaunch_seen.json data/prelaunch_runs.csv)" ]; then
@@ -111,7 +122,7 @@ jobs:
           # to its developer tracker automatically. The pre-launch watch never
           # writes it; its two files ride along when they changed.
           git add data/teduh_watch.csv projects.csv docs
-          git add data/prelaunch_finds.csv data/prelaunch_seen.json data/prelaunch_runs.csv 2>/dev/null || true
+          git add data/prelaunch_finds.csv data/prelaunch_seen.json data/prelaunch_runs.csv data/prelaunch_images.csv 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "Nothing new to commit."
             exit 0

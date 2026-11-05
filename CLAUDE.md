@@ -75,6 +75,9 @@ prelaunch_sources.csv            pre-launch watch config: developer pages, sitem
 data/prelaunch_finds.csv         signs of life for no-code rows: ads, news, agent pages (see below)
 data/prelaunch_pages.csv         pages to keep looking at for no-code rows: agent sites, microsites
 data/prelaunch_teduh.csv         TEDUH codes a no-code row hangs on (8 Conlay's suspended 14159-1/-2)
+scripts/prelaunch_images.py      one building picture per pre-launch card -- see Pre-launch pictures
+data/prelaunch_images.csv        every page it looked at, picture kept or why not
+data/prelaunch_images_removed/   her "Wrong picture? Remove" answers, one file per picture id
 scripts/selftest.py              pre-flight contract check — see below
 data/teduh_history.csv           WEEKLY series — Fridays only — drives the Excel files
 data/teduh_daily.csv             DAILY series — every run — drives the website
@@ -445,6 +448,24 @@ in the pre-launch watch it never writes projects.csv -- the codes go on the
 row only when she says so. Not in teduh_watch_extra.csv on purpose: there
 the old expired permit would read as a new one and auto-add a duplicate row.
 
+**Pre-launch pictures** (built 5 Nov 2026, her rules): each card can show one
+picture of the **whole building, never a logo**, from **credible sources only**
+-- the row's `official` pages in prelaunch_pages.csv, the developer's website
+in prelaunch_sources.csv (not its front page), or an established news site
+(`NEWS_OUTLETS` / `NEWS_HOSTS`). Never agent sites, portals, forums or social
+media. Pictures are **linked to the source, never copied**, lazy-loaded on
+the Pre-launch view only. `scripts/prelaunch_images.py` takes each page's
+preview picture (og:image) and drops logo-named, event-named (opening
+ceremony, award), small (<600px), square and shared pictures; a news story
+must name the project and not be about an event. The first test turned up
+The Eclipse's opening ceremony and an LBS awards photo for Sherwood -- that
+is why the event rules exist -- and wrongly dropped EdgeProp's Selayang
+Mulia render for "brand" in its name, so "brand" is not a logo word. Her
+"Wrong picture? Remove" link files `data/prelaunch_images_removed/<id>`,
+which triggers a rebuild-only refresh. `--report` writes nothing;
+`.github/workflows/prelaunch-images-test.yml` runs it on any claude/ branch
+push and shows the pictures on the run's Summary page.
+
 Still to come: crt.sh and a search API. From GitHub,
 PropertyGuru, iProperty, EdgeProp listings, Bursa and six developer sites
 (Armani, UEM, Lagenda, Shang Height, Maxim, Majestic Gen) are blocked --
@@ -607,6 +628,17 @@ The website has to work on a phone. Frozen columns are `position: sticky`; note
 that sticky on a `<td>` with a large `colspan` does not keep contents in view — the
 inner div has to be the sticky element. On screens under 640px the Remarks and `#`
 columns are hidden and the note moves to its own row.
+
+Since 05 Nov 2026 a phone has two layouts for the weekly tracker, switched by a
+**Table | Cards** button above it (phones only): **Table first** (her call), with
+a 100 / 75 / 55% zoom; Cards is one card per project with Today and the newest
+week, the rest one tap away. The choice is remembered per device
+(`teduh.pview2`). Row 2 of the sticky header is measured into `--r1h` by
+`fixHead()`, because a fixed 34px left a slit on phones. The cumulative small
+multiples use `minmax(0,1fr)` columns: plain `1fr` let nowrap titles push the
+whole page wider than the phone. Pre-launch shows the first 3 purple Check
+banners and folds the rest behind "Show N more to check". `docs/mobile-draft.html`
+is the static draft these came from; it is not rebuilt by the daily run.
 
 ## Practical constraints
 
