@@ -221,6 +221,28 @@ def size_of(b):
     return None
 
 
+def load_check(url):
+    """How a picture answers a browser on another site: 'loads (type, WxH)' or why not.
+    Asked twice, as the site sends it (no referrer) and as a plain browser."""
+    out = []
+    for label, headers in (("no referrer", {"User-Agent": UA, "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"}),
+                           ("from another site", {"User-Agent": UA, "Accept": "image/*",
+                                                  "Referer": "https://teduh-tracker.pages.dev/"})):
+        try:
+            req = urllib.request.Request(url, headers=dict(headers, Range="bytes=0-65535"))
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+                b = r.read(65536)
+                ctype = r.headers.get_content_type()
+            wh = size_of(b)
+            out.append(f"{label}: {r.status} {ctype}" + (f" {wh[0]}x{wh[1]}" if wh else " (size unreadable)"))
+        except urllib.error.HTTPError as e:
+            out.append(f"{label}: refused {e.code}")
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            out.append(f"{label}: failed {type(e).__name__}")
+        time.sleep(PAUSE)
+    return "; ".join(out)
+
+
 def headline_of(html):
     tags = meta_tags(html)
     title = (tags.get("og:title") or tags.get("twitter:title") or [""])[0]
@@ -361,6 +383,10 @@ def main():
         if re.search(r"\.(jpe?g|png|webp|avif)(?:$|\?)", urllib.parse.urlsplit(url).path.lower() + "?") \
                 or re.search(r"/_next/image\?|/_blob/[0-9a-f]{16,}$|\.(jpe?g|png|webp|avif)(?:&|$)", url.lower()):
             r.update(image=url, status="ok")
+            # Her exact choice, so it is used whatever it is -- but say whether
+            # it actually loads for a browser on another site: some hosts
+            # refuse pictures shown away from their own pages.
+            r["reason"] = load_check(url)
         else:
             html, final = net.page(url, "her pick")
             # A share link (share.google/...) is followed to wherever it leads:
@@ -460,7 +486,8 @@ def main():
                 lines += ["", "No picture.", ""]
             for r in rows:
                 if (r["tracker"], r["project"]) == k:
-                    verdict = "USED" if r is c else ("ok (not first)" if r["status"] == "ok" else r["reason"])
+                    verdict = ("USED" if r is c else ("ok (not first)" if r["status"] == "ok" else r["reason"])) \
+                        + (f" [{r['reason']}]" if r["status"] == "ok" and r["reason"] else "")
                     lines.append(f"- {r['kind']}, {r['source']}: {verdict} -- [page]({r['page']})"
                                  + (f" -- [picture]({r['image']})" if r["image"] else ""))
             lines.append("")
