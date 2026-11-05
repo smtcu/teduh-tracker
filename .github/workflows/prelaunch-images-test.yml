@@ -1,0 +1,33 @@
+name: Pre-launch pictures (test run)
+
+# A test of scripts/prelaunch_images.py that writes nothing: it lists the
+# building picture it would put on each pre-launch card, and why every other
+# page was not used. The result is the run's Summary page, pictures included.
+# Nothing is committed. Runs when the script changes on a claude/ branch, or
+# from the Actions tab.
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'scripts/prelaunch_images.py'
+      - '.github/workflows/prelaunch-images-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Find pictures (report only)
+        run: |
+          python scripts/prelaunch_images.py --report report.md
+          cat report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
