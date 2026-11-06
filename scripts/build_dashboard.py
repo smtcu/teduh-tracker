@@ -695,6 +695,10 @@ TEMPLATE = r"""<!DOCTYPE html>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#2a78d6">
 <title>TEDUH Competitor Tracker</title>
+<link rel="icon" type="image/png" href="brand/favicon.png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="TEDUH Tracker">
 <style>
 :root{
   color-scheme:light;
@@ -725,6 +729,10 @@ body{
 .wrap{max-width:1280px;margin:0 auto;padding:20px 16px 64px}
 header{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 h1{font-size:21px;font-weight:750;margin:0;letter-spacing:-.02em;line-height:1.2}
+h1.brand{line-height:0}
+h1.brand img{height:44px;width:auto;display:block}
+h1.brand .logo-dark,html[data-theme="dark"] h1.brand .logo-light{display:none}
+html[data-theme="dark"] h1.brand .logo-dark{display:block}
 .sub{color:var(--ink-2);font-size:13.5px;margin-top:5px;font-weight:500}
 .sub b{color:var(--ink);font-weight:750}
 h2{font-size:17px;font-weight:750;margin:0 0 4px;letter-spacing:-.015em}
@@ -996,6 +1004,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 @media(max-width:640px){
   .wrap{padding:14px 11px 52px}
   h1{font-size:19px} h2{font-size:16px}
+  h1.brand img{height:38px}
   .card{padding:14px;border-radius:12px}
   .kpis{grid-template-columns:repeat(2,1fr);gap:9px}
   .kpi{padding:12px 13px} .kpi .v{font-size:25px} .hero .v{font-size:32px}
@@ -1143,7 +1152,7 @@ table.pct tr.live td.l{color:var(--orange)}
 <div class="wrap">
 <header>
   <div>
-    <h1>TEDUH Competitor Tracker</h1>
+    <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="147" height="44"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="147" height="44"></h1>
     <div class="sub">Data as at <b id="asat"></b> · refreshed daily</div>
   </div>
   <button class="ghost" id="theme">Dark</button>

@@ -2,7 +2,8 @@
  * Password gate for the TEDUH competitor tracker.
  *
  * Every request passes through here first -- the dashboard, the spreadsheets and
- * the CSV downloads -- so nothing is reachable without signing in.
+ * the CSV downloads -- so nothing is reachable without signing in, apart from
+ * the logo and home-screen icons listed in PUBLIC_PATHS below.
  *
  * The username and password are read from Cloudflare's dashboard
  * (Settings -> Variables and Secrets) and are never stored in this repository.
@@ -49,8 +50,36 @@ function askForPassword() {
   });
 }
 
+/**
+ * The only files served without a password: the logo, home-screen icons and the
+ * manifest that names them. Phones fetch these on their own, without the login,
+ * when you add the site to a home screen. They are pictures and nothing else --
+ * every dashboard page, spreadsheet, PDF and CSV stays behind the password.
+ * Exact paths only, so nothing else can slip through.
+ */
+const PUBLIC_PATHS = new Set([
+  "/manifest.webmanifest",
+  "/brand/apple-touch-icon.png",
+  "/brand/icon-192.png",
+  "/brand/icon-512.png",
+  "/brand/favicon.png",
+  "/brand/logo.png",
+  "/brand/logo-dark.png",
+]);
+
 export default {
   async fetch(request, env) {
+    if (request.method === "GET" || request.method === "HEAD") {
+      const path = new URL(request.url).pathname;
+      if (PUBLIC_PATHS.has(path)) {
+        const response = await env.ASSETS.fetch(request);
+        const out = new Response(response.body, response);
+        out.headers.set("Cache-Control", "public, max-age=86400");
+        out.headers.set("X-Robots-Tag", "noindex, nofollow");
+        return out;
+      }
+    }
+
     const user = tidy(env.SITE_USER);
     const pass = tidy(env.SITE_PASSWORD);
 
