@@ -42,7 +42,7 @@ TOP_N = {("johor", "Permas Jaya"): 1}
 
 # The Cloudflare Worker that serves the "Suggest a project" form (see
 # cloudflare-worker/). Leave empty to hide the form entirely.
-SUGGEST_URL = "https://teduh-workflow-trigger.cpiland.workers.dev"
+SUGGEST_URL = "https://teduh-workflow-trigger.marketsurvey.workers.dev"
 
 
 def tracker_label(key, given=""):
