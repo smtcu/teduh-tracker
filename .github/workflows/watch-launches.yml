@@ -48,7 +48,9 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.workflow_run.created_at, 'T23:')
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # 55 (developer watch) + 10 (pre-launch) + 6 (pictures) + build and
+    # commit. Raised from 60 on 6 Nov 2026 with the developer watch's limit.
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v4
 
@@ -61,7 +63,12 @@ jobs:
 
       - name: Watch for new developer launches
         if: ${{ !startsWith(inputs.what, 'Pre-launch') }}
-        timeout-minutes: 40      # ~20 minutes on a healthy day
+        # Was 40 (~20 minutes when set). By 6 Nov 2026 it made ~364 TEDUH
+        # lookups a day (291 developer codes, 67 name searches) at ~6 s each
+        # and hit the 40-minute cap; the whole watch had crept from 36 to 47
+        # minutes over two weeks. The next refresh is at 16:00 MYT, hours
+        # away, and the shared concurrency group keeps the two apart.
+        timeout-minutes: 55
         run: python scripts/watch_developers.py
 
       # Pre-launch watch, phase 2: Google News, developer sites, sitemaps,
