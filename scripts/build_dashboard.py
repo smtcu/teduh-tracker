@@ -730,7 +730,7 @@ body{
 header{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 h1{font-size:21px;font-weight:750;margin:0;letter-spacing:-.02em;line-height:1.2}
 h1.brand{line-height:0}
-h1.brand img{height:44px;width:auto;display:block}
+h1.brand img{height:64px;width:auto;display:block}
 h1.brand .logo-dark,html[data-theme="dark"] h1.brand .logo-light{display:none}
 html[data-theme="dark"] h1.brand .logo-dark{display:block}
 .sub{color:var(--ink-2);font-size:13.5px;margin-top:5px;font-weight:500}
@@ -944,6 +944,20 @@ tr:last-child td{border-bottom:0}
   .navrow.devs .navbtns button{min-width:calc(33.333% - 6px);
     font-size:12.5px;padding:8px 5px;min-height:36px}
 }
+/* Home page: the tracker buttons become tiles with a project count. Inside a
+   tracker they are gone, and the sticky bar carries Home + a switcher. */
+.homehead{font-size:19px;margin:6px 0 4px}
+#home .navbtns button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+#home .navbtns .tn{display:inline-flex;align-items:center;gap:5px}
+#home .navbtns .tc{font-size:11px;font-weight:650;color:var(--muted)}
+#home .navbtns button[aria-pressed="true"] .tc{color:inherit;opacity:.85}
+.secnav .home{flex:0 0 auto;padding:6px 11px;font-size:12.5px}
+.secnav .tsel{flex:0 0 auto;font:inherit;font-size:14px;font-weight:800;color:var(--ink);
+  background:var(--surface);border:1.5px solid var(--blue);border-radius:9px;padding:6px 28px 6px 10px;
+  max-width:190px;appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--blue) 50%),linear-gradient(135deg,var(--blue) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.secnav .sep{flex:0 0 auto;width:1.5px;height:20px;background:var(--rule);margin:0 4px}
 #pickedName{margin:2px 0 13px}
 #pickedName .pn{display:block;font-size:19px;font-weight:750;letter-spacing:-.015em}
 #pickedName .pd{display:block;font-size:13px;font-weight:650;color:var(--muted);margin-top:2px}
@@ -1004,7 +1018,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 @media(max-width:640px){
   .wrap{padding:14px 11px 52px}
   h1{font-size:19px} h2{font-size:16px}
-  h1.brand img{height:38px}
+  h1.brand img{height:52px}
   .card{padding:14px;border-radius:12px}
   .kpis{grid-template-columns:repeat(2,1fr);gap:9px}
   .kpi{padding:12px 13px} .kpi .v{font-size:25px} .hero .v{font-size:32px}
@@ -1152,7 +1166,7 @@ table.pct tr.live td.l{color:var(--orange)}
 <div class="wrap">
 <header>
   <div>
-    <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="147" height="44"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="147" height="44"></h1>
+    <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"></h1>
     <div class="sub">Data as at <b id="asat"></b> · refreshed daily</div>
   </div>
   <button class="ghost" id="theme">Dark</button>
@@ -1164,7 +1178,11 @@ table.pct tr.live td.l{color:var(--orange)}
   <div class="qr" id="qr" hidden></div>
 </div>
 
-<div class="nav" id="ftrack"></div>
+<div id="home" hidden>
+  <h2 class="homehead">Choose a tracker</h2>
+  <p class="note">Select a category for more info.</p>
+  <div class="nav" id="ftrack"></div>
+</div>
 
 <div class="secnav" id="secnav" hidden></div>
 
@@ -1329,7 +1347,16 @@ const TRACKERS = DATA.trackers && DATA.trackers.length ? DATA.trackers : (() => 
   ALL.forEach(p => { if (!t.some(x => x.key === p.tracker)) t.push({ key: p.tracker, label: p.trackerLabel, kind: p.trackerKind || 'area' }); });
   return t;
 })();
-let tracker = TRACKERS.length ? TRACKERS[0].key : '';
+/* '' is the home page. The tracker lives in the address (#johor), so the
+   phone's back button returns to Home and a bookmark reopens the same tracker. */
+const KEYS = new Set(TRACKERS.map(t => t.key).concat('prelaunch'));
+const fromHash = () => { const h = decodeURIComponent(location.hash.slice(1)); return KEYS.has(h) ? h : ''; };
+let tracker = fromHash();
+function route(key) {
+  if (key === tracker) return;
+  history.pushState(null, '', key ? '#' + key : location.pathname + location.search);
+  tracker = key;
+}
 /* Pinned projects lead their tracker and stay visible while the table scrolls. */
 const vis = () => ALL.filter(p => p.tracker === tracker)
                      .sort((a, b) => (b.pin === true) - (a.pin === true));
@@ -1394,26 +1421,31 @@ function trackerBar() {
     row.appendChild(el('div', 'navlab', label));
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
-      const b = el('button', 'ghost', t.label);
+      const b = el('button', 'ghost'), tn = el('span', 'tn', t.label);
+      b.appendChild(tn);
       const fs = (DATA.watch || {})[t.key] || [];
       const nCheck = fs.filter(needsCheck).length, nAuto = fs.length - nCheck;
-      if (nAuto) { const s = el('span', 'plus', '+' + nAuto); s.title = 'Added automatically'; b.appendChild(s); }
-      if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check — not added'; b.appendChild(s); }
+      if (nAuto) { const s = el('span', 'plus', '+' + nAuto); s.title = 'Added automatically'; tn.appendChild(s); }
+      if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check — not added'; tn.appendChild(s); }
       const nSeen = plSeen(t.key).length;
-      if (nSeen) { const s = el('span', 'plus ad', String(nSeen)); s.title = 'Rows with no TEDUH code that are advertising or have pages — see Pre-launch'; b.appendChild(s); }
+      if (nSeen) { const s = el('span', 'plus ad', String(nSeen)); s.title = 'Rows with no TEDUH code that are advertising or have pages — see Pre-launch'; tn.appendChild(s); }
+      const n = ALL.filter(p => p.tracker === t.key).length;
+      b.title = n + (n === 1 ? ' project' : ' projects');
       b.setAttribute('aria-pressed', String(t.key === tracker));
-      b.onclick = () => { tracker = t.key; pickedKey = null; FOCUS = null; tableMore = false; render(); };
+      b.onclick = () => { route(t.key); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0); };
       btns.appendChild(b);
     });
     if (kind === 'area') {
       /* Pre-launch sits with the area sheets because it is read with them each morning. */
-      const b = el('button', 'ghost', 'Pre-launch');
+      const b = el('button', 'ghost'), tn = el('span', 'tn', 'Pre-launch');
+      b.appendChild(tn);
       const nAct = PL.rows.filter(r => r.finds.length || r.pages.length).length;
-      if (nAct) { const s = el('span', 'plus ad', String(nAct)); s.title = 'Rows with something seen'; b.appendChild(s); }
+      if (nAct) { const s = el('span', 'plus ad', String(nAct)); s.title = 'Rows with something seen'; tn.appendChild(s); }
       const nNew = PL.newInArea.filter(f => f.status !== 'accepted').length;
-      if (nNew) { const s = el('span', 'plus check', '+' + nNew); s.title = 'New in your areas — needs your check'; b.appendChild(s); }
+      if (nNew) { const s = el('span', 'plus check', '+' + nNew); s.title = 'New in your areas — needs your check'; tn.appendChild(s); }
+      b.title = PL.rows.length + ' not launched yet';
       b.setAttribute('aria-pressed', String(tracker === 'prelaunch'));
-      b.onclick = () => { tracker = 'prelaunch'; pickedKey = null; FOCUS = null; render(); };
+      b.onclick = () => { route('prelaunch'); pickedKey = null; FOCUS = null; render(); scrollTo(0, 0); };
       btns.appendChild(b);
     }
     row.appendChild(btns); host.appendChild(row);
@@ -1467,7 +1499,7 @@ function table() {
     const a = el('button', 'wnlink', 'Pre-launch ›');
     a.style.color = 'var(--blue)';
     // Straight to this project's row, outlined, not just the top of the list.
-    a.onclick = () => { tracker = 'prelaunch'; plFilter = 'all'; plFocus = r.name; render(); };
+    a.onclick = () => { route('prelaunch'); plFilter = 'all'; plFocus = r.name; render(); };
     row.appendChild(a);
     wn.appendChild(row);
   });
@@ -2657,6 +2689,23 @@ function plOpen(r) {
 function secnav() {
   const host = $('#secnav'); if (!host) return;
   host.textContent = '';
+  const home = el('button', 'ghost home', '\u2302 Home');
+  home.title = 'Back to the list of trackers';
+  home.onclick = () => { route(''); pickedKey = null; FOCUS = null; render(); scrollTo(0, 0); };
+  host.appendChild(home);
+  const sel = el('select', 'tsel'); sel.setAttribute('aria-label', 'Switch tracker');
+  [['area', 'Areas'], ['developer', 'Developers']].forEach(([kind, label]) => {
+    const g = document.createElement('optgroup'); g.label = label;
+    TRACKERS.filter(t => (t.kind || 'area') === kind).forEach(t => { const o = el('option', '', t.label); o.value = t.key; g.appendChild(o); });
+    if (kind === 'area') { const o = el('option', '', 'Pre-launch'); o.value = 'prelaunch'; g.appendChild(o); }
+    if (g.children.length) sel.appendChild(g);
+  });
+  sel.value = tracker;
+  sel.onchange = () => { route(sel.value); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0); };
+  host.appendChild(sel);
+  host.hidden = false;
+  if (tracker === 'prelaunch') return;
+  host.appendChild(el('span', 'sep'));
   [['#sec-table', 'Table'], ['#sec-weekly', 'Weekly sales'], ['#btcard', 'Sold/unsold'],
    ['#sec-movers', 'Movement'], ['#sec-sellthru', 'Sell-through'], ['#sec-trends', 'Trends'],
    ['#sec-dl', 'Downloads']].forEach(([id, label]) => {
@@ -2700,11 +2749,12 @@ function fchip() {
 }
 
 function render() {
-  const pre = tracker === 'prelaunch';
-  $('#mainview').hidden = pre;
+  const home = !tracker, pre = tracker === 'prelaunch';
+  $('#home').hidden = !home;
+  $('#mainview').hidden = home || pre;
   $('#sec-prelaunch').hidden = !pre;
-  trackerBar();
-  if (pre) { $('#secnav').hidden = true; prelaunchView(); fchip(); return; }
+  if (home) { $('#secnav').hidden = true; trackerBar(); fchip(); return; }
+  if (pre) { secnav(); prelaunchView(); fchip(); return; }
   secnav(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip();
 }
 
@@ -2728,13 +2778,13 @@ function render() {
     find: f, hay: (f.note + ' ' + plArea(f) + ' pre-launch').toLowerCase()
   }));
   const toPrelaunch = focus => {
-    tracker = 'prelaunch'; plFilter = 'all'; plFocus = focus; pickedKey = null; FOCUS = null;
+    route('prelaunch'); plFilter = 'all'; plFocus = focus; pickedKey = null; FOCUS = null;
     q.value = ''; box.hidden = true; render();
   };
   const jump = p => {
     const r = plRow(p);
     if (r) { toPrelaunch(r.name); return; }
-    tracker = p.tracker;
+    route(p.tracker);
     /* Focus follows the pick through every section: the table row glows, the
        weekly chart switches to it, and its bars and trend panel are outlined
        until the floating chip clears it. */
@@ -2806,8 +2856,13 @@ function render() {
   });
 })();
 
+addEventListener('popstate', () => {
+  tracker = fromHash(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
+});
 render();
-let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { weekly(); movers(); sellthru(); bytype(); }, 160); });
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => {
+  if (!tracker || tracker === 'prelaunch') return;
+  weekly(); movers(); sellthru(); bytype(); }, 160); });
 </script>
 </body>
 </html>
