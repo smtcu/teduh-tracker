@@ -150,6 +150,7 @@ th.r2{top:var(--r1h,34px)}
 th.l,td.l{text-align:left}
 td.nm{font-weight:700;color:var(--ink)}
 .grpcell{background:var(--sunk);font-weight:800;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);border-right:0}
+.grpcell span{position:sticky;left:11px;display:inline-block}
 .wk{border-left:2px solid var(--rule)}
 /* Seeded figures are dotted-underlined so a stand-in never reads as a real
    Friday reading, without shouting louder than the live column. */
@@ -174,7 +175,10 @@ html[data-theme="dark"] th.live{background-color:var(--sunk);
   white-space:normal;line-height:1.32;font-weight:600;font-size:11.8px}
 th.rem{z-index:5;background:var(--sunk)}
 tbody tr:hover td.rem{background:var(--sunk)}
-tr.pinned td.rem{background:var(--pinbg)}
+/* Every Remarks cell is sticky at z-index 3, so the rows scrolling up under the
+   pinned row painted their remark over its own. Lift the pinned one a level
+   (still under the header's REMARKS cell at 5). */
+tr.pinned td.rem{background:var(--pinbg);z-index:4}
 tr.noterow{display:none}
 tr.pinned+tr.noterow td{background:var(--pinbg)}
 .ins{margin-top:6px}
@@ -207,6 +211,15 @@ tr.pinned td.nm::after{content:" \2605";color:var(--blue)}
    padding, so it needs 116. At 78 the year was clipped off every row. */
 .stick3{left:234px;width:116px;min-width:116px;max-width:116px}
 .stick4{left:350px;width:64px;min-width:64px;max-width:64px;border-right:2px solid var(--rule)}
+/* A soft shadow on the inside edge of each frozen block, so it reads as
+   frozen panes with the weeks sliding underneath, not as one more column. */
+.stick4{box-shadow:5px 0 6px -4px rgba(0,0,0,.16)}
+.rem{box-shadow:-5px 0 6px -4px rgba(0,0,0,.16)}
+html[data-theme="dark"] .stick4{box-shadow:5px 0 7px -4px rgba(0,0,0,.6)}
+html[data-theme="dark"] .rem{box-shadow:-5px 0 7px -4px rgba(0,0,0,.6)}
+/* A week with no reading showed as a bare white cell, which looked like a
+   rendering gap. A faint dash says "no figure" on purpose. */
+#table tbody td:not(.rem):empty::before{content:"\2013";color:var(--muted);font-weight:500}
 th.stick3,th.stick2,th.stick4{white-space:normal;line-height:1.25}
 th.stick,th.stick2,th.stick3,th.stick4{z-index:4;background:var(--sunk)}
 tbody tr:hover .stick,tbody tr:hover .stick2,tbody tr:hover .stick3,
@@ -350,6 +363,9 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
   .stick2{left:0;max-width:112px;min-width:112px}
   .stick4{left:112px}
   tr.noterow{display:table-row}
+  /* The pinned row sticks; its note line has to as well (fixHead sets top),
+     or the pinned project's remark scrolled away on its own. */
+  tr.pinnedNote td{position:sticky;z-index:3}
   tr.noterow td{background:var(--sunk);border-right:0;padding:0}
   tr.noterow .notebox{position:sticky;left:0;width:calc((100vw - 46px) / var(--z,1));
     white-space:normal;line-height:1.35;font-size:11.5px;font-weight:600;
@@ -857,7 +873,8 @@ function table() {
     if (p.group && p.group !== section) {
       section = p.group;
       const gr = el('tr');
-      const gc = el('td', 'l grpcell', section);
+      const gc = el('td', 'l grpcell');
+      gc.appendChild(el('span', '', section));
       gc.colSpan = 12 + weeks.length * 3;
       gr.appendChild(gc); bd.appendChild(gr);
     }
@@ -956,6 +973,12 @@ function fixHead() {
   tb.style.setProperty('--r1h', Math.floor(r1.getBoundingClientRect().height / z) + 'px');
   const top = Math.floor(head.getBoundingClientRect().height / z);
   tb.querySelectorAll('tr.pinned td').forEach(td => { td.style.top = top + 'px'; });
+  tb.querySelectorAll('tr.pinned').forEach(tr => {
+    const nr = tr.nextElementSibling;
+    if (!nr || !nr.classList.contains('pinnedNote')) return;
+    const h = Math.floor(tr.getBoundingClientRect().height / z);
+    nr.querySelectorAll('td').forEach(td => { td.style.top = (top + h) + 'px'; });
+  });
 }
 
 /* Phone Cards view: the same rows, order, group headers and Top-view folding
