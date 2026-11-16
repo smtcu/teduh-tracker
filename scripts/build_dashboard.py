@@ -707,6 +707,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   --grid:#d8d7cf; --rule:#c3c2b7; --border:rgba(11,11,11,.16);
   --blue:#2a78d6; --orange:#eb6834; --track:#cde2fb;
   --check:#7a4fd0; --checkbg:#f1ecfb;
+  --gold:#c19044;  /* the yellow in the CPI Land logo */
   --hl:rgba(42,120,214,.09); --pinbg:#eaf2fd;
   --shadow:0 1px 2px rgba(11,11,11,.05),0 6px 20px rgba(11,11,11,.06);
 }
@@ -717,6 +718,7 @@ html[data-theme="dark"]{
   --grid:#35352f; --rule:#45453f; --border:rgba(255,255,255,.18);
   --blue:#3987e5; --orange:#d95926; --track:#184f95;
   --check:#a585ee; --checkbg:#272038;
+  --gold:#c19044;
   --hl:rgba(57,135,229,.16); --pinbg:#16304f;
   --shadow:none;
 }
@@ -735,6 +737,8 @@ h1.brand .logo-dark,html[data-theme="dark"] h1.brand .logo-light{display:none}
 html[data-theme="dark"] h1.brand .logo-dark{display:block}
 .sub{color:var(--ink-2);font-size:13.5px;margin-top:5px;font-weight:500}
 .sub b{color:var(--ink);font-weight:750}
+/* Live Malaysia-time clock beside the data date. */
+.sub .clock{font-variant-numeric:tabular-nums;white-space:nowrap}
 h2{font-size:17px;font-weight:750;margin:0 0 4px;letter-spacing:-.015em}
 .note{color:var(--muted);font-size:13px;margin:0 0 16px;font-weight:500}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
@@ -964,9 +968,9 @@ tr:last-child td{border-bottom:0}
 /* Home: Areas and Developers are two separate panels, each with its own
    heading, instead of two rows under one small gutter label. */
 #home .nav{display:grid;gap:14px}
-#home .navrow{display:block;margin:0;padding:14px 16px 16px;border:1.5px solid var(--rule);
+#home .navrow{display:block;margin:0;padding:14px 16px 16px;border:2px solid var(--gold);
   border-radius:12px;background:var(--surface)}
-#home .navrow+.navrow{margin-top:0;border-top:1.5px solid var(--rule)}
+#home .navrow+.navrow{margin-top:0;border-top:2px solid var(--gold)}
 #home .navlab{display:none}
 #home .navcap{font-size:12.5px;color:var(--muted);margin:0 0 11px}
 /* Home opens on just two choices, Areas and Developers; tapping one reveals
@@ -998,7 +1002,10 @@ tr:last-child td{border-bottom:0}
 .dl a{text-decoration:none;display:inline-flex;align-items:center;gap:8px}
 .dlsz{font-size:11px;font-weight:700;color:var(--ink-2);opacity:.75;
   font-variant-numeric:tabular-nums}
-.foot{color:var(--muted);font-size:12.5px;margin-top:22px;line-height:1.7;font-weight:500}
+/* Footer box in the logo's yellow; dark text in both themes for contrast. */
+.foot{color:#0b0b0b;background:var(--gold);font-size:12.5px;margin-top:22px;line-height:1.7;
+  font-weight:500;padding:10px 14px;border-radius:10px}
+.foot b{font-weight:800}
 .hide{display:none!important}
 
 /* Sold-out rows stay in the table, greyed and tagged; the charts drop them. */
@@ -1203,7 +1210,7 @@ table.pct tr.live td.l{color:var(--orange)}
 <header>
   <div>
     <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"></h1>
-    <div class="sub">Data as at <b id="asat"></b> · refreshed daily</div>
+    <div class="sub">Data as at <b id="asat"></b> · refreshed daily · <span class="clock" id="clock"></span></div>
   </div>
   <button class="ghost" id="theme">Dark</button>
 </header>
@@ -2443,8 +2450,22 @@ document.querySelectorAll('[data-tbl]').forEach(b => {
 })();
 
 $('#asat').textContent = fdate(DATA.latestDate);
-$('#foot').textContent = 'Generated ' + DATA.generated +
-  ' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my)';
+(() => {
+  const f = $('#foot'); f.textContent = 'Generated ';
+  f.appendChild(el('b', '', DATA.generated));
+  f.appendChild(document.createTextNode(' · Source: TEDUH portal, Jabatan Perumahan Negara (teduh.kpkt.gov.my)'));
+})();
+/* Live clock, always in Malaysia time whatever the device's own zone. */
+(() => {
+  const c = $('#clock'); if (!c) return;
+  let fmt;
+  try {
+    fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kuala_Lumpur', weekday: 'short',
+      day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+  } catch (e) { return; }
+  const tick = () => { c.textContent = 'Now ' + fmt.format(new Date()).replace(/\b(am|pm)\b/, m => m.toUpperCase()) + ' MYT'; };
+  tick(); setInterval(tick, 1000);
+})();
 /* Sticky shortcuts to each section, with the sold-out toggle on the right.
    The pages run 8,000px tall on the big developer trackers; nobody scrolls that. */
 /* ---------- Pre-launch: tracker rows with no TEDUH code ---------- */
