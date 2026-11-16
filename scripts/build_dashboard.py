@@ -708,6 +708,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   --blue:#2a78d6; --orange:#eb6834; --track:#cde2fb;
   --check:#7a4fd0; --checkbg:#f1ecfb;
   --gold:#c19044;  /* the yellow in the CPI Land logo */
+  --goldsoft:#f6ead4;  /* a light tint of it, for fills */
   --hl:rgba(42,120,214,.09); --pinbg:#eaf2fd;
   --shadow:0 1px 2px rgba(11,11,11,.05),0 6px 20px rgba(11,11,11,.06);
 }
@@ -719,6 +720,7 @@ html[data-theme="dark"]{
   --blue:#3987e5; --orange:#d95926; --track:#184f95;
   --check:#a585ee; --checkbg:#272038;
   --gold:#c19044;
+  --goldsoft:#3d3020;
   --hl:rgba(57,135,229,.16); --pinbg:#16304f;
   --shadow:none;
 }
@@ -982,13 +984,12 @@ tr:last-child td{border-bottom:0}
 .homepick .hp::after{content:'\25BE';font-size:14px;color:var(--muted);transition:transform .15s}
 .homepick button[aria-expanded="true"] .hp::after{transform:rotate(180deg)}
 .homepick .hs{font-size:12.5px;font-weight:500;color:var(--muted)}
-.homepick button[aria-expanded="true"]{background:var(--gold);border-color:var(--gold);color:#0b0b0b}
-.homepick button[aria-expanded="true"] .hs,.homepick button[aria-expanded="true"] .hp::after{color:#0b0b0b}
+.homepick button[aria-expanded="true"]{background:var(--goldsoft);border-color:var(--gold);color:var(--ink)}
 /* Tracker buttons on the home page take the logo yellow: a tint on hover,
-   solid while pressed (the tap that opens the tracker). */
+   the light tint while pressed (the tap that opens the tracker). */
 #home .navbtns button{border-color:rgba(193,144,68,.55)}
-#home .navbtns button:hover{background:rgba(193,144,68,.16);border-color:var(--gold)}
-#home .navbtns button:active,#home .homepick button:active{background:var(--gold);border-color:var(--gold);color:#0b0b0b}
+#home .navbtns button:hover{background:rgba(193,144,68,.10);border-color:var(--gold)}
+#home .navbtns button:active,#home .homepick button:active{background:var(--goldsoft);border-color:var(--gold);color:var(--ink)}
 @media(max-width:640px){.homepick button{padding:13px 14px;min-height:76px}.homepick .hp{font-size:17px}}
 #home .navbtns button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 #home .navbtns .tn{display:inline-flex;align-items:center;gap:5px}
@@ -1008,8 +1009,8 @@ tr:last-child td{border-bottom:0}
 .dl a{text-decoration:none;display:inline-flex;align-items:center;gap:8px}
 .dlsz{font-size:11px;font-weight:700;color:var(--ink-2);opacity:.75;
   font-variant-numeric:tabular-nums}
-/* Footer box in the logo's yellow; dark text in both themes for contrast. */
-.foot{color:#0b0b0b;background:var(--gold);font-size:12.5px;margin-top:22px;line-height:1.7;
+/* Footer box in a light tint of the logo's yellow, edged in the full yellow. */
+.foot{color:var(--ink);background:var(--goldsoft);border:1.5px solid var(--gold);font-size:12.5px;margin-top:22px;line-height:1.7;
   font-weight:500;padding:10px 14px;border-radius:10px}
 .foot b{font-weight:800}
 .hide{display:none!important}
