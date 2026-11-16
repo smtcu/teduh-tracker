@@ -1,0 +1,41 @@
+name: Crawl4AI (test run)
+
+# A one-off test of scripts/probe_crawl4ai.py: can Crawl4AI's stealth modes
+# read the developer sites that blocked GitHub on 29 Oct 2026? It writes
+# nothing to the repo -- the answer is the run's Summary page, with the saved
+# pages and screenshots as an artifact. Runs when the script or this file
+# changes on a claude/ branch. Nothing here touches the daily refresh.
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'scripts/probe_crawl4ai.py'
+      - '.github/workflows/crawl4ai-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Crawl4AI and its browsers
+        run: |
+          pip install crawl4ai==0.9.5
+          python -m playwright install --with-deps chromium
+          python -m patchright install chromium
+      - name: Try the sites (report only)
+        run: python scripts/probe_crawl4ai.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crawl4ai-results
+          path: probe_c4/
+          retention-days: 14
