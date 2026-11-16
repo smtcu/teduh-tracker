@@ -959,7 +959,27 @@ tr:last-child td{border-bottom:0}
 }
 /* Home page: the tracker buttons become tiles with a project count. Inside a
    tracker they are gone, and the sticky bar carries Home + a switcher. */
-.homehead{font-size:19px;margin:6px 0 4px}
+.homehead{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
+#home>.note{font-size:14px;margin-bottom:14px}
+/* Home: Areas and Developers are two separate panels, each with its own
+   heading, instead of two rows under one small gutter label. */
+#home .nav{display:grid;gap:14px}
+#home .navrow{display:block;margin:0;padding:14px 16px 16px;border:1.5px solid var(--rule);
+  border-radius:12px;background:var(--surface)}
+#home .navrow+.navrow{margin-top:0;border-top:1.5px solid var(--rule)}
+#home .navlab{display:none}
+#home .navcap{font-size:12.5px;color:var(--muted);margin:0 0 11px}
+/* Home opens on just two choices, Areas and Developers; tapping one reveals
+   that group's tracker buttons underneath (tap again to fold it away). */
+.homepick{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.homepick button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;
+  padding:16px 18px;min-height:84px;border-radius:12px}
+.homepick .hp{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800}
+.homepick .hp::after{content:'\25BE';font-size:14px;color:var(--muted);transition:transform .15s}
+.homepick button[aria-expanded="true"] .hp::after{transform:rotate(180deg)}
+.homepick .hs{font-size:12.5px;font-weight:500;color:var(--muted)}
+.homepick button[aria-expanded="true"]{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+@media(max-width:640px){.homepick button{padding:13px 14px;min-height:76px}.homepick .hp{font-size:17px}}
 #home .navbtns button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 #home .navbtns .tn{display:inline-flex;align-items:center;gap:5px}
 #home .navbtns .tc{font-size:11px;font-weight:650;color:var(--muted)}
@@ -1428,13 +1448,42 @@ const rkTag = p => (p && p.rank ? el('span', 'toptag', '#' + p.rank) : null);
 const act = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === FOCUS) && inTop(p)));
 const pickList = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === pickedKey) && inTop(p, pickedKey)));
 
+let homeOpen = '';
+try { homeOpen = localStorage.getItem('teduh.homeOpen') || ''; } catch (e) {}
 function trackerBar() {
   const host = $('#ftrack'); host.textContent = '';
-  [['area', 'Areas'], ['developer', 'Developers']].forEach(([kind, label]) => {
+  const kinds = [['area', 'Areas'], ['developer', 'Developers']]
+    .filter(([kind]) => TRACKERS.some(t => (t.kind || 'area') === kind));
+  const pick = el('div', 'homepick');
+  kinds.forEach(([kind, label]) => {
+    const n = TRACKERS.filter(t => (t.kind || 'area') === kind).length;
+    const b = el('button', 'ghost'), hp = el('span', 'hp', label);
+    /* The tracker buttons carry the purple "needs your check" pills, and they
+       are folded away here, so the group button shows the total. */
+    let nCheck = TRACKERS.filter(t => (t.kind || 'area') === kind)
+      .reduce((a, t) => a + ((DATA.watch || {})[t.key] || []).filter(needsCheck).length, 0);
+    if (kind === 'area') nCheck += PL.newInArea.filter(f => f.status !== 'accepted').length;
+    if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check'; hp.appendChild(s); }
+    b.appendChild(hp);
+    b.appendChild(el('span', 'hs', kind === 'area'
+      ? n + ' area trackers + Pre-launch' : n + ' developer trackers'));
+    b.setAttribute('aria-expanded', String(homeOpen === kind));
+    b.onclick = () => {
+      homeOpen = homeOpen === kind ? '' : kind;
+      try { localStorage.setItem('teduh.homeOpen', homeOpen); } catch (e) {}
+      trackerBar();
+    };
+    pick.appendChild(b);
+  });
+  host.appendChild(pick);
+  kinds.forEach(([kind, label]) => {
+    if (homeOpen !== kind) return;
     const mine = TRACKERS.filter(t => (t.kind || 'area') === kind);
-    if (!mine.length) return;                       // no developers loaded yet
     const row = el('div', 'navrow ' + (kind === 'area' ? 'areas' : 'devs'));
     row.appendChild(el('div', 'navlab', label));
+    row.appendChild(el('div', 'navcap', kind === 'area'
+      ? 'Projects grouped by location, plus Pre-launch.'
+      : 'Projects grouped by developer.'));
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
       const b = el('button', 'ghost'), tn = el('span', 'tn', t.label);
