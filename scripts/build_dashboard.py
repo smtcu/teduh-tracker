@@ -982,7 +982,13 @@ tr:last-child td{border-bottom:0}
 .homepick .hp::after{content:'\25BE';font-size:14px;color:var(--muted);transition:transform .15s}
 .homepick button[aria-expanded="true"] .hp::after{transform:rotate(180deg)}
 .homepick .hs{font-size:12.5px;font-weight:500;color:var(--muted)}
-.homepick button[aria-expanded="true"]{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+.homepick button[aria-expanded="true"]{background:var(--gold);border-color:var(--gold);color:#0b0b0b}
+.homepick button[aria-expanded="true"] .hs,.homepick button[aria-expanded="true"] .hp::after{color:#0b0b0b}
+/* Tracker buttons on the home page take the logo yellow: a tint on hover,
+   solid while pressed (the tap that opens the tracker). */
+#home .navbtns button{border-color:rgba(193,144,68,.55)}
+#home .navbtns button:hover{background:rgba(193,144,68,.16);border-color:var(--gold)}
+#home .navbtns button:active,#home .homepick button:active{background:var(--gold);border-color:var(--gold);color:#0b0b0b}
 @media(max-width:640px){.homepick button{padding:13px 14px;min-height:76px}.homepick .hp{font-size:17px}}
 #home .navbtns button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 #home .navbtns .tn{display:inline-flex;align-items:center;gap:5px}
@@ -1456,6 +1462,8 @@ const act = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p)
 const pickList = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === pickedKey) && inTop(p, pickedKey)));
 
 let homeOpen = '';
+/* iPad Safari only shows :active colours once a touch listener exists. */
+document.addEventListener('touchstart', () => {}, { passive: true });
 try { homeOpen = localStorage.getItem('teduh.homeOpen') || ''; } catch (e) {}
 function trackerBar() {
   const host = $('#ftrack'); host.textContent = '';
