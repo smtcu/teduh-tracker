@@ -959,7 +959,17 @@ tr:last-child td{border-bottom:0}
 }
 /* Home page: the tracker buttons become tiles with a project count. Inside a
    tracker they are gone, and the sticky bar carries Home + a switcher. */
-.homehead{font-size:19px;margin:6px 0 4px}
+.homehead{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
+#home>.note{font-size:14px;margin-bottom:14px}
+/* Home: Areas and Developers are two separate panels, each with its own
+   heading, instead of two rows under one small gutter label. */
+#home .nav{display:grid;gap:14px}
+#home .navrow{display:block;margin:0;padding:14px 16px 16px;border:1.5px solid var(--rule);
+  border-radius:12px;background:var(--surface)}
+#home .navrow+.navrow{margin-top:0;border-top:1.5px solid var(--rule)}
+#home .navlab{width:auto;padding:0 0 2px;font-size:16px;font-weight:800;letter-spacing:0;
+  text-transform:none;color:var(--ink)}
+#home .navcap{font-size:12.5px;color:var(--muted);margin:0 0 11px}
 #home .navbtns button{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 #home .navbtns .tn{display:inline-flex;align-items:center;gap:5px}
 #home .navbtns .tc{font-size:11px;font-weight:650;color:var(--muted)}
@@ -1435,6 +1445,9 @@ function trackerBar() {
     if (!mine.length) return;                       // no developers loaded yet
     const row = el('div', 'navrow ' + (kind === 'area' ? 'areas' : 'devs'));
     row.appendChild(el('div', 'navlab', label));
+    row.appendChild(el('div', 'navcap', kind === 'area'
+      ? 'Projects grouped by location, plus Pre-launch.'
+      : 'Projects grouped by developer.'));
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
       const b = el('button', 'ghost'), tn = el('span', 'tn', t.label);
