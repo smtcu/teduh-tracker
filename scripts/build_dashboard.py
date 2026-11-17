@@ -1020,6 +1020,14 @@ tr.soldout td{color:var(--muted)}
 .sotag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:20px;background:var(--sunk);
   border:1px solid var(--rule);color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.05em;
   text-transform:uppercase;vertical-align:1px;white-space:nowrap}
+/* A project TEDUH did not answer for today: its figure is the last complete
+   reading, tagged with that date so it is never read as today's number.
+   From 15 Nov 2026 TEDUH's database ran out of disk and 45 big projects
+   stopped answering; the scraper writes no row for them (never a part sum). */
+.stag{display:table;margin:4px 0 0;padding:1px 7px;border-radius:10px;background:transparent;
+  border:1px solid var(--orange);color:var(--orange);font-size:10px;font-weight:750;letter-spacing:.05em;
+  line-height:1.35;text-transform:uppercase;white-space:normal;max-width:100%}
+td.stale,tr.stale td{color:var(--muted);font-style:italic}
 
 /* Sticky section shortcuts under the tracker buttons. */
 .secnav{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:4px;margin:10px -4px 0;
@@ -1415,6 +1423,19 @@ const vis = () => ALL.filter(p => p.tracker === tracker)
    until the secnav toggle brings them back. A searched project is always let
    through so search never lands on nothing. */
 const pkey = p => p.code || ('NOCODE-' + p.name);
+/* Date of the last reading when TEDUH gave none today, else null. */
+const staleOf = p => {
+  const s = p.series || [];
+  // No code = never scraped (The Eclipse): its old figure is hers, not a miss.
+  return (p.code && s.length && DATA.todayDate && s[s.length - 1].d < DATA.todayDate) ? s[s.length - 1].d : null;
+};
+const staleTag = p => {
+  const d = staleOf(p);
+  if (!d) return null;
+  const t = el('span', 'stag', 'No TEDUH data · as at ' + fdate(d, true).replace(' ', '\u00a0'));
+  t.title = 'TEDUH did not return this project today. Figures are its last complete reading, ' + fdate(d) + '.';
+  return t;
+};
 const soldOut = p => !!p.units && p.todaySold !== null && p.todaySold !== undefined && p.todaySold >= p.units;
 let showSold = false;
 /* Top-projects view: only the N projects closest to selling out (ranked in
@@ -1644,6 +1665,7 @@ function table() {
     const nm = el('td', 'l stick2 nm', p.name);
     if (p.top) { tr.classList.add('top'); nm.appendChild(el('span', 'toptag', '#' + p.rank)); }
     if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
+    if (staleTag(p)) nm.appendChild(staleTag(p));
     tr.appendChild(nm);
     tr.appendChild(el('td', 'stick3', p.apdl ? fdate(p.apdl) : '–'));
     tr.appendChild(el('td', 'stick4', nf(p.units)));
@@ -1658,9 +1680,10 @@ function table() {
       prev = v;
     });
     if (live) {
-      tr.appendChild(el('td', 'live livehd', p.todayNew === null || p.todayNew === undefined ? '' : sgn(p.todayNew)));
-      tr.appendChild(el('td', 'live', p.todaySold === null ? '' : nf(p.todaySold)));
-      tr.appendChild(el('td', 'live', (p.todaySold === null || !p.units) ? '' : pf(p.todaySold / p.units)));
+      const st = staleOf(p) ? ' stale' : '';
+      tr.appendChild(el('td', 'live livehd' + st, p.todayNew === null || p.todayNew === undefined ? '' : sgn(p.todayNew)));
+      tr.appendChild(el('td', 'live' + st, p.todaySold === null ? '' : nf(p.todaySold)));
+      tr.appendChild(el('td', 'live' + st, (p.todaySold === null || !p.units) ? '' : pf(p.todaySold / p.units)));
     }
     weeks.forEach((d, i) => {
       const n = i === 0 ? ' new' : '';
@@ -1751,6 +1774,7 @@ function cards(weeks, live) {
     const hd = el('div', 'pch'), nm = el('div', 'pcn', p.name);
     if (p.top) nm.appendChild(el('span', 'toptag', '#' + p.rank));
     if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
+    if (staleTag(p)) nm.appendChild(staleTag(p));
     hd.appendChild(nm); hd.appendChild(el('div', 'pcu', nf(p.units) + ' units'));
     c.appendChild(hd);
     const meta = [p.apdl ? 'APDL ' + fdate(p.apdl) : '', p.codeDisp || p.code || '', p.developer || '']
@@ -1777,7 +1801,8 @@ function cards(weeks, live) {
       r.appendChild(el('td', '', (sold === null || !p.units) ? '' : pf(sold / p.units)));
       b.appendChild(r); return r;
     };
-    if (live) row('Today ' + fdate(DATA.todayDate, true), 'live',
+    if (live) row((staleOf(p) ? 'As at ' + fdate(staleOf(p), true) : 'Today ' + fdate(DATA.todayDate, true)),
+                  'live' + (staleOf(p) ? ' stale' : ''),
                   p.todayNew === null || p.todayNew === undefined ? '' : sgn(p.todayNew),
                   p.todaySold === null || p.todaySold === undefined ? null : p.todaySold);
     weeks.forEach((d, i) => {
