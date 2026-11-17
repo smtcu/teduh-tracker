@@ -247,6 +247,8 @@ Both feed the Remarks column, and picking the wrong one loses information.
 - **`remarks` replaces the generated note outright.** Use it when the text is the
   whole story and block numbers would add nothing: Seputeh's unit-size lines,
   HillView's sale-scope note.
+- **`remarks` = `-` means no note at all**, generated or seeded (added 17 Nov
+  2026 for The Seed, whose 23 three-storey blocks made a note she did not want).
 - **`note_prefix` is a standing caveat that keeps the live numbers after it.**
   Use it when the numbers matter but are misleading without context. Causewayz
   Square is the case: 1,421 of 3,692 sold reads as weak selling until you know
