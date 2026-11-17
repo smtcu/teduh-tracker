@@ -543,6 +543,28 @@ rows. A 429 holds every worker for TEDUH's `Retry-After` and slows the pace
 once per refusal (`push_back`); the circuit breaker (three dead codes in a row
 -> exit 3, nothing written) is unchanged.
 
+### TEDUH out of disk -- the 500s from 15 Nov 2026
+
+From 15 Nov 2026 the unit list answered HTTP 500 for the same 45 codes (all
+926+ units) every run. `probe-teduh-units.yml` read the error body: TEDUH's
+own database is out of disk (`OS errno 28 - No space left on device`), so any
+unit list big enough to need a temp file fails. Pace, paging and retries make
+no difference, and TEDUH's public unit pop-up shows "Jumlah Unit: 0" for the
+same projects. Nothing on our side can fix it; she was advised to report it
+via MEJA BANTUAN. Re-run the probe from the Actions tab to see if it is back.
+
+Two rules came out of it:
+
+- **A project with any failed code gets no row** -- never a part sum.
+  Causewayz Square (2 of 4 codes failing) was written as 561/1741 instead of
+  1,629/4,525, and M Nova 669/832 instead of 1,900/2,080; those rows were
+  deleted.
+- **The site tags a coded project whose newest reading is older than today**
+  "As at <date>" (`staleOf()` in build_dashboard.py), greys its Today
+  figures, and the note above the table says how many and why -- so a held
+  figure is never read as today's. The tag is short and nowrap on purpose:
+  a wrapped tag made phone rows taller (her call, 17 Nov 2026).
+
 ## Unit numbers — read this before touching `block_of`
 
 TEDUH uses two different shapes, and confusing them has caused two separate bugs.
