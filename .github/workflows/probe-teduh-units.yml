@@ -1,0 +1,36 @@
+name: TEDUH unit-list probe (test run)
+
+# Why TEDUH answers 500 for big projects' unit lists (from 15 Nov 2026).
+# Asks TEDUH a few ways, slowly, and opens its own website in a browser to
+# see how the site gets a big project's units. Writes nothing to the repo:
+# the result is the run's Summary page. Runs when the script changes on a
+# claude/ branch, or from the Actions tab.
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'scripts/probe_teduh_units.py'
+      - '.github/workflows/probe-teduh-units.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install a browser
+        run: |
+          pip install playwright==1.47.0
+          python -m playwright install --with-deps chromium
+      - name: Probe TEDUH (report only)
+        run: |
+          python scripts/probe_teduh_units.py report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"

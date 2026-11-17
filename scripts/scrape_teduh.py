@@ -241,7 +241,18 @@ def main():
             sold += s_
             groups += g
             all_units.append((code, units))
-        if failed and not all_units:
+        # Any code missing means no row at all, never a partial sum. From
+        # 15 Nov 2026 TEDUH answered 500 for 31100-1/-2 and 11202-4, and the
+        # codes that did answer were summed and written as if whole:
+        # Causewayz Square read 561/1741 instead of ~1,629/4,525, M Nova
+        # 669/832 instead of 1,900/2,080. With no row for today the website
+        # keeps showing the last complete reading, as it already does for a
+        # single-code project that fails; on a Friday the weekly cell stays
+        # blank rather than recording a false drop.
+        if failed:
+            if all_units:
+                print(f"PART  {'+'.join(codes):<22} {p['project'][:30]:<30} "
+                      f"skipped: {len(codes) - len(all_units)} of {len(codes)} codes failed")
             continue
 
         expected = int(p["total_units"]) if str(p.get("total_units", "")).strip().isdigit() else None
