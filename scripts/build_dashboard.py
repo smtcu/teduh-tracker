@@ -1006,6 +1006,7 @@ tr:last-child td{border-bottom:0}
 #pickedName .pn{display:block;font-size:19px;font-weight:750;letter-spacing:-.015em}
 #pickedName .pd{display:block;font-size:13px;font-weight:650;color:var(--muted);margin-top:2px}
 .dl{display:flex;gap:10px;flex-wrap:wrap}
+.dl[hidden]{display:none}
 .dl a{text-decoration:none;display:inline-flex;align-items:center;gap:8px}
 .dlsz{font-size:11px;font-weight:700;color:var(--ink-2);opacity:.75;
   font-variant-numeric:tabular-nums}
@@ -1325,9 +1326,9 @@ table.pct tr.live td.l{color:var(--orange)}
 </div>
 
 <div class="card" id="sec-dl">
-  <h2>Download</h2>
-  <p class="note">The PDFs are table-only summaries meant for forwarding. The weekly PDFs and every Excel tracker — the four areas and the thirteen developers — are rebuilt each Friday; the daily PDF and the daily workbook are rebuilt every morning. This list is generated from the files that are actually on disk, so nothing here is a dead link.</p>
-  <div class="dl" id="dl"></div>
+  <h2>Download Data</h2>
+  <p class="note">To download the lists generated from the trackers daily. The weekly PDFs and Excel Sheets include the four areas and the 13 developers, which will be refreshed every Friday.</p>
+  <div class="dl" id="dl" hidden></div>
 </div>
 
 <div class="card" id="suggest" hidden>
@@ -2838,7 +2839,7 @@ function secnav() {
   host.appendChild(el('span', 'sep'));
   [['#sec-table', 'Table'], ['#sec-weekly', 'Weekly sales'], ['#btcard', 'Sold/unsold'],
    ['#sec-movers', 'Movement'], ['#sec-sellthru', 'Sell-through'], ['#sec-trends', 'Trends'],
-   ['#sec-dl', 'Downloads']].forEach(([id, label]) => {
+   ['#sec-dl', 'Download Data']].forEach(([id, label]) => {
     const a = el('a', '', label);
     a.href = id;
     a.onclick = e => { e.preventDefault(); const t = $(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
