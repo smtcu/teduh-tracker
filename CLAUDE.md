@@ -191,7 +191,7 @@ is the pipeline's existing "publish what we can" behaviour, unchanged here.
 |---|---|---|
 | `seputeh` | Seputeh Hills | 7 projects, has a Remarks column |
 | `status13` | Klang Valley | 13 projects (renamed from "Developer Sales Status") |
-| `johor` | Johor | 14 projects in two groups: Permas Jaya, JBCC |
+| `johor` | Johor | 22 projects in three groups: Permas Jaya, JBCC, Others (added 17 Nov 2026) |
 | `ukay` | Ukay | 17 projects, flat list, no group headings |
 
 ## projects.csv columns
