@@ -1009,6 +1009,7 @@ tr:last-child td{border-bottom:0}
 #pickedName .pd{display:block;font-size:13px;font-weight:650;color:var(--muted);margin-top:2px}
 .dl{display:flex;gap:10px;flex-wrap:wrap}
 .dl[hidden]{display:none}
+#dlmore{margin-bottom:10px}
 .dl a{text-decoration:none;display:inline-flex;align-items:center;gap:8px}
 .dlsz{font-size:11px;font-weight:700;color:var(--ink-2);opacity:.75;
   font-variant-numeric:tabular-nums}
@@ -1330,6 +1331,7 @@ table.pct tr.live td.l{color:var(--orange)}
 <div class="card" id="sec-dl">
   <h2>Download Data</h2>
   <p class="note">To download the lists generated from the trackers daily. The weekly PDFs and Excel Sheets include the four areas and the 13 developers, which will be refreshed every Friday.</p>
+  <button class="ghost" id="dlmore" aria-expanded="false" aria-controls="dl">See more</button>
   <div class="dl" id="dl" hidden></div>
 </div>
 
@@ -2479,6 +2481,14 @@ document.querySelectorAll('[data-tbl]').forEach(b => {
   const host = $('#dl'); if (!host) return;
   const items = DATA.downloads || [];
   host.textContent = '';
+  /* Folded behind "See more" (her call, 17 Nov 2026); tap again to fold away. */
+  const more = $('#dlmore');
+  if (more) more.onclick = () => {
+    const open = host.hidden;
+    host.hidden = !open;
+    more.textContent = open ? 'See less' : 'See more';
+    more.setAttribute('aria-expanded', String(open));
+  };
   if (!items.length) { host.appendChild(el('div', 'note', 'No files built yet.')); return; }
   items.forEach(d => {
     const a = el('a', 'ghost');
