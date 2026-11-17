@@ -90,6 +90,8 @@ def remark_for(project, generated, sold=None):
     data has outgrown (see stale_remark) is skipped. Kept in step with
     build_dashboard.remark_for so the Excel and the site never disagree."""
     override = (project.get('remarks') or '').strip()
+    if override == '-':   # "-" = no note at all (The Seed, 17 Nov 2026)
+        return ''
     if override and not stale_remark(project, sold):
         return override
     caveat = (project.get('note_prefix') or '').strip()
