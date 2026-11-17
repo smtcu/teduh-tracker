@@ -232,6 +232,8 @@ def remark_for(project, generated, sold=None):
     stale_remark) is skipped, and the caveat + generated note shows instead.
     """
     override = (project.get("remarks") or "").strip()
+    if override == "-":   # "-" = no note at all (The Seed, 17 Nov 2026)
+        return ""
     if override and not stale_remark(project, sold):
         return override
     caveat = (project.get("note_prefix") or "").strip()

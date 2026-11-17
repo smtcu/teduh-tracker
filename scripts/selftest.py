@@ -79,7 +79,11 @@ else:
     for u in ["9-1", "10-3A", "12-01", "7-12"]:
         ck(UT.block_of(u) is None, f"{u!r} is FLOOR-UNIT -> None")
     for u, want in [("A-08-03", "A"), ("A-08-03A", "A"), ("1A-07-01", "1A"),
-                    ("D1-12-01", "D1"), ("A- 01-02", "A")]:
+                    ("D1-12-01", "D1"), ("A- 01-02", "A"),
+                    # The Seed: house number in front, block inside the bracket
+                    ("957 (35-01-01)", "35"), ("1009 (36-02-03)", "36"),
+                    # Sime Darby: bracket is part of the block name
+                    ("HT6T1A(I)/1-05-02", "HT6T1A(I)/1")]:
         ck(UT.block_of(u) == want, f"{u!r} -> {want!r}")
 
 # Desa Timur's "B39-13" lost its first hyphen; it is still block B. Floor-unit

@@ -66,7 +66,15 @@ def block_of(unit):
     numbered FLOOR-UNIT ("9-1", "10-3A"), where the prefix is a floor, not a
     block. Those projects have no blocks to report, so they return None.
     """
-    parts = str(unit).strip().upper().split("-")
+    u = str(unit).strip().upper()
+    # The Seed (6034-35/-36) prefixes a house number to some units:
+    # "957 (35-01-01)" is block 35 like "35-01-02". Read the bracket only
+    # when it holds the whole BLOCK-FLOOR-UNIT number; Sime Darby's
+    # "HT6T1A(I)/1-.." keeps its own block name.
+    m = re.fullmatch(r"[^()]*\(\s*([^()]*-[^()]*-[^()]*?)\s*\)", u)
+    if m:
+        u = m.group(1)
+    parts = u.split("-")
     if len(parts) < 3:
         return None
     head = parts[0].strip()
