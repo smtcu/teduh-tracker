@@ -1024,9 +1024,9 @@ tr.soldout td{color:var(--muted)}
    reading, tagged with that date so it is never read as today's number.
    From 15 Nov 2026 TEDUH's database ran out of disk and 45 big projects
    stopped answering; the scraper writes no row for them (never a part sum). */
-.stag{display:table;margin:4px 0 0;padding:1px 7px;border-radius:10px;background:transparent;
+.stag{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:20px;background:transparent;
   border:1px solid var(--orange);color:var(--orange);font-size:10px;font-weight:750;letter-spacing:.05em;
-  line-height:1.35;text-transform:uppercase;white-space:normal;max-width:100%}
+  text-transform:uppercase;vertical-align:1px;white-space:nowrap}
 td.stale,tr.stale td{color:var(--muted);font-style:italic}
 
 /* Sticky section shortcuts under the tracker buttons. */
@@ -1432,7 +1432,7 @@ const staleOf = p => {
 const staleTag = p => {
   const d = staleOf(p);
   if (!d) return null;
-  const t = el('span', 'stag', 'No TEDUH data · as at ' + fdate(d, true).replace(' ', '\u00a0'));
+  const t = el('span', 'stag', 'As at ' + fdate(d, true));
   t.title = 'TEDUH did not return this project today. Figures are its last complete reading, ' + fdate(d) + '.';
   return t;
 };
@@ -1561,11 +1561,14 @@ function table() {
   /* Today only earns a column when it is not already the newest Friday. */
   const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
   const nSeed = vis().filter(p => p.seeded).length;
+  const nStale = vis().filter(p => staleOf(p)).length;
   $('#tblnote').textContent = (live
     ? 'The orange column is today, updated every morning. Everything after it is the weekly record that feeds your Excel sheets, newest week first.'
     : 'Newest week first, matching your Excel sheets. Scroll sideways for earlier weeks.')
     + (nSeed ? ' ' + nSeed + (nSeed === 1 ? ' project is' : ' projects are')
-             + ' new to the tracker, so the newest week is seeded from today’s reading (dotted underline) and has no NEW figure yet.' : '');
+             + ' new to the tracker, so the newest week is seeded from today’s reading (dotted underline) and has no NEW figure yet.' : '')
+    + (live && nStale ? ' ' + nStale + (nStale === 1 ? ' project' : ' projects')
+             + ' tagged “As at” got no reply from TEDUH today; their figures are the last complete reading, shown greyed.' : '');
 
   const finds = (DATA.watch || {})[tracker] || [];
   const wn = $('#watchnote'); wn.textContent = '';

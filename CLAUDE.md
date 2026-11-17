@@ -560,8 +560,10 @@ Two rules came out of it:
   1,629/4,525, and M Nova 669/832 instead of 1,900/2,080; those rows were
   deleted.
 - **The site tags a coded project whose newest reading is older than today**
-  "No TEDUH data · as at <date>" (`staleOf()` in build_dashboard.py), and
-  greys its Today figures, so a held figure is never read as today's.
+  "As at <date>" (`staleOf()` in build_dashboard.py), greys its Today
+  figures, and the note above the table says how many and why -- so a held
+  figure is never read as today's. The tag is short and nowrap on purpose:
+  a wrapped tag made phone rows taller (her call, 17 Nov 2026).
 
 ## Unit numbers — read this before touching `block_of`
 
