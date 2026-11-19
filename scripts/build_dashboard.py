@@ -749,6 +749,9 @@ h2{font-size:17px;font-weight:750;margin:0 0 4px;letter-spacing:-.015em}
 button,.btn{font:inherit;color:inherit;cursor:pointer}
 .ghost{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:9px 15px;font-size:13.5px;font-weight:650;color:var(--ink-2);min-height:40px}
 .ghost:hover{background:var(--sunk)}
+.hbtns{display:flex;gap:8px;flex:0 0 auto}
+@media (max-width:480px){.hbtns{flex-direction:column;gap:6px}.hbtns .ghost{justify-content:center;text-align:center}}
+#logout{display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap}
 .ghost[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
 
 /* suggest-a-project form */
@@ -1231,7 +1234,10 @@ table.pct tr.live td.l{color:var(--orange)}
     <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"></h1>
     <div class="sub">Data as at <b id="asat"></b> · refreshed daily · <span class="clock" id="clock"></span></div>
   </div>
-  <button class="ghost" id="theme">Dark</button>
+  <div class="hbtns">
+    <button class="ghost" id="theme">Dark</button>
+    <a class="ghost" id="logout" href="/logout">Log out</a>
+  </div>
 </header>
 
 <div class="searchwrap">
