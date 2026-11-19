@@ -56,7 +56,7 @@ block_groups.json                rolls TEDUH block names into her reported group
 .github/workflows/weekly-teduh.yml  the pipeline — workflow_dispatch only, no cron
 .github/workflows/watch-launches.yml the new-launch watch — runs after the morning refresh
 cloudflare-worker/               the Worker that fires workflow_dispatch twice a day
-worker.js / wrangler.toml        Cloudflare password gate for the website (unrelated
+worker.js / wrangler.toml        Cloudflare sign-in gate for the website (unrelated
                                  to cloudflare-worker/ above — different Worker)
 scripts/scrape_teduh.py          the scraper — writes all the data files
 scripts/unit_types.py            unit-number parsing, classification, block notes
@@ -488,6 +488,23 @@ refresh (the form used to put the permit *number* there). The same day the
 stale-remark rule was extended to `note_prefix`, so a filled placeholder's
 "Not launched yet." caveat stops printing once it records sales. Worker
 changes only take effect after a `wrangler deploy` from a laptop.
+
+## Sign-in and Log out (worker.js)
+
+Since 19 Nov 2026 the site has its own sign-in page and a **Log out** button
+(next to Dark), replacing the browser's Basic Auth pop-up -- a website cannot
+sign out of Basic Auth, and iPad Safari keeps it until the app is closed.
+
+- One shared username and password, `SITE_USER` / `SITE_PASSWORD` in
+  Cloudflare as before. Nothing new to set up.
+- Signing in sets an HttpOnly cookie that lasts **one hour from sign-in**
+  (`SESSION_SECONDS`, her call). Then the sign-in page comes back on the next
+  page load or download; a page already open keeps showing.
+- `/logout` deletes the cookie on that device only.
+- The cookie is signed with a key made from the username and password, so
+  **changing the password signs every device out** -- the way to cut someone off.
+- `PUBLIC_PATHS` (logo, icons, manifest) stay open; the sign-in page uses the logo.
+- A wrong password waits 1s before answering, to slow guessing.
 
 ## Website search, badges and code ranges
 
