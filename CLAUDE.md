@@ -509,6 +509,10 @@ sign out of Basic Auth, and iPad Safari keeps it until the app is closed.
   "You have been logged out" message -- Log out goes straight to a plain sign-in
   page. The logo is the one-line CPI Land | TEDUH Tracker (`docs/brand/logo.png`;
   `logo-dark.png` is the same with "cpi" in white).
+- Logo URLs carry `?v=`: the Worker lets browsers keep the logo a day, so the
+  new logo first showed as the old one. The dashboard's `?v=` is a fingerprint
+  of the files (`logo_version()`), automatic; the sign-in page's is
+  `LOGO_VERSION` in worker.js -- bump it when the logo changes.
 
 ## Website search, badges and code ranges
 
