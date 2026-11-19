@@ -45,6 +45,24 @@ TOP_N = {("johor", "Permas Jaya"): 1}
 SUGGEST_URL = "https://teduh-workflow-trigger.marketsurvey.workers.dev"
 
 
+def logo_version():
+    """A short fingerprint of the two header logos, added to their URLs as ?v=.
+
+    worker.js tells browsers to keep the logo for a day, so a new logo under the
+    same file name kept showing the old one (19 Nov 2026). A new picture gives a
+    new fingerprint, so browsers fetch it at once.
+    """
+    import hashlib
+    h = hashlib.sha1()
+    for name in ("logo.png", "logo-dark.png"):
+        try:
+            with open(os.path.join(ROOT, "docs", "brand", name), "rb") as f:
+                h.update(f.read())
+        except OSError:
+            pass
+    return h.hexdigest()[:8]
+
+
 def tracker_label(key, given=""):
     if key in AREA_TRACKERS:
         return AREA_TRACKERS[key]
@@ -1232,7 +1250,7 @@ table.pct tr.live td.l{color:var(--orange)}
 <div class="wrap">
 <header>
   <div>
-    <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144"></h1>
+    <h1 class="brand"><img class="logo-light" src="brand/logo.png?v=__LOGO_V__" alt="CPI Land | TEDUH Tracker" width="1100" height="144"><img class="logo-dark" src="brand/logo-dark.png?v=__LOGO_V__" alt="CPI Land | TEDUH Tracker" width="1100" height="144"></h1>
     <div class="sub">Data as at <b id="asat"></b> · refreshed daily · <span class="clock" id="clock"></span></div>
   </div>
   <div class="hbtns">
@@ -3024,6 +3042,7 @@ def main():
     payload = build_payload()
     html_out = TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False).replace("</", "<\\/"))
     html_out = html_out.replace("__SUGGEST_URL__", SUGGEST_URL.rstrip("/"))
+    html_out = html_out.replace("__LOGO_V__", logo_version())
     out = os.path.join(DOCS, "index.html")
     with open(out, "w", encoding="utf-8") as f:
         f.write(html_out)

@@ -22,6 +22,10 @@
 const SESSION_SECONDS = 60 * 60; // one hour
 const COOKIE = "teduh_session";
 
+// Added to the logo URLs on the sign-in page. Browsers keep the logo for a day
+// (see PUBLIC_PATHS), so bump this whenever docs/brand/logo*.png is replaced.
+const LOGO_VERSION = "2";
+
 /**
  * The only files served without signing in: the logo, home-screen icons and the
  * manifest that names them. Phones fetch these on their own, without the login,
@@ -157,8 +161,8 @@ button{width:100%;margin-top:20px;padding:12px;font:inherit;font-size:16px;font-
 </head>
 <body>
 <form method="post" action="/login">
-  <img class="logo light" src="/brand/logo.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144">
-  <img class="logo dark" src="/brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144">
+  <img class="logo light" src="/brand/logo.png?v=${LOGO_VERSION}" alt="CPI Land | TEDUH Tracker" width="1100" height="144">
+  <img class="logo dark" src="/brand/logo-dark.png?v=${LOGO_VERSION}" alt="CPI Land | TEDUH Tracker" width="1100" height="144">
   ${note}
   <input type="hidden" name="next" value="${escapeHtml(next)}">
   <label for="u">Username</label>
