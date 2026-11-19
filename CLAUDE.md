@@ -505,6 +505,10 @@ sign out of Basic Auth, and iPad Safari keeps it until the app is closed.
   **changing the password signs every device out** -- the way to cut someone off.
 - `PUBLIC_PATHS` (logo, icons, manifest) stay open; the sign-in page uses the logo.
 - A wrong password waits 1s before answering, to slow guessing.
+- 19 Nov 2026, her call: no "You stay signed in for one hour" line and no
+  "You have been logged out" message -- Log out goes straight to a plain sign-in
+  page. The logo is the one-line CPI Land | TEDUH Tracker (`docs/brand/logo.png`;
+  `logo-dark.png` is the same with "cpi" in white).
 
 ## Website search, badges and code ranges
 
