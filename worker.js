@@ -141,7 +141,7 @@ body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:c
   background:var(--plane);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
 form{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--border);border-radius:14px;
   padding:28px 24px;box-shadow:0 1px 2px rgba(11,11,11,.05),0 6px 20px rgba(11,11,11,.06)}
-.logo{display:block;width:190px;height:auto;margin:0 auto 20px}
+.logo{display:block;width:100%;max-width:280px;height:auto;margin:4px auto 22px}
 .logo.dark{display:none}
 @media (prefers-color-scheme: dark){.logo.light{display:none}.logo.dark{display:block}}
 label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 5px}
@@ -153,13 +153,12 @@ button{width:100%;margin-top:20px;padding:12px;font:inherit;font-size:16px;font-
 .msg{margin:0 0 6px;padding:10px 12px;border-radius:9px;font-size:14px;text-align:center}
 .msg.info{background:var(--infobg);color:var(--infoink)}
 .msg.error{background:var(--errbg);color:var(--errink)}
-.foot{margin:16px 0 0;font-size:12.5px;color:var(--muted);text-align:center}
 </style>
 </head>
 <body>
 <form method="post" action="/login">
-  <img class="logo light" src="/brand/logo.png" alt="CPI Land | TEDUH Tracker" width="214" height="64">
-  <img class="logo dark" src="/brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="214" height="64">
+  <img class="logo light" src="/brand/logo.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144">
+  <img class="logo dark" src="/brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144">
   ${note}
   <input type="hidden" name="next" value="${escapeHtml(next)}">
   <label for="u">Username</label>
@@ -167,7 +166,6 @@ button{width:100%;margin-top:20px;padding:12px;font:inherit;font-size:16px;font-
   <label for="p">Password</label>
   <input id="p" name="password" type="password" autocomplete="current-password" required>
   <button type="submit">Sign in</button>
-  <p class="foot">You stay signed in on this device for one hour.</p>
 </form>
 </body>
 </html>`;
@@ -208,7 +206,7 @@ export default {
 
     // Log out: delete the cookie on this device. Nothing else is touched.
     if (path === "/logout") {
-      return redirect("/login?out=1", { "Set-Cookie": sessionCookie("", 0) });
+      return redirect("/login", { "Set-Cookie": sessionCookie("", 0) });
     }
 
     if (path === "/login") {
@@ -234,9 +232,6 @@ export default {
       // Already signed in? Go straight to the site.
       if (await sessionIsValid(readCookie(request, COOKIE), user, pass)) {
         return redirect(safeNext(url.searchParams.get("next")));
-      }
-      if (url.searchParams.get("out") === "1") {
-        return loginPage({ message: "You have been logged out." });
       }
       if (url.searchParams.get("expired") === "1") {
         return loginPage({ next: safeNext(url.searchParams.get("next")), message: "Please sign in again." });

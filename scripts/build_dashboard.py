@@ -736,7 +736,8 @@ body{
 header{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 h1{font-size:21px;font-weight:750;margin:0;letter-spacing:-.02em;line-height:1.2}
 h1.brand{line-height:0}
-h1.brand img{height:64px;width:auto;display:block}
+header>div{min-width:0}
+h1.brand img{width:360px;max-width:100%;height:auto;display:block}
 h1.brand .logo-dark,html[data-theme="dark"] h1.brand .logo-light{display:none}
 html[data-theme="dark"] h1.brand .logo-dark{display:block}
 .sub{color:var(--ink-2);font-size:13.5px;margin-top:5px;font-weight:500}
@@ -1080,7 +1081,7 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 @media(max-width:640px){
   .wrap{padding:14px 11px 52px}
   h1{font-size:19px} h2{font-size:16px}
-  h1.brand img{height:52px}
+  h1.brand img{height:auto}
   .card{padding:14px;border-radius:12px}
   .kpis{grid-template-columns:repeat(2,1fr);gap:9px}
   .kpi{padding:12px 13px} .kpi .v{font-size:25px} .hero .v{font-size:32px}
@@ -1231,7 +1232,7 @@ table.pct tr.live td.l{color:var(--orange)}
 <div class="wrap">
 <header>
   <div>
-    <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="214" height="64"></h1>
+    <h1 class="brand"><img class="logo-light" src="brand/logo.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144"><img class="logo-dark" src="brand/logo-dark.png" alt="CPI Land | TEDUH Tracker" width="1100" height="144"></h1>
     <div class="sub">Data as at <b id="asat"></b> · refreshed daily · <span class="clock" id="clock"></span></div>
   </div>
   <div class="hbtns">
