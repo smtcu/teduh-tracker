@@ -4,30 +4,30 @@ forum,https://forum.lowyat.net/PropertyQ&A,Lowyat Property Q&A,,ok 29 Oct
 developer,https://www.mahsing.com.my/,Mah Sing,mahsing,ok
 developer,https://www.simedarbyproperty.com/,Sime Darby Property,simedarby,ok
 developer,https://ecoworld.my/,Eco World,ecoworld,ok
-developer,https://www.lbs.com.my/,LBS,lbs,ok
+developer,https://lbs.com.my/,LBS,lbs,ok -- was www.lbs.com.my until 20 Nov 2026 (it redirects)
 developer,https://spsetia.com/,S P Setia,spsetia,ok
 developer,https://avaland.com.my/,Avaland,avaland,ok
-developer,https://www.binastra.com.my/,Binastra,binastra,ok
+developer,https://binastra.com.my/,Binastra,binastra,ok -- was www.binastra.com.my until 20 Nov 2026 (it redirects)
 developer,https://www.brdb.com.my/,BRDB,brdb,ok
 developer,https://chinhinproperty.com/,Chin Hin Property,chinhin,ok
 developer,https://ksl.my/,KSL,ksl,ok
 developer,https://magma.my/,Magma,magma,ok
 developer,https://www.malton.com.my/,Malton,malton,ok
-developer,https://mbworld.com.my/,MB World,mbworld,ok
-developer,https://myra.com.my/,Myra,myra,ok
+developer,https://www.mbworld.com.my/,MB World,mbworld,ok -- was mbworld.com.my until 20 Nov 2026 (it redirects)
+developer,https://www.myra.com.my/,Myra,myra,ok -- was myra.com.my until 20 Nov 2026 (it redirects)
 developer,https://paramountproperty.my/,Paramount Property,paramount,ok
-developer,https://platinumvictory.com/,Platinum Victory,platinumvictory,ok
-developer,https://radiumdevelopment.com/,Radium,radium,ok
-developer,https://www.scientex.com.my/,Scientex,scientex,ok
-developer,https://skyworld.my/,SkyWorld,skyworld,ok
-developer,https://trinitygroup.com.my/,Trinity Group,trinitygroup,ok
-developer,https://tslawland.com/,TS Law,tslaw,ok
+developer,https://www.platinumvictory.com/,Platinum Victory,platinumvictory,ok -- was platinumvictory.com until 20 Nov 2026 (it redirects)
+developer,https://www.radiumdevelopment.com/,Radium,radium,ok -- was radiumdevelopment.com until 20 Nov 2026 (it redirects)
+developer,https://scientex.com.my/,Scientex,scientex,ok -- was www.scientex.com.my until 20 Nov 2026 (it redirects)
+developer,https://skyworldgroup.com.my/,SkyWorld,skyworld,ok -- was skyworld.my until 20 Nov 2026 (it redirects)
+developer,https://www.trinitygroup.com.my/,Trinity Group,trinitygroup,ok -- was trinitygroup.com.my until 20 Nov 2026 (it redirects)
+developer,https://www.tslawland.com/en,TS Law,tslaw,ok -- was tslawland.com until 20 Nov 2026 (it redirects)
 developer,https://sksgroup.com.my/property/,SKS Group,sks,ok
 developer,https://exsim.com.my/our-developments/,Exsim,exsim,browser only
 developer,https://setiaawan.com/residential/,Setia Awan,setiaawan,ok
-developer,https://www.sunwayproperty.com/,Sunway Property,,browser only
-developer,https://www.oskproperty.com.my/,OSK Property,,ok
-developer,https://www.titijaya.com.my/,Titijaya,,ok
+developer,https://sunwayproperty.com/,Sunway Property,,browser only -- was www.sunwayproperty.com until 20 Nov 2026 (it redirects)
+developer,https://oskproperty.com.my/,OSK Property,,ok -- was www.oskproperty.com.my until 20 Nov 2026 (it redirects)
+developer,https://titijaya.com.my/en/,Titijaya,,ok -- was www.titijaya.com.my until 20 Nov 2026 (it redirects)
 developer,https://armanigroup.com.my/our-developments/,Armani,armani,blocked -- laptop
 developer,https://armanigroup.com.my/,Armani,armani,added 3 Nov 2026 -- tried daily; same host as our-developments (blocked from GitHub 29 Oct)
 developer,https://www.magnaprima.com.my/,Magna Prima (Hallson),armani,added 3 Nov 2026 -- tried daily; not probed yet
