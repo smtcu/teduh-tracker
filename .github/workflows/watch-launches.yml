@@ -48,9 +48,10 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.workflow_run.created_at, 'T23:')
     runs-on: ubuntu-latest
-    # 55 (developer watch) + 10 (pre-launch) + 6 (pictures) + build and
-    # commit. Raised from 60 on 6 Nov 2026 with the developer watch's limit.
-    timeout-minutes: 80
+    # 55 (developer watch) + 10 (pre-launch) + 8 (brochures) + 6 (pictures)
+    # + build and commit. Raised from 60 on 6 Nov 2026 with the developer
+    # watch's limit, and to 90 on 21 Nov 2026 for the brochure check.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -58,8 +59,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      # watch_developers.py and build_dashboard.py are stdlib-only,
-      # so there is nothing to pip install.
+      # watch_developers.py and build_dashboard.py are stdlib-only. Only the
+      # brochure check needs a package (pypdf), installed in its own step.
 
       - name: Watch for new developer launches
         if: ${{ !startsWith(inputs.what, 'Pre-launch') }}
@@ -80,6 +81,20 @@ jobs:
         timeout-minutes: 10
         continue-on-error: true
         run: python scripts/watch_prelaunch.py
+
+      # Brochure / APDL check (21 Nov 2026): reads the saved pages and the
+      # developers' project pages for a permit number, including inside the
+      # PDFs they link (pypdf), and makes a find when a no-code row's APDL
+      # shows up. Writes only data/prelaunch_finds.csv and its memory,
+      # data/prelaunch_brochures.json; never projects.csv. Each PDF is opened
+      # once; a failure never stops the commit below.
+      - name: Pre-launch brochure check
+        if: ${{ !cancelled() }}
+        timeout-minutes: 8
+        continue-on-error: true
+        run: |
+          pip install --quiet pypdf==6.19.0
+          python scripts/watch_brochures.py
 
       # One building picture per pre-launch card, from the project's official
       # pages, the developer's website or an established news site, linked
@@ -109,7 +124,7 @@ jobs:
             git --no-pager diff --stat -- data/teduh_watch.csv projects.csv data/prelaunch_finds.csv data/prelaunch_images.csv
             echo "any=yes" >> "$GITHUB_OUTPUT"
           fi
-          if [ -n "$(git status --porcelain -- data/prelaunch_seen.json data/prelaunch_runs.csv)" ]; then
+          if [ -n "$(git status --porcelain -- data/prelaunch_seen.json data/prelaunch_runs.csv data/prelaunch_brochures.json)" ]; then
             echo "mem=yes" >> "$GITHUB_OUTPUT"
           fi
 
@@ -129,7 +144,7 @@ jobs:
           # to its developer tracker automatically. The pre-launch watch never
           # writes it; its two files ride along when they changed.
           git add data/teduh_watch.csv projects.csv docs
-          git add data/prelaunch_finds.csv data/prelaunch_seen.json data/prelaunch_runs.csv data/prelaunch_images.csv 2>/dev/null || true
+          git add data/prelaunch_finds.csv data/prelaunch_seen.json data/prelaunch_runs.csv data/prelaunch_images.csv data/prelaunch_brochures.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "Nothing new to commit."
             exit 0
