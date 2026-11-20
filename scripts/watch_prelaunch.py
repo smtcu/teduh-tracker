@@ -176,6 +176,7 @@ class Fetcher:
     def __init__(self, budget):
         self.start, self.budget = time.time(), budget
         self.errors, self.skipped, self.asked = [], [], 0
+        self.final = {}         # url asked -> address it ended at after redirects
 
     def get(self, url, label):
         if time.time() - self.start > self.budget:
@@ -188,6 +189,7 @@ class Fetcher:
             with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
                 raw = r.read(3_000_000)
                 cs = r.headers.get_content_charset() or "utf-8"
+                self.final[url] = r.geturl() or url
             return raw.decode(cs, "replace")
         except (urllib.error.URLError, OSError, ValueError) as e:
             self.errors.append(f"{label}: {getattr(e, 'code', '') or type(e).__name__} {getattr(e, 'reason', '')}".strip())
@@ -252,14 +254,27 @@ LISTING_PATH = re.compile(r"/(?:propert(?:y|ies)|portfolio|projects?|development
 LISTING_MAX = 3         # listing pages followed per developer
 
 
-def listing_pages(links, host):
+def site_of(url):
+    """A website's name for same-site tests: host only, lower case, without
+    "www." or a port. myra.com.my redirects to www.myra.com.my and writes its
+    links that way, so an exact host test dropped every Myra project link
+    (found 20 Nov 2026; 13 of the developer sites redirected like this)."""
+    h = urllib.parse.urlsplit(url).netloc.lower().rsplit("@", 1)[-1].split(":", 1)[0]
+    return h[4:] if h.startswith("www.") else h
+
+
+def listing_pages(links, sites):
     """The developer's own project-list pages among a front page's links:
     same website, address ending in a listing word, no ?filter copies
-    (Chin Hin's ?category=Nature), at most LISTING_MAX, front page excluded."""
+    (Chin Hin's ?category=Nature), at most LISTING_MAX, front page excluded.
+    `sites` is a set of site_of() names (the address asked and the one it
+    redirected to), or a single host."""
+    if isinstance(sites, str):
+        sites = {site_of("//" + sites)}
     out = []
     for link, _ in links:
         u = urllib.parse.urlsplit(link)
-        if u.netloc != host or u.query or not LISTING_PATH.search(u.path):
+        if site_of(link) not in sites or u.query or not LISTING_PATH.search(u.path):
             continue
         clean = urllib.parse.urlunsplit((u.scheme, u.netloc, u.path, "", ""))
         if clean.rstrip("/") not in {x.rstrip("/") for x in out}:
@@ -604,8 +619,12 @@ def main():
                 items.append({"title": slug, "url": loc, "date": None, "text": "", "via": s["developer"] + " sitemap",
                               "kind": "sitemap", "own": s.get("tracker")})
             continue
-        host = urllib.parse.urlsplit(url).netloc
-        front = links_of(page, url)
+        # Same site = the address asked or the one it redirected to, www or not
+        # (skyworld.my lands on skyworldgroup.com.my); links resolve against
+        # where the page really is.
+        base = fetch.final.get(url, url)
+        sites = {site_of(url), site_of(base)}
+        front = links_of(page, base)
         if kind == "forum":
             for link, anchor in front:
                 if "/topic/" in link:
@@ -615,13 +634,14 @@ def main():
             continue
         # A developer site: the front page, then its project-list pages one level down.
         pages = [(front, s["developer"] + " website")]
-        for lp in listing_pages(front, host):
+        for lp in listing_pages(front, sites):
             sub = fetch.get(lp, f"listing {s['developer']} {urllib.parse.urlsplit(lp).path}")
             if sub is not None:
-                pages.append((links_of(sub, lp), s["developer"] + " website " + urllib.parse.urlsplit(lp).path))
+                pages.append((links_of(sub, fetch.final.get(lp, lp)),
+                              s["developer"] + " website " + urllib.parse.urlsplit(lp).path))
         for links, via in pages:
             for link, anchor in links:
-                if urllib.parse.urlsplit(link).netloc != host:
+                if site_of(link) not in sites:
                     continue
                 # The address counts as text too: a picture tile has no words.
                 items.append({"title": anchor or slug_words(link), "url": link, "date": None,

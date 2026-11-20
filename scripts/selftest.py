@@ -456,6 +456,12 @@ if WPm:
               ("https://other.example/projects", "agent")]
     ck(WPm.listing_pages(_front, "www.brdb.com.my") == ["https://www.brdb.com.my/property"],
        "pre-launch: listing pages are same-site, unfiltered, listed once")
+    # www or not is the same site (myra.com.my -> www.myra.com.my, 20 Nov 2026)
+    ck(WPm.site_of("https://www.Myra.com.my:443/myra-homes/") == WPm.site_of("https://myra.com.my/") == "myra.com.my",
+       "pre-launch: www. and a port don't make another site")
+    ck(WPm.listing_pages([("https://www.myra.com.my/projects/", "x")], {"myra.com.my"})
+       == ["https://www.myra.com.my/projects/"],
+       "pre-launch: a www link counts as the same site as the address without www")
     _slug = WPm.slug_words("https://www.brdb.com.my/portfolio/damansara-heights-coming-soon")
     ck(_slug == "damansara-heights-coming-soon".replace("-", " "),
        "pre-launch: a link's address reads as words")
