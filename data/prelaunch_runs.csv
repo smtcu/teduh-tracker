@@ -1,4 +1,4 @@
 run,label,last_run,note
-web,"Daily web watch (news, developer sites, Lowyat)",2026-11-19 08:33,"144 sources asked, 10 failed, 0 new finds"
+web,"Daily web watch (news, developer sites, Lowyat)",2026-11-20 08:22,"144 sources asked, 12 failed, 3 new finds"
 laptop,"Weekly laptop check (Facebook ads, social media)",2026-11-14,Runs A + B + C + Google and crt.sh check. Update this date at the end of each laptop session.
 google_ads,Monthly Google ads check,2026-10-30,Run D. Update this date at the end of each run.
