@@ -75,6 +75,8 @@ prelaunch_sources.csv            pre-launch watch config: developer pages, sitem
 data/prelaunch_finds.csv         signs of life for no-code rows: ads, news, agent pages (see below)
 data/prelaunch_pages.csv         pages to keep looking at for no-code rows: agent sites, microsites
 data/prelaunch_teduh.csv         TEDUH codes a no-code row hangs on (8 Conlay's suspended 14159-1/-2)
+scripts/watch_brochures.py       APDL numbers on saved pages, project pages and their PDFs -- see Brochure check
+data/prelaunch_brochures.json    its memory: pages read when, PDFs opened (once), permit codes seen
 scripts/prelaunch_images.py      one building picture per pre-launch card -- see Pre-launch pictures
 data/prelaunch_images.csv        every page it looked at, picture kept or why not
 data/prelaunch_images_removed/   her "Wrong picture? Remove" answers, one file per picture id
@@ -449,6 +451,36 @@ Permit column; memory is seen.json `teduh` / `teduh_next`. Like everything
 in the pre-launch watch it never writes projects.csv -- the codes go on the
 row only when she says so. Not in teduh_watch_extra.csv on purpose: there
 the old expired permit would read as a new one and auto-add a duplicate row.
+
+**Brochure check** (built 21 Nov 2026, her ask: "if the developer's site
+uploads its brochure with the APDL but you have to click it to open the PDF,
+will the run catch it?" -- it did not). `scripts/watch_brochures.py` is its
+own step in watch-launches.yml after the pre-launch watch (8-minute cap,
+420 s budget, `continue-on-error`, `pip install pypdf==6.19.0` -- the only
+package any watch step installs). Every advertisement must carry its permit,
+and the permit number's first part is the TEDUH code
+(`20164-3/06-2028/0447(N)-(S)` = 20164-3), so a permit for a no-code row is
+the strongest pre-launch sign and the code it needs. Each run reads: the
+no-code rows' saved pages (all kinds but social); each developer front page
+and listing page (same rows and skips as the pre-launch watch); then up to
+150 project pages one level down -- pages whose link names a no-code row every
+day, never-read pages next, the rest after 7 days (the first full run read
+63 project pages, so the first sweep of every site takes a few weeks; the
+log says how many pages named a no-code row and how many are still unread);
+then up to 40 PDFs it has never opened, permit files first ("APDL",
+"-AP-", "lesen", "permit" in the name or link), then brochures. Company
+paperwork (terms, annual reports, careers...) is skipped, PDFs over 20 MB
+are skipped, each PDF gets 40 pages and 30 s, a scan has no text (no OCR).
+A permit whose code is on no tracker (and not in prelaunch_teduh.csv), on a
+no-code row's saved page or next to the row's name on its developer's site,
+is a find: kind `permit`, the number and validity in the Permit column,
+Strong on developer pages, Possible on agent or landing pages. One find per
+row and code. A code that matches no row is only printed in the log. Memory
+is data/prelaunch_brochures.json. `--report FILE` (with `--only <developer>`)
+writes nothing. The Myra trial (20 Nov) read the right code from 9 of its 10
+project pages; MG1D's APDL is a scan. It needs real site addresses: 13
+developer sites redirected to another host and lost their links until
+the same-site test learned to ignore www and follow redirects (`site_of()`).
 
 **Pre-launch pictures** (built 5 Nov 2026, her rules): each card can show one
 picture of the **whole building, never a logo**, from **credible sources only**

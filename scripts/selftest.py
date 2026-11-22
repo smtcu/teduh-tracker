@@ -38,7 +38,7 @@ mods = {}
 for name in ["unit_types", "scrape_teduh", "build_dashboard", "build_trackers",
              "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary",
              "fill_apdl", "watch_developers", "survey_area", "apply_resolutions",
-             "watch_prelaunch", "prelaunch_images"]:
+             "watch_prelaunch", "prelaunch_images", "watch_brochures"]:
     try:
         mods[name] = __import__(name)
         ck(True, name)
@@ -456,6 +456,12 @@ if WPm:
               ("https://other.example/projects", "agent")]
     ck(WPm.listing_pages(_front, "www.brdb.com.my") == ["https://www.brdb.com.my/property"],
        "pre-launch: listing pages are same-site, unfiltered, listed once")
+    # www or not is the same site (myra.com.my -> www.myra.com.my, 20 Nov 2026)
+    ck(WPm.site_of("https://www.Myra.com.my:443/myra-homes/") == WPm.site_of("https://myra.com.my/") == "myra.com.my",
+       "pre-launch: www. and a port don't make another site")
+    ck(WPm.listing_pages([("https://www.myra.com.my/projects/", "x")], {"myra.com.my"})
+       == ["https://www.myra.com.my/projects/"],
+       "pre-launch: a www link counts as the same site as the address without www")
     _slug = WPm.slug_words("https://www.brdb.com.my/portfolio/damansara-heights-coming-soon")
     ck(_slug == "damansara-heights-coming-soon".replace("-", " "),
        "pre-launch: a link's address reads as words")
@@ -469,6 +475,73 @@ if os.path.exists(wp):
     src = open(wp, encoding="utf-8").read()
     ck(not re.search(r"open\(\s*PROJECTS[^)]*['\"][wa]", src) and "write_projects" not in src,
        "watch_prelaunch.py never writes projects.csv")
+
+# The brochure / APDL check (21 Nov 2026): permit numbers in page and PDF
+# text, PDF links with spaces or in iframes, and a fake developer site whose
+# APDL PDF names a no-code row -- one find, Strong, permit in its column.
+# No network: the fetcher and the PDF reader are stand-ins.
+WB = mods.get("watch_brochures")
+if WB:
+    _t = ("No. Permit Iklan & Jualan: 20164-3/06-2028/0447(N)-(S) Tempoh Sah: 06/06/2025 - 05/06/2028. "
+          "Lesen 5534-32 / 08 - 2027 / 0754 (A)-(S); tel 03-1234/5678, fax 2024/1234")
+    _p = WB.permits_in(_t)
+    ck([x["code"] for x in _p] == ["20164-3", "5534-32"], "brochures: permit numbers give their TEDUH codes")
+    ck(_p[0]["valid"] == "06/06/2025 - 05/06/2028" and _p[1]["valid"] == "",
+       "brochures: a permit keeps its own validity, never its neighbour's")
+    _h = ('<a href="Halaman 1-AP-19.08.2025.pdf">APDL</a><iframe src="/files/e-brochure.pdf"></iframe>'
+          '<a href="/terms.pdf">Terms</a>')
+    _l = WB.pdf_links_of(_h, "https://www.dev.my/projek/")
+    ck(("https://www.dev.my/projek/Halaman 1-AP-19.08.2025.pdf", "APDL") in _l
+       and any(u == "https://www.dev.my/files/e-brochure.pdf" for u, _ in _l),
+       "brochures: PDF links are found in links and iframes")
+    ck(WB.quote_url("https://www.dev.my/a b.pdf") == "https://www.dev.my/a%20b.pdf"
+       and WB.quote_url("https://www.dev.my/a%20b.pdf") == "https://www.dev.my/a%20b.pdf",
+       "brochures: spaces are encoded once, never twice")
+    ck(WB.code_list("30962-1,30962-2\n19355-6") == {"30962-1", "30962-2", "19355-6"},
+       "brochures: a multi-code cell gives every code")
+
+    _site = {"https://www.dev.my/": '<a href="/our-projects/the-hilltop/">The Hilltop</a>'
+                                    '<a href="/careers/">Jobs</a>',
+             "https://www.dev.my/our-projects/the-hilltop/": '<title>The Hilltop</title>'
+                                                            '<a href="APDL_Hilltop.pdf">APDL</a>'}
+    _tables = {WPm.PROJECTS: [{"tracker": "dev", "project": "The Hilltop @ Somewhere", "code": "",
+                               "developer": "DEV SDN BHD", "tracker_label": "Dev"},
+                              {"tracker": "dev", "project": "Old One", "code": "900-1",
+                               "developer": "DEV SDN BHD", "tracker_label": "Dev"}],
+               WPm.SOURCES: [{"kind": "developer", "url": "https://www.dev.my/", "developer": "Dev",
+                              "tracker": "dev", "probe": "ok"}],
+               WPm.PAGES: [], WPm.FINDS: [], WPm.TEDUH_WATCH: []}
+    class _BF(WB.Fetch):
+        def get(self, url, label):
+            self.asked += 1
+            self.final[url] = url
+            return _site.get(url)
+        def get_pdf(self, url, label):
+            self.asked += 1
+            return b"%PDF fake", ""
+    _wread, _fetch, _ptext = WPm.read, WB.Fetch, WB.pdf_text
+    WPm.read = lambda path: _tables.get(path, [])
+    WB.Fetch = _BF
+    WB.pdf_text = lambda raw: ("Projek: Hilltop. Permit 31999-1/03-2028/0101(N)-(S) sah 01/03/2026 - 28/02/2028. "
+                               "Phase 1 permit 900-1/01-2027/0001(N)-(S)", "")
+    import tempfile
+    _out = os.path.join(tempfile.mkdtemp(), "bro.md")
+    try:
+        WB.main(["--report", _out])
+        _rep = open(_out, encoding="utf-8").read()
+        ck("Would-be finds (1)" in _rep and "**The Hilltop @ Somewhere** (dev) -- APDL 31999-1/03-2028/0101(N)-(S), "
+           "valid 01/03/2026 - 28/02/2028 -- strong" in _rep,
+           "brochures: an APDL PDF on the developer's page for a no-code row is one Strong find")
+        ck("900-1/01-2027/0001(N)-(S) (on a tracker)" in _rep, "brochures: a code already on a tracker is no find")
+        ck("/careers/" not in _rep, "brochures: the company's own pages are not read as projects")
+    finally:
+        WPm.read, WB.Fetch, WB.pdf_text = _wread, _fetch, _ptext
+
+wb = os.path.join(ROOT, "scripts", "watch_brochures.py")
+if os.path.exists(wb):
+    src = open(wb, encoding="utf-8").read()
+    ck("PROJECTS" in src and not re.search(r"open\(\s*W\.PROJECTS[^)]*['\"][wa]", src),
+       "watch_brochures.py never writes projects.csv")
 
 # Her pre-launch answers: each file in data/prelaunch_resolved/ is named by
 # a find id and says accept or dismiss. A file whose find has gone (a note
