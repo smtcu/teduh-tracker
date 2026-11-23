@@ -1022,9 +1022,15 @@ tr:last-child td{border-bottom:0}
 .fpanel .chip i{font-style:normal;font-weight:600;opacity:.65;margin-left:6px}
 .fpanel .chip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue)}
 .fpanel .chip:disabled{opacity:.4}
-.fgl{font-size:12px;font-weight:750;color:var(--ink-2);margin:12px 0 6px}
-.fpanel>.fgl:first-child{margin-top:0}
-.fpanel .sgin{width:100%;max-width:520px;background:var(--surface)}
+.ftop{display:flex;gap:8px;align-items:center}
+.ftop .sgin{flex:1 1 auto;max-width:520px;background:var(--surface)}
+.ftop .ghost{flex:0 0 auto;margin-left:auto}
+.frow{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.fdrop{font:inherit;font-size:13px;font-weight:650;color:var(--ink-2);background:var(--surface);
+  border:1.5px solid var(--border);border-radius:9px;padding:6px 11px;min-height:36px;text-align:left}
+.fdrop[aria-expanded="true"]{border-color:var(--ink-2)}
+.fdrop.on{border-color:var(--blue);color:var(--blue)}
+.fpanel .chips{margin-top:9px}
 .fsum{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:650;color:var(--ink-2);margin:0 0 12px}
 .fsum .ghost{padding:5px 11px;min-height:34px;font-size:12.5px}
 .secnav .fnav{flex:0 0 auto;border-color:var(--blue);color:var(--blue);padding:6px 11px;font-size:12.5px}
@@ -1520,7 +1526,7 @@ function route(key) {
   if (key === tracker) return;
   history.pushState(null, '', key ? '#' + key : location.pathname + location.search);
   tracker = key;
-  clearView();
+  clearView(); closeFilter();
 }
 
 /* ---------- sort + filter ----------
@@ -1531,7 +1537,7 @@ const STATUSES = { selling: 'Selling', stalled: 'No sales in 4 weeks', soldout: 
 const KINDS = ['Landed', 'High-rise', 'Mixed', 'none'];
 const lastNone = (a, b) => (a === 'none') - (b === 'none');
 const FACETS = [
-  { id: 'year', label: 'Launch year (APDL)', of: p => p.apdl ? p.apdl.slice(0, 4) : 'none',
+  { id: 'year', label: 'Launch year', of: p => p.apdl ? p.apdl.slice(0, 4) : 'none',
     show: v => v === 'none' ? 'No APDL date' : v, order: (a, b) => lastNone(a, b) || (a < b ? 1 : a > b ? -1 : 0) },
   { id: 'status', label: 'Status', of: p => p.status, show: v => STATUSES[v] || v,
     order: (a, b) => Object.keys(STATUSES).indexOf(a) - Object.keys(STATUSES).indexOf(b) },
@@ -1618,6 +1624,9 @@ function view() {
     return (x < y ? -1 : x > y ? 1 : 0) * sort.dir || (pos.get(a) - pos.get(b));
   });
 }
+/* Small trackers fit on one screen: no Filter button there, unless a shared
+   link has already filtered one. */
+const FILTER_FROM = 10;
 const applySF = () => { writeView(); render(); };
 /* Heading taps: highest first (A to Z for names), the other way, then back to Excel order. */
 function tapSort(key) {
@@ -1641,7 +1650,8 @@ function sortHead(th, key) {
   th.appendChild(b);
   return th;
 }
-let fOpen = false;
+let fOpen = false, fGroup = '';       /* panel open; which group's chips are showing */
+function closeFilter() { fOpen = false; fGroup = ''; }
 function sortFilterBar() {
   const sel = $('#sortSel'); sel.textContent = '';
   const add = (v, t) => { const o = el('option', '', t); o.value = v; sel.appendChild(o); };
@@ -1662,47 +1672,65 @@ function sortFilterBar() {
   fb.textContent = 'Filter' + (n ? ' (' + n + ')' : '');
   fb.setAttribute('aria-expanded', String(fOpen));
   fb.setAttribute('aria-pressed', String(n > 0));
-  fb.onclick = () => { fOpen = !fOpen; sortFilterBar(); };
+  fb.onclick = () => { if (fOpen) closeFilter(); else fOpen = true; sortFilterBar(); };
+  fb.hidden = !n && vis().length < FILTER_FROM;
+  if (fb.hidden) closeFilter();
 
   const pan = $('#fpanel'); pan.hidden = !fOpen;
   /* The box is kept while she types in it; only the chips below are redrawn. */
   const typing = document.activeElement && document.activeElement.id === 'fq';
   if (fOpen && !typing) {
     pan.textContent = '';
-    pan.appendChild(el('div', 'fgl', 'Name, TEDUH name or code'));
-    const q = el('input', 'sgin'); q.id = 'fq'; q.type = 'search'; q.value = flt.q; q.autocomplete = 'off';
+    const top = el('div', 'ftop');
+    const q = el('input', 'sgin'); q.id = 'fq'; q.placeholder = 'Name, TEDUH name or code'; q.type = 'search'; q.value = flt.q; q.autocomplete = 'off';
     q.setAttribute('aria-label', 'Filter by project name, TEDUH name or code');
     let t; const at = tracker;
     q.oninput = () => { clearTimeout(t); t = setTimeout(() => { if (at !== tracker) return; flt.q = q.value; applySF(); }, 220); };
-    pan.appendChild(q);
+    top.appendChild(q);
+    const done = el('button', 'ghost', 'Hide');
+    done.title = 'Close the filter. Anything ticked stays on.';
+    done.onclick = () => { closeFilter(); sortFilterBar(); fb.focus({ preventScroll: true }); };
+    top.appendChild(done); pan.appendChild(top);
     const box = el('div'); box.id = 'ffac'; pan.appendChild(box);
   }
   const fac = $('#ffac');
   if (fOpen && fac) {
     fac.textContent = '';
+    /* One short row of groups; tapping one shows its chips, one group at a time. */
+    const row = el('div', 'frow'); fac.appendChild(row);
     FACETS.forEach(f => {
       /* A value from a shared link that this tracker no longer has still shows, so it can be unticked. */
       const vals = [...new Set(vis().map(f.of).concat([...flt[f.id]]))].sort(f.order);
       if (vals.length < 2 && !flt[f.id].size) return;      // nothing to choose between
-      fac.appendChild(el('div', 'fgl', f.label));
-      const row = el('div', 'chips');
+      const on = [...flt[f.id]].sort(f.order).map(f.show), open = fGroup === f.id;
+      const d = el('button', 'fdrop' + (on.length ? ' on' : ''),
+        f.label + ': ' + (on.length > 2 ? on.length + ' ticked' : on.join(', ') || 'any') + (open ? ' ▴' : ' ▾'));
+      d.dataset.g = f.id;
+      d.setAttribute('aria-expanded', String(open));
+      d.onclick = () => {
+        fGroup = open ? '' : f.id; sortFilterBar();
+        const nd = document.querySelector('#ffac .fdrop[data-g="' + f.id + '"]'); if (nd) nd.focus({ preventScroll: true });
+      };
+      row.appendChild(d);
+      if (!open) return;
+      const chips = el('div', 'chips');
       vals.forEach(v => {
-        const c = vis().filter(p => passes(p, f.id) && f.of(p) === v).length, on = flt[f.id].has(v);
+        const c = vis().filter(p => passes(p, f.id) && f.of(p) === v).length, tick = flt[f.id].has(v);
         const b = el('button', 'chip', f.show(v));
         b.appendChild(el('i', '', String(c)));
-        b.setAttribute('aria-pressed', String(on));
+        b.setAttribute('aria-pressed', String(tick));
         b.dataset.f = f.id + ':' + v;
-        b.disabled = !c && !on;
+        b.disabled = !c && !tick;
         if (v === 'stalled') b.title = 'No unit sold in the four weeks to the last Friday reading, nor since. Projects tracked for less than four weeks count as Selling.';
         b.onclick = () => {
-          if (on) flt[f.id].delete(v); else flt[f.id].add(v);
+          if (tick) flt[f.id].delete(v); else flt[f.id].add(v);
           applySF();
           const nb = [...document.querySelectorAll('#ffac .chip')].find(x => x.dataset.f === f.id + ':' + v);
           if (nb) nb.focus({ preventScroll: true });
         };
-        row.appendChild(b);
+        chips.appendChild(b);
       });
-      fac.appendChild(row);
+      fac.appendChild(chips);
     });
   }
 
@@ -3332,7 +3360,7 @@ function render() {
 })();
 
 addEventListener('popstate', () => {
-  tracker = fromHash(); readView(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
+  tracker = fromHash(); readView(); closeFilter(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
 });
 readView();
 render();

@@ -288,6 +288,10 @@ touches projects.csv or the Excel files.
 - **Filter**: name / TEDUH name / code, APDL year, status, type, state. Ticks
   inside one group are either/or; groups narrow each other. A group with nothing
   to choose between is not shown.
+  The panel is folded: one row of groups, one group's chips at a time, a Hide
+  button, and it closes when you leave the tracker. Trackers under 10 rows
+  (`FILTER_FROM`) have no Filter button; what is ticked always shows in a line
+  above the table, so a closed panel never hides a filter.
 - **Reach**: `view()` is the filtered, sorted tracker; `vis()` is the whole one.
   Table, cards, charts, picker and KPIs use `view()`, and KPIs print the
   whole-tracker figure under the filtered one. Unit-type tables always show in
