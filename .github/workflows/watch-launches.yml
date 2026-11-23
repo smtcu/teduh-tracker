@@ -32,13 +32,6 @@ on:
 permissions:
   contents: write
 
-# Same group as the refresh so the two never run at once: both commit
-# projects.csv and data/, and binary docs cannot merge. If a refresh is
-# already running, this waits its turn.
-concurrency:
-  group: teduh-refresh
-  cancel-in-progress: false
-
 jobs:
   watch:
     # Once a day is enough, so only the morning refresh (dispatched 23:17
@@ -47,13 +40,32 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.workflow_run.created_at, 'T23:')
+    # Same group as the refresh so the two never run at once: both commit
+    # projects.csv and data/, and binary docs cannot merge. If a refresh is
+    # already running, this waits its turn.
+    #
+    # On the JOB, under the `if:` above, not at the top of the file. Every
+    # refresh that ends starts this workflow, and GitHub keeps only one run
+    # waiting per group: a newer waiting run cancels the older one. At the
+    # top, a watch about to skip itself still took the waiting place first.
+    # On 23 Nov 2026 two such watches (started by refreshes that had
+    # themselves been cancelled) bumped the refresh for her Horizon 27
+    # answer and the PR #68 merge. Here, a skipped watch never joins the group.
+    concurrency:
+      group: teduh-refresh
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     # 55 (developer watch) + 10 (pre-launch) + 8 (brochures) + 6 (pictures)
     # + build and commit. Raised from 60 on 6 Nov 2026 with the developer
     # watch's limit, and to 90 on 21 Nov 2026 for the brochure check.
     timeout-minutes: 90
     steps:
+      # ref: main for the same reason as the refresh: a watch that waited
+      # in the queue must start from the latest main, not from the commit
+      # that existed when it was created.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
