@@ -397,8 +397,40 @@ def prelaunch(projects):
     return {"stages": STAGES, "rows": rows, "newInArea": new_in_area, "runs": runs}
 
 
+# TEDUH's unit types in the three buckets the type filter uses. A townhouse
+# (Rumah Bandar) counts as landed; SOHO and suites are high-rise. A type in
+# neither set is left out of the bucket and named in the build log.
+HIGH_RISE = {"Rumah Pangsa/Kondo", "Pangsapuri Servis", "Pangsapuri Suite", "Soho", "Suite Homes"}
+LANDED = {"Rumah Teres", "Rumah Berkembar", "Rumah Sesebuah", "Rumah Kluster", "Rumah Bandar",
+          "Rumah Berpagar", "Rumah Berpagar & Berpengawal"}
+
+
+def type_bucket(names):
+    """Landed / High-rise / Mixed for a set of TEDUH unit types, "" when unknown."""
+    names = set(names)
+    hi, lo = bool(HIGH_RISE & names), bool(LANDED & names)
+    return "Mixed" if hi and lo else "High-rise" if hi else "Landed" if lo else ""
+
+
+def stalled(wpts, today_new, days=28):
+    """No sale in the four weeks up to the last Friday reading, nor since it.
+
+    Friday to Friday, so it agrees with the Excel. None when there is no reading
+    four weeks back to compare with: too new to say is not the same as stalled.
+    """
+    if not wpts:
+        return None
+    from datetime import date, timedelta
+    back = (date.fromisoformat(wpts[-1][0]) - timedelta(days=days)).isoformat()
+    then = [v for d, v in wpts if d <= back]
+    if not then:
+        return None
+    return wpts[-1][1] - then[-1] <= 0 and not (today_new or 0) > 0
+
+
 def build_payload():
     projects = read("projects.csv")
+    states = {r["code"]: (r.get("state") or "").strip() for r in read("data/project_places.csv")}
     weekly = read("data/teduh_history.csv")
     utypes = read("data/teduh_unit_types_weekly.csv")
     # The daily classification, for a project whose rules were added since the
@@ -481,6 +513,10 @@ def build_payload():
     week_seed = max(known_weeks) if known_weeks else ""
     seeded_weeks = set()
 
+    odd = sorted({g["type"] for gs in types.values() for g in gs} - HIGH_RISE - LANDED)
+    if odd:
+        print("Unit types in no filter bucket (see HIGH_RISE / LANDED):", ", ".join(odd))
+
     out = []
     for p in projects:
         codes = [c.strip() for c in (p.get("code") or "").split(",") if c.strip()]
@@ -513,7 +549,15 @@ def build_payload():
 
         wLast = wpts[-1][1] if wpts else None
         wPrev = wpts[-2][1] if len(wpts) > 1 else None
+        today_new = None if seeded or latest is None or wLast is None else latest - wLast
+        # One status per project, for the filter. Sold out uses her total units.
+        status = ("nocode" if not code else
+                  "soldout" if units and latest is not None and latest >= units else
+                  "stalled" if stalled(wpts, today_new) else "selling")
         out.append({
+            "state": " / ".join(sorted({states[c] for c in codes if states.get(c)})),
+            "kind": type_bucket(g["type"] for c in codes for g in types.get(c, [])),
+            "status": status,
             "tracker": p["tracker"],
             "trackerLabel": tracker_label(p["tracker"], p.get("tracker_label", "")),
             "trackerKind": tracker_kind(p["tracker"]),
@@ -963,6 +1007,30 @@ tr:last-child td{border-bottom:0}
    it wrap instead -- the figures are what the page is for. */
 .dev{max-width:250px;white-space:normal;line-height:1.3}
 .tbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+/* sort + filter (.flab is the focused bar label, so these are .fgl) */
+.ssel{font:inherit;font-size:13.5px;font-weight:650;color:var(--ink-2);background:var(--surface);
+  border:1.5px solid var(--border);border-radius:10px;padding:8px 11px;min-height:40px;max-width:100%}
+.ssel.on{border-color:var(--blue);color:var(--ink)}
+.thb{all:unset;cursor:pointer;display:inline;color:inherit;font:inherit;letter-spacing:inherit}
+.thb:hover{text-decoration:underline}
+.thb:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+.thb[data-on]{color:var(--blue)}
+.fpanel{background:var(--sunk);border-radius:12px;padding:13px 14px 14px;margin:0 0 12px}
+.fpanel[hidden],.fsum[hidden]{display:none}
+.fpanel .chips{display:flex;margin:0;gap:6px}
+.fpanel .chip{background:var(--surface);border-color:var(--border);padding:6px 11px;min-height:36px}
+.fpanel .chip i{font-style:normal;font-weight:600;opacity:.65;margin-left:6px}
+.fpanel .chip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue)}
+.fpanel .chip:disabled{opacity:.4}
+.fgl{font-size:12px;font-weight:750;color:var(--ink-2);margin:12px 0 6px}
+.fpanel>.fgl:first-child{margin-top:0}
+.fpanel .sgin{width:100%;max-width:520px;background:var(--surface)}
+.fsum{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:650;color:var(--ink-2);margin:0 0 12px}
+.fsum .ghost{padding:5px 11px;min-height:34px;font-size:12.5px}
+.secnav .fnav{flex:0 0 auto;border-color:var(--blue);color:var(--blue);padding:6px 11px;font-size:12.5px}
+.kpi .d.all{color:var(--ink-2)}
+.fempty{padding:22px 14px;font-size:14px;color:var(--ink-2)}
+@media(max-width:640px){.ssel{flex:1 1 200px;min-width:0}}
 .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .bar button{flex:1 1 auto;min-width:150px}
 /* Seventeen trackers in one flat row pushed the table below the fold, so they
@@ -1282,7 +1350,11 @@ table.pct tr.live td.l{color:var(--orange)}
     <div class="seg vonly" id="vseg"><button data-v="table">Table</button><button data-v="cards">Cards</button></div>
     <div class="seg vonly" id="zseg"><button data-z="1">100%</button><button data-z="0.75">75%</button><button data-z="0.55">55%</button></div>
     <button class="ghost" id="cols">Show all columns</button>
+    <select class="ssel" id="sortSel" aria-label="Sort projects"></select>
+    <button class="ghost" id="fbtn" aria-expanded="false" aria-controls="fpanel">Filter</button>
   </div>
+  <div class="fpanel" id="fpanel" hidden></div>
+  <div class="fsum" id="fsum" hidden></div>
   <div class="scroll tall" id="table"></div>
   <div id="pcards"></div>
 </div>
@@ -1315,7 +1387,7 @@ table.pct tr.live td.l{color:var(--orange)}
   <div id="bytype"></div>
 </div>
 
-<h2 style="margin:26px 0 2px">Whole portfolio</h2>
+<h2 style="margin:26px 0 2px" id="kpihead">Whole portfolio</h2>
 <p class="note" id="kpinote"></p>
 <div class="kpis" id="kpis"></div>
 
@@ -1438,13 +1510,217 @@ const TRACKERS = DATA.trackers && DATA.trackers.length ? DATA.trackers : (() => 
 /* '' is the home page. The tracker lives in the address (#johor), so the
    phone's back button returns to Home and a bookmark reopens the same tracker. */
 const KEYS = new Set(TRACKERS.map(t => t.key).concat('prelaunch'));
-const fromHash = () => { const h = decodeURIComponent(location.hash.slice(1)); return KEYS.has(h) ? h : ''; };
+const fromHash = () => {
+  let h = location.hash.slice(1).split('?')[0];
+  try { h = decodeURIComponent(h); } catch (e) {}
+  return KEYS.has(h) ? h : '';
+};
 let tracker = fromHash();
 function route(key) {
   if (key === tracker) return;
   history.pushState(null, '', key ? '#' + key : location.pathname + location.search);
   tracker = key;
+  clearView();
 }
+
+/* ---------- sort + filter ----------
+   Per tracker and per visit: leaving the tracker clears both, so a page always
+   opens in Excel order with nothing hidden. The address carries them, so a
+   filtered view can be bookmarked or sent. Excel order is never altered. */
+const STATUSES = { selling: 'Selling', stalled: 'No sales in 4 weeks', soldout: 'Sold out', nocode: 'No TEDUH code' };
+const KINDS = ['Landed', 'High-rise', 'Mixed', 'none'];
+const lastNone = (a, b) => (a === 'none') - (b === 'none');
+const FACETS = [
+  { id: 'year', label: 'Launch year (APDL)', of: p => p.apdl ? p.apdl.slice(0, 4) : 'none',
+    show: v => v === 'none' ? 'No APDL date' : v, order: (a, b) => lastNone(a, b) || (a < b ? 1 : a > b ? -1 : 0) },
+  { id: 'status', label: 'Status', of: p => p.status, show: v => STATUSES[v] || v,
+    order: (a, b) => Object.keys(STATUSES).indexOf(a) - Object.keys(STATUSES).indexOf(b) },
+  { id: 'type', label: 'Type', of: p => p.kind || 'none', show: v => v === 'none' ? 'Not stated' : v,
+    order: (a, b) => KINDS.indexOf(a) - KINDS.indexOf(b) },
+  { id: 'state', label: 'State', of: p => p.state || 'none', show: v => v === 'none' ? 'Not stated' : v,
+    order: (a, b) => lastNone(a, b) || a.localeCompare(b) },
+];
+let flt, sort;
+function clearView() { flt = { q: '' }; FACETS.forEach(f => { flt[f.id] = new Set(); }); sort = { key: '', dir: 0 }; }
+clearView();
+const nFilters = () => (flt.q.trim() ? 1 : 0) + FACETS.reduce((a, f) => a + flt[f.id].size, 0);
+const filtered = () => nFilters() > 0;
+function readView() {
+  clearView();
+  const i = location.hash.indexOf('?');
+  if (i < 0 || !tracker) return;
+  const u = new URLSearchParams(location.hash.slice(i + 1));
+  flt.q = u.get('q') || '';
+  FACETS.forEach(f => (u.get(f.id) || '').split(',').filter(Boolean).forEach(v => flt[f.id].add(v)));
+  const m = /^(.+)-(up|down)$/.exec(u.get('sort') || '');
+  if (m && sortVal(m[1])) sort = { key: m[1], dir: m[2] === 'up' ? 1 : -1 };
+}
+function writeView() {
+  const u = new URLSearchParams();
+  if (flt.q.trim()) u.set('q', flt.q.trim());
+  FACETS.forEach(f => { if (flt[f.id].size) u.set(f.id, [...flt[f.id]].join(',')); });
+  if (sort.key) u.set('sort', sort.key + (sort.dir > 0 ? '-up' : '-down'));
+  const q = u.toString();
+  history.replaceState(null, '', '#' + tracker + (q ? '?' + q : ''));
+}
+const fold = t => (t || '').toLowerCase();
+const matchQ = p => {
+  const h = fold(p.name + ' ' + (p.teduhName || '') + ' ' + (p.codes || []).join(' '));
+  return fold(flt.q).split(/\s+/).filter(Boolean).every(w => h.includes(w));
+};
+/* Ticks inside one group are either/or; the groups narrow each other. `skip`
+   leaves one group out, so its own chips can show what each would give. */
+const passes = (p, skip) => matchQ(p) && FACETS.every(f => f.id === skip || !flt[f.id].size || flt[f.id].has(f.of(p)));
+const matches = () => vis().filter(p => passes(p));
+
+const liveDay = () => !!DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
+const SORTS = [['apdl', 'APDL date', -1], ['pct', 'Sold %', -1], ['sold', 'Units sold', -1], ['unsold', 'Units unsold', -1],
+               ['new', 'New sales this week', -1], ['units', 'Total units', -1], ['name', 'Project name', 1]];
+const TEXT_SORTS = { name: 'Project name', code: 'Code', dev: 'Developer' };
+/* key -> value reader, or null for a key this page does not know. A week
+   column is "w:<date>:new|sold|pct". */
+function sortVal(key) {
+  const cur = p => (liveDay() ? p.todaySold : p.wSold);
+  const nil = v => v === null || v === undefined;
+  const simple = {
+    apdl: p => p.apdl || null, units: p => p.units || null, name: p => fold(p.name), dev: p => fold(p.developer) || null,
+    code: p => p.code ? p.code.split('-').map(x => x.padStart(6, '0')).join('-') : null,
+    sold: cur, pct: p => (nil(cur(p)) || !p.units) ? null : cur(p) / p.units,
+    unsold: p => (nil(cur(p)) || !p.units) ? null : p.units - cur(p),
+    new: p => (liveDay() ? p.todayNew : p.wNew),
+  };
+  if (Object.prototype.hasOwnProperty.call(simple, key)) return simple[key];
+  const m = /^w:(\d{4}-\d\d-\d\d):(new|sold|pct)$/.exec(key);
+  if (!m) return null;
+  return p => {
+    const i = p.weekly.findIndex(x => x.d === m[1]);
+    if (i < 0) return null;
+    const v = p.weekly[i].v;
+    if (m[2] === 'sold') return v;
+    if (m[2] === 'pct') return p.units ? v / p.units : null;
+    return i ? v - p.weekly[i - 1].v : null;
+  };
+}
+/* The tracker as it is on screen: filtered, then sorted. Pinned rows stay on
+   top, group headings stay in her order with the sort running inside each,
+   blanks go last either way round, and ties keep Excel order. */
+function view() {
+  const base = vis(), list = base.filter(p => passes(p));
+  const val = sort.key && sortVal(sort.key);
+  if (!val) return list;
+  const gi = new Map(); base.forEach(p => { if (!gi.has(p.group)) gi.set(p.group, gi.size); });
+  const pos = new Map(base.map((p, i) => [p, i]));
+  return list.sort((a, b) => {
+    const fixed = ((b.pin === true) - (a.pin === true)) || (gi.get(a.group) - gi.get(b.group));
+    if (fixed) return fixed;
+    const x = val(a), y = val(b), nx = x === null || x === undefined, ny = y === null || y === undefined;
+    if (nx || ny) return (nx - ny) || (pos.get(a) - pos.get(b));
+    return (x < y ? -1 : x > y ? 1 : 0) * sort.dir || (pos.get(a) - pos.get(b));
+  });
+}
+const applySF = () => { writeView(); render(); };
+/* Heading taps: highest first (A to Z for names), the other way, then back to Excel order. */
+function tapSort(key) {
+  const first = TEXT_SORTS[key] ? 1 : -1;
+  sort = sort.key !== key ? { key, dir: first } : sort.dir === first ? { key, dir: -first } : { key: '', dir: 0 };
+  applySF();
+}
+function sortHead(th, key) {
+  const label = th.textContent, on = sort.key === key;
+  th.textContent = '';
+  const b = el('button', 'thb', label + (on ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''));
+  if (on) { b.dataset.on = ''; th.setAttribute('aria-sort', sort.dir > 0 ? 'ascending' : 'descending'); }
+  b.dataset.sort = key;
+  b.title = 'Sort by this column';
+  b.onclick = () => {
+    const sc = $('#table'), x = sc.scrollLeft;
+    tapSort(key);
+    sc.scrollLeft = x;                       // the rebuild would jump back to the left edge
+    const nb = sc.querySelector('.thb[data-sort="' + key + '"]'); if (nb) nb.focus({ preventScroll: true });
+  };
+  th.appendChild(b);
+  return th;
+}
+let fOpen = false;
+function sortFilterBar() {
+  const sel = $('#sortSel'); sel.textContent = '';
+  const add = (v, t) => { const o = el('option', '', t); o.value = v; sel.appendChild(o); };
+  add('', 'Sort: Excel order');
+  const word = (k, d) => TEXT_SORTS[k] ? (d > 0 ? 'A to Z' : 'Z to A') : k === 'apdl' ? (d > 0 ? 'oldest first' : 'newest first')
+    : (d > 0 ? 'low to high' : 'high to low');
+  SORTS.forEach(([k, t, d]) => [d, -d].forEach(dd => add(k + '|' + dd, t + ', ' + word(k, dd))));
+  const cur = sort.key ? sort.key + '|' + sort.dir : '';
+  if (cur && ![...sel.options].some(o => o.value === cur)) {
+    const m = /^w:(.+):(.+)$/.exec(sort.key);
+    add(cur, (m ? fdate(m[1], true) + ' ' + { new: 'NEW', sold: 'SOLD', pct: '%' }[m[2]] : TEXT_SORTS[sort.key])
+      + ', ' + word(sort.key, sort.dir));
+  }
+  sel.value = cur; sel.classList.toggle('on', !!cur);
+  sel.onchange = () => { const [k, d] = sel.value.split('|'); sort = k ? { key: k, dir: +d } : { key: '', dir: 0 }; applySF(); };
+
+  const n = nFilters(), fb = $('#fbtn');
+  fb.textContent = 'Filter' + (n ? ' (' + n + ')' : '');
+  fb.setAttribute('aria-expanded', String(fOpen));
+  fb.setAttribute('aria-pressed', String(n > 0));
+  fb.onclick = () => { fOpen = !fOpen; sortFilterBar(); };
+
+  const pan = $('#fpanel'); pan.hidden = !fOpen;
+  /* The box is kept while she types in it; only the chips below are redrawn. */
+  const typing = document.activeElement && document.activeElement.id === 'fq';
+  if (fOpen && !typing) {
+    pan.textContent = '';
+    pan.appendChild(el('div', 'fgl', 'Name, TEDUH name or code'));
+    const q = el('input', 'sgin'); q.id = 'fq'; q.type = 'search'; q.value = flt.q; q.autocomplete = 'off';
+    q.setAttribute('aria-label', 'Filter by project name, TEDUH name or code');
+    let t; const at = tracker;
+    q.oninput = () => { clearTimeout(t); t = setTimeout(() => { if (at !== tracker) return; flt.q = q.value; applySF(); }, 220); };
+    pan.appendChild(q);
+    const box = el('div'); box.id = 'ffac'; pan.appendChild(box);
+  }
+  const fac = $('#ffac');
+  if (fOpen && fac) {
+    fac.textContent = '';
+    FACETS.forEach(f => {
+      /* A value from a shared link that this tracker no longer has still shows, so it can be unticked. */
+      const vals = [...new Set(vis().map(f.of).concat([...flt[f.id]]))].sort(f.order);
+      if (vals.length < 2 && !flt[f.id].size) return;      // nothing to choose between
+      fac.appendChild(el('div', 'fgl', f.label));
+      const row = el('div', 'chips');
+      vals.forEach(v => {
+        const c = vis().filter(p => passes(p, f.id) && f.of(p) === v).length, on = flt[f.id].has(v);
+        const b = el('button', 'chip', f.show(v));
+        b.appendChild(el('i', '', String(c)));
+        b.setAttribute('aria-pressed', String(on));
+        b.dataset.f = f.id + ':' + v;
+        b.disabled = !c && !on;
+        if (v === 'stalled') b.title = 'No unit sold in the four weeks to the last Friday reading, nor since. Projects tracked for less than four weeks count as Selling.';
+        b.onclick = () => {
+          if (on) flt[f.id].delete(v); else flt[f.id].add(v);
+          applySF();
+          const nb = [...document.querySelectorAll('#ffac .chip')].find(x => x.dataset.f === f.id + ':' + v);
+          if (nb) nb.focus({ preventScroll: true });
+        };
+        row.appendChild(b);
+      });
+      fac.appendChild(row);
+    });
+  }
+
+  const sum = $('#fsum'); sum.textContent = ''; sum.hidden = !n && !sort.key;
+  if (n) {
+    const bits = [];
+    if (flt.q.trim()) bits.push('“' + flt.q.trim() + '”');
+    FACETS.forEach(f => { if (flt[f.id].size) bits.push([...flt[f.id]].sort(f.order).map(f.show).join(' or ')); });
+    sum.appendChild(el('span', '', 'Showing ' + matches().length + ' of ' + vis().length + ' projects: ' + bits.join(' · ')));
+    const b = el('button', 'ghost', 'Clear filters'); b.onclick = clearFilters; sum.appendChild(b);
+  }
+  if (sort.key) {
+    const b = el('button', 'ghost', 'Back to Excel order');
+    b.onclick = () => { sort = { key: '', dir: 0 }; applySF(); };
+    sum.appendChild(b);
+  }
+}
+function clearFilters() { const keep = sort; clearView(); sort = keep; const q = $('#fq'); if (q) q.value = ''; applySF(); }
 /* Pinned projects lead their tracker and stay visible while the table scrolls. */
 const vis = () => ALL.filter(p => p.tracker === tracker)
                      .sort((a, b) => (b.pin === true) - (a.pin === true));
@@ -1477,8 +1753,11 @@ let topOnly = false;           /* opens showing everything; the section-bar togg
 let tableMore = false;         /* Top view: whether the collapsed table rows are open */
 let FOCUS = null;              /* pkey of a picked search result, shown in every section */
 let pickedKey = null;          /* weekly-chart selection, by key so filters can't shift it */
-const inTop = (p, k) => !topOnly || p.top || pkey(p) === FOCUS || (k && pkey(p) === k);
-const topOrder = list => topOnly ? list.slice().sort((a, b) => ((a.pctNow || 0) - (b.pctNow || 0)) || ((a.soldNow || 0) - (b.soldNow || 0))) : list;
+/* A filter pauses the Top view: the top 3 of the tracker may not be in the
+   filtered list at all, and "#1" always means #1 of the whole tracker. */
+const topOn = () => topOnly && !filtered();
+const inTop = (p, k) => !topOn() || p.top || pkey(p) === FOCUS || (k && pkey(p) === k);
+const topOrder = list => topOn() ? list.slice().sort((a, b) => ((a.pctNow || 0) - (b.pctNow || 0)) || ((a.soldNow || 0) - (b.soldNow || 0))) : list;
 /* A new SPV or a name match is a guess -- never added, waits on her. */
 const needsCheck = f => f.kind === 'name-match' || f.kind === 'new-spv';
 
@@ -1510,8 +1789,11 @@ function resolveLinks(f) {
 const byKey = k => ALL.find(p => pkey(p) === k);
 const rkText = p => (p && p.rank ? '#' + p.rank + ' ' : '');
 const rkTag = p => (p && p.rank ? el('span', 'toptag', '#' + p.rank) : null);
-const act = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === FOCUS) && inTop(p)));
-const pickList = () => topOrder(vis().filter(p => (showSold || !soldOut(p) || pkey(p) === pickedKey) && inTop(p, pickedKey)));
+/* Once a status is ticked it decides whether sold-out projects reach the
+   charts; the section-bar switch only speaks when no status is ticked. */
+const soOk = () => flt.status.size > 0 || showSold;
+const act = () => topOrder(view().filter(p => (soOk() || !soldOut(p) || pkey(p) === FOCUS) && inTop(p)));
+const pickList = () => topOrder(view().filter(p => (soOk() || !soldOut(p) || pkey(p) === pickedKey) && inTop(p, pickedKey)));
 
 let homeOpen = '';
 /* iPad Safari only shows :active colours once a touch listener exists. */
@@ -1590,8 +1872,8 @@ function table() {
   const weeks = DATA.weeks.slice().reverse();      // newest first
   /* Today only earns a column when it is not already the newest Friday. */
   const live = DATA.todayDate && DATA.todayDate !== DATA.weekLatest;
-  const nSeed = vis().filter(p => p.seeded).length;
-  const nStale = vis().filter(p => staleOf(p)).length;
+  const nSeed = view().filter(p => p.seeded).length;
+  const nStale = view().filter(p => staleOf(p)).length;
   $('#tblnote').textContent = (live
     ? 'The orange column is today, updated every morning. Everything after it is the weekly record that feeds your Excel sheets, newest week first.'
     : 'Newest week first, matching your Excel sheets. Scroll sideways for earlier weeks.')
@@ -1648,6 +1930,8 @@ function table() {
     /* i < 6, not i < 5: DEVELOPER's cells are left-aligned, so its header was
        the one column heading sitting over the wrong edge of its own column. */
     const th = el('th', (cls ? cls + ' ' : '') + (i < 6 ? 'l' : ''), label);
+    const sk = [null, 'name', 'apdl', 'units', 'code', 'dev'][i];
+    if (sk) sortHead(th, sk);
     th.rowSpan = 2; r1.appendChild(th);
   });
   if (live) {
@@ -1663,21 +1947,28 @@ function table() {
   const showRemarks = vis().some(p => p.remarks);
   if (!showRemarks) thRem.style.display = 'none';
   if (live) {
-    r2.appendChild(el('th', 'r2 live livehd', 'NEW'));
-    r2.appendChild(el('th', 'r2 live', 'SOLD'));
-    r2.appendChild(el('th', 'r2 live', '%'));
+    r2.appendChild(sortHead(el('th', 'r2 live livehd', 'NEW'), 'new'));
+    r2.appendChild(sortHead(el('th', 'r2 live', 'SOLD'), 'sold'));
+    r2.appendChild(sortHead(el('th', 'r2 live', '%'), 'pct'));
   }
   weeks.forEach((w, i) => {
     const n = i === 0 ? ' new' : '';
-    r2.appendChild(el('th', 'r2 wk' + n, 'NEW'));
-    r2.appendChild(el('th', 'r2' + n, 'SOLD'));
-    r2.appendChild(el('th', 'r2' + n, '%'));
+    /* On a Friday the newest week IS today, so its headings share the menu's keys. */
+    const k = x => (!live && i === 0) ? x : 'w:' + w + ':' + x;
+    r2.appendChild(sortHead(el('th', 'r2 wk' + n, 'NEW'), k('new')));
+    r2.appendChild(sortHead(el('th', 'r2' + n, 'SOLD'), k('sold')));
+    r2.appendChild(sortHead(el('th', 'r2' + n, '%'), k('pct')));
   });
   const th = el('thead'); th.appendChild(r1); th.appendChild(r2); tb.appendChild(th);
 
   const bd = el('tbody');
   let section = null, nMore = 0;
-  vis().forEach(p => {
+  const rows = view();
+  if (!rows.length) {
+    const er = el('tr'), ec = el('td', 'l fempty', 'No project on this tracker matches these filters.');
+    ec.colSpan = 12 + weeks.length * 3; er.appendChild(ec); bd.appendChild(er);
+  }
+  rows.forEach(p => {
     if (p.group && p.group !== section) {
       section = p.group;
       const gr = el('tr');
@@ -1689,7 +1980,7 @@ function table() {
     const tr = el('tr', p.pin ? 'pinned' : '');
     /* Top view keeps Excel order and the group headers, but folds every
        non-top row (and its phone note) under one "Show N more" row. */
-    const folded = topOnly && !p.top && pkey(p) !== FOCUS;
+    const folded = topOn() && !p.top && pkey(p) !== FOCUS;
     if (folded) { tr.classList.add('more'); if (!tableMore) tr.classList.add('hide'); nMore++; }
     tr.dataset.proj = p.code || ('NOCODE-' + p.name);
     if (soldOut(p)) tr.classList.add('soldout');
@@ -1797,9 +2088,11 @@ function fixHead() {
 function cards(weeks, live) {
   const host = $('#pcards'); host.textContent = '';
   let section = null, nMore = 0;
-  vis().forEach(p => {
+  const rows = view();
+  if (!rows.length) host.appendChild(el('div', 'fempty', 'No project on this tracker matches these filters.'));
+  rows.forEach(p => {
     if (p.group && p.group !== section) { section = p.group; host.appendChild(el('div', 'pgrp', section)); }
-    const folded = topOnly && !p.top && pkey(p) !== FOCUS;
+    const folded = topOn() && !p.top && pkey(p) !== FOCUS;
     const c = el('div', 'pcard' + (p.pin ? ' pinned' : '') + (soldOut(p) ? ' soldout' : '')
                         + (FOCUS && pkey(p) === FOCUS ? ' focused' : ''));
     if (folded) { c.classList.add('more'); if (!tableMore) c.classList.add('hide'); nMore++; }
@@ -2183,7 +2476,8 @@ function weekly() {
 /* ---------- overall KPIs ---------- */
 function kpis() {
   const box = $('#kpis'); box.textContent = '';
-  const P = vis();
+  const P = view(), W = vis(), part = filtered();
+  $('#kpihead').textContent = part ? 'Filtered projects (' + P.length + ' of ' + W.length + ')' : 'Whole portfolio';
   /* Today's live figures whenever the daily run is newer than the weekly
      record; on a Friday the two are the same numbers and the weekly wording
      comes back, so nothing here can disagree with the Excel files that day. */
@@ -2194,21 +2488,27 @@ function kpis() {
   const units = P.reduce((a, p) => a + (p.units || 0), 0);
   const nw = P.reduce((a, p) => a + (newOf(p) || 0), 0);
   const moved = P.filter(p => (newOf(p) || 0) > 0).length;
+  const wSold = W.reduce((a, p) => a + (soldOf(p) || 0), 0), wUnits = W.reduce((a, p) => a + (p.units || 0), 0);
+  const wNew = W.reduce((a, p) => a + (newOf(p) || 0), 0), wMoved = W.filter(p => (newOf(p) || 0) > 0).length;
+  const wTop = W.slice().sort((a, b) => (newOf(b) || 0) - (newOf(a) || 0))[0];
   const top = P.slice().sort((a, b) => (newOf(b) || 0) - (newOf(a) || 0))[0];
   $('#kpinote').textContent = live
     ? 'Live figures as at today, ' + fdate(DATA.todayDate) + '. New sales count from the last weekly record (' + fdate(DATA.weekLatest) + ').'
     : 'All figures below are the weekly record as at ' + fdate(DATA.weekLatest) + '.';
-  const add = (l, v, d, hero) => {
+  const add = (l, v, d, hero, whole) => {
     const c = el('div', 'kpi' + (hero ? ' hero' : ''));
     c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v));
-    if (d) c.appendChild(el('div', 'd', d)); box.appendChild(c);
+    if (d) c.appendChild(el('div', 'd', d));
+    if (part && whole) c.appendChild(el('div', 'd all', 'Whole tracker: ' + whole));
+    box.appendChild(c);
   };
   add(live ? 'Sold since ' + fdate(DATA.weekLatest) : 'Sold this week', nf(nw),
-      moved + ' of ' + P.length + ' projects moved', true);
-  add('Total units sold', nf(sold), 'of ' + nf(units) + ' units tracked');
+      moved + ' of ' + P.length + ' projects moved', true, nf(wNew) + ', ' + wMoved + ' of ' + W.length + ' moved');
+  add('Total units sold', nf(sold), 'of ' + nf(units) + ' units tracked', false, nf(wSold) + ' of ' + nf(wUnits));
   add('All ' + P.length + ' projects combined', units ? pf(sold / units) : '–',
-      nf(sold) + ' of ' + nf(units) + ' units sold');
-  add('Fastest mover', top && newOf(top) ? trunc(top.name, 18) : '–', top && newOf(top) ? '+' + newOf(top) + ' units' : 'no movement');
+      nf(sold) + ' of ' + nf(units) + ' units sold', false, wUnits ? pf(wSold / wUnits) : '–');
+  add('Fastest mover', top && newOf(top) ? trunc(top.name, 18) : '–', top && newOf(top) ? '+' + newOf(top) + ' units' : 'no movement', false,
+      wTop && newOf(wTop) ? trunc(wTop.name, 18) + ' +' + newOf(wTop) : 'no movement');
 }
 
 /* ---------- horizontal bar helper ---------- */
@@ -2279,9 +2579,9 @@ function sellthru() {
   const sd = p => (live ? p.todaySold : p.wSold);
   /* Top view keeps the ascending sales order; the full view sorts by share. */
   const rows = act().filter(p => pc(p) !== null && pc(p) !== undefined);
-  if (!topOnly) rows.sort((a, b) => pc(b) - pc(a));
-  const nHid = showSold ? 0 : vis().filter(p => soldOut(p) && pkey(p) !== FOCUS).length;
-  const nTrim = vis().length - act().length - nHid;
+  if (!topOn()) rows.sort((a, b) => pc(b) - pc(a));
+  const nHid = soOk() ? 0 : view().filter(p => soldOut(p) && pkey(p) !== FOCUS).length;
+  const nTrim = view().length - act().length - nHid;
   $('#stnote').textContent = 'Share of total units sold as at ' + fdate(live ? DATA.todayDate : DATA.weekLatest) +
     (live ? ' — live daily numbers.' : ' — the weekly record.') + ' The pale bar is what is still unsold.' +
     (nHid ? ' ' + nHid + ' sold-out project' + (nHid > 1 ? 's are' : ' is') + ' hidden — use the toggle in the section bar above.' : '') +
@@ -2303,7 +2603,7 @@ function bytype() {
     + fdate(DATA.typesDate) + ' — one bar per project.'
     + (btLive ? ' These will match the weekly numbers again from the next Friday run.' : '')
     + (DATA.typesNewer ? ' Projects added since then show their newest reading.' : '')
-    + (topOnly && vis().length > act().length ? ' Top view: the projects closest to selling out, nearest sold out last.' : '');
+    + (topOn() && view().length > act().length ? ' Top view: the projects closest to selling out, nearest sold out last.' : '');
   const rows = [];
   act().forEach(p => (p.types || []).forEach(t => rows.push({ p, t })));
   if (!rows.length) { $('#bytype').textContent = ''; $('#bytype').appendChild(el('p', 'note', 'Unit-type data appears after the first scheduled run.')); return; }
@@ -2883,7 +3183,7 @@ function secnav() {
     host.appendChild(a);
   });
   const nTop = vis().filter(p => p.top).length, nAll = vis().length;
-  if (nTop < nAll) {
+  if (nTop < nAll && !filtered()) {
     const t = el('button', 'ghost sotoggle toptoggle',
       topOnly ? 'Top ' + nTop + ' of ' + nAll + ' \u00b7 show all' : 'All ' + nAll + ' \u00b7 top ' + nTop + ' only');
     t.setAttribute('aria-pressed', String(topOnly));
@@ -2892,7 +3192,13 @@ function secnav() {
     t.onclick = () => { topOnly = !topOnly; render(); };
     host.appendChild(t);
   }
-  const nSo = vis().filter(soldOut).length;
+  if (filtered()) {
+    const b = el('button', 'ghost fnav', 'Filtered: ' + matches().length + ' of ' + vis().length + ' ×');
+    b.title = 'Clear the filters';
+    b.onclick = clearFilters;
+    host.insertBefore(b, host.querySelector('.sep'));
+  }
+  const nSo = flt.status.size ? 0 : view().filter(soldOut).length;
   if (nSo) {
     const b = el('button', 'ghost sotoggle', (showSold ? 'Hide' : 'Show') + ' sold-out (' + nSo + ')');
     b.onclick = () => { showSold = !showSold; render(); };
@@ -2923,7 +3229,7 @@ function render() {
   $('#sec-prelaunch').hidden = !pre;
   if (home) { $('#secnav').hidden = true; trackerBar(); fchip(); return; }
   if (pre) { secnav(); prelaunchView(); fchip(); return; }
-  secnav(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip();
+  secnav(); sortFilterBar(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip();
 }
 
 /* ---------- search: marketing names, registered TEDUH names, codes ----------
@@ -2953,6 +3259,7 @@ function render() {
     const r = plRow(p);
     if (r) { toPrelaunch(r.name); return; }
     route(p.tracker);
+    if (!passes(p)) { const keep = sort; clearView(); sort = keep; const fq = $('#fq'); if (fq) fq.value = ''; writeView(); }
     /* Focus follows the pick through every section: the table row glows, the
        weekly chart switches to it, and its bars and trend panel are outlined
        until the floating chip clears it. */
@@ -3025,8 +3332,9 @@ function render() {
 })();
 
 addEventListener('popstate', () => {
-  tracker = fromHash(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
+  tracker = fromHash(); readView(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
 });
+readView();
 render();
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => {
   if (!tracker || tracker === 'prelaunch') return;

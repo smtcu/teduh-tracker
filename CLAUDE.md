@@ -68,6 +68,7 @@ scripts/build_unit_workbook.py   unit-type and unit-list workbook
 scripts/weekly_summary.py        the summary text used in the email and WhatsApp
 scripts/watch_developers.py      new-launch watch -- see its own section below
 scripts/apply_resolutions.py     applies her Resolve answers to purple Check notices
+scripts/fill_places.py           one state per tracked code -> data/project_places.csv (state filter)
 data/teduh_watch.csv             what the watch has found (and is still waiting on)
 data/teduh_watch_extra.csv       extra things to watch that projects.csv cannot imply
 data/teduh_watch_resolved/       one file per answer: <code> = accept | dismiss
@@ -274,6 +275,32 @@ A generated note overwrites a seeded one whenever it is non-empty, so a caveat
 left only in `data/teduh_history.csv` *will* be lost on the next scrape. That is
 exactly how Causewayz's "Block C is not opened yet" disappeared. Anything that
 must survive belongs in one of these two columns.
+
+## Sort and filter on the tracker pages
+
+Agreed with her 24 Nov 2026. Excel order is always the start; nothing here
+touches projects.csv or the Excel files.
+
+- **Sort**: tap a heading -- highest first (A to Z for names), then the other
+  way, then back to Excel order -- or use the Sort menu. Pinned rows stay on top,
+  group headings (Johor, CPI Land) keep her order and the sort runs inside each,
+  blanks go last both ways.
+- **Filter**: name / TEDUH name / code, APDL year, status, type, state. Ticks
+  inside one group are either/or; groups narrow each other. A group with nothing
+  to choose between is not shown.
+- **Reach**: `view()` is the filtered, sorted tracker; `vis()` is the whole one.
+  Table, cards, charts, picker and KPIs use `view()`, and KPIs print the
+  whole-tracker figure under the filtered one. Unit-type tables always show in
+  full. A filter pauses the Top view; a ticked status replaces the sold-out switch.
+- **Reset**: leaving the tracker clears both. The address carries them
+  (`#ecoworld?year=2025&state=Johor&sort=pct-down`), so a view can be shared.
+- **Status** is one of Selling, No sales in 4 weeks, Sold out (her total units),
+  No TEDUH code. "No sales" is net, Friday to Friday over four weeks, and nothing
+  sold since; a project read for less than four weeks counts as Selling.
+- **Type** is TEDUH's unit types in two buckets (`HIGH_RISE` / `LANDED` in
+  build_dashboard.py); both = Mixed. Townhouses are landed. A type TEDUH invents
+  is named in the build log until it is put in one.
+- **State** is where the project is, from `data/project_places.csv`.
 
 ## The new-launch watch
 

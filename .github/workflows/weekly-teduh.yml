@@ -190,6 +190,14 @@ jobs:
           esac
           rm -f projects.csv.bak
 
+      # The state filter on the site. Only codes without a state are asked for,
+      # so on most days this makes no requests. Same caution as the APDL step.
+      - name: Fill any missing project states
+        if: ${{ !cancelled() && !startsWith(inputs.what, 'Rebuild') }}
+        timeout-minutes: 5
+        continue-on-error: true
+        run: python scripts/fill_places.py
+
       # The new-launch watch used to run here; it moved to its own workflow
       # (watch-launches.yml) on 22 Sep 2026 so its ~20 minutes of speculative
       # probing can never delay or prolong the day's sales figures again.

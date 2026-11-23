@@ -1,0 +1,920 @@
+code,state,source
+10279-5,Johor,register
+10279-6,Johor,register
+10279-7,Johor,register
+10279-8,Johor,register
+10296-3,Selangor,register
+10296-4,Selangor,register
+10296-5,Selangor,register
+10296-6,Selangor,register
+10296-7,Selangor,register
+10296-8,Selangor,register
+10296-9,Selangor,register
+10346-2,Negeri Sembilan,register
+10530-12,Selangor,register
+10555-12,Johor,register
+10555-15,Kuala Lumpur,register
+10555-16,Selangor,teduh
+10611-24,Johor,register
+10611-25,Johor,register
+10611-26,Johor,register
+10611-27,Johor,register
+10611-28,Johor,register
+10611-29,Johor,register
+10826-4,Selangor,register
+10991-4,Selangor,register
+10991-5,Selangor,register
+11018-3,Johor,register
+11018-4,Johor,register
+11078-3,Selangor,register
+11186-16,Selangor,register
+11186-17,Selangor,register
+11186-18,Selangor,register
+11186-19,Selangor,register
+11186-20,Selangor,register
+11202-4,Kuala Lumpur,register
+11202-5,Kuala Lumpur,register
+11225-10,Perak,register
+11225-11,Selangor,register
+11225-12,Selangor,register
+11225-13,Selangor,register
+11225-14,Perak,register
+11225-15,Kedah,teduh
+11225-9,Perak,register
+11295-22,Penang,register
+11295-23,Penang,register
+11295-25,Penang,register
+11295-26,Kedah,register
+11295-27,Kedah,register
+11295-28,Penang,register
+11295-29,Kedah,register
+11295-30,Penang,register
+11295-31,Kedah,teduh
+11430-2,Kuala Lumpur,register
+11461-7,Penang,register
+11482-10,Selangor,register
+11482-11,Selangor,register
+11482-12,Selangor,register
+11482-5,Selangor,register
+11482-7,Selangor,register
+11482-8,Selangor,register
+11482-9,Selangor,register
+11519-3,Selangor,register
+11590-4,Selangor,register
+11590-5,Selangor,register
+11602-1,Selangor,register
+11606-2,Kuala Lumpur,register
+11606-3,Kuala Lumpur,teduh
+11611-1,Kuala Lumpur,register
+11611-2,Kuala Lumpur,register
+11786-1,Johor,register
+11786-2,Johor,register
+11807-2,Selangor,register
+11807-3,Selangor,register
+11807-4,Selangor,register
+11978-4,Penang,register
+11998-4,Selangor,register
+11998-5,Selangor,register
+12029-3,Penang,register
+12029-4,Penang,register
+12047-4,Selangor,register
+12069-7,Selangor,register
+12123-1,Selangor,register
+12166-1,Selangor,register
+12215-6,Selangor,register
+12215-7,Selangor,register
+12215-8,Selangor,register
+12215-9,Selangor,register
+12287-1,Kuala Lumpur,register
+12293-8,Selangor,register
+12324-1,Penang,register
+12324-2,Penang,register
+12327-1,Johor,register
+12327-2,Johor,register
+12327-3,Johor,register
+12327-4,Johor,register
+12369-1,Selangor,register
+12369-2,Selangor,register
+12369-3,Selangor,teduh
+12381-1,Johor,register
+12381-2,Johor,register
+12408-11,Negeri Sembilan,register
+12408-12,Negeri Sembilan,register
+12408-13,Negeri Sembilan,register
+12408-14,Negeri Sembilan,register
+12408-15,Negeri Sembilan,register
+12408-16,Negeri Sembilan,register
+12408-17,Negeri Sembilan,register
+12408-18,Negeri Sembilan,register
+12408-19,Negeri Sembilan,register
+12408-20,Negeri Sembilan,register
+12408-21,Negeri Sembilan,register
+12408-22,Negeri Sembilan,register
+12408-23,Negeri Sembilan,register
+12408-24,Negeri Sembilan,register
+12427-4,Selangor,register
+12437-2,Selangor,register
+12437-3,Selangor,register
+12437-4,Selangor,register
+12446-1,Johor,register
+12446-2,Johor,register
+12446-3,Johor,register
+13017-19,Selangor,register
+13017-20,Selangor,register
+13017-21,Selangor,register
+13017-22,Selangor,register
+13017-23,Selangor,register
+13017-24,Selangor,register
+13017-25,Selangor,register
+13017-26,Selangor,register
+13017-27,Selangor,register
+13017-28,Selangor,register
+13017-29,Selangor,register
+13017-30,Selangor,register
+13017-31,Selangor,register
+13017-32,Selangor,register
+13017-33,Selangor,register
+13017-34,Selangor,register
+13017-35,Selangor,register
+13017-36,Selangor,register
+13017-37,Selangor,register
+13017-38,Selangor,register
+13017-39,Selangor,register
+13017-40,Selangor,register
+13017-41,Selangor,register
+13017-42,Selangor,register
+13017-43,Selangor,register
+13017-44,Selangor,register
+13017-45,Selangor,register
+13017-46,Selangor,register
+13017-47,Selangor,register
+13017-48,Selangor,register
+13017-49,Selangor,register
+13017-50,Selangor,register
+13017-51,Selangor,register
+13074-4,Kuala Lumpur,register
+13203-1,Johor,register
+13243-26,Selangor,register
+13243-28,Selangor,register
+13262-2,Kuala Lumpur,register
+13425-8,Selangor,register
+13425-9,Selangor,register
+13457-2,Johor,register
+13531-2,Johor,register
+13578-6,Johor,register
+13578-7,Johor,register
+13578-8,Johor,register
+13666-2,Kuala Lumpur,register
+13819-1,Selangor,register
+13819-2,Selangor,register
+13819-3,Selangor,register
+13819-4,Selangor,register
+13819-5,Selangor,register
+13819-6,Selangor,register
+13950-3,Selangor,register
+13970-3,Terengganu,register
+13975-5,Selangor,register
+13975-6,Kuala Lumpur,register
+13975-7,Putrajaya,register
+14020-10,Johor,register
+14020-11,Johor,register
+14020-12,Johor,register
+14020-13,Johor,register
+14020-14,Johor,register
+14020-5,Johor,register
+14020-6,Johor,register
+14020-7,Johor,register
+14020-8,Johor,register
+14020-9,Johor,register
+14032-10,Johor,register
+14032-11,Johor,register
+14032-7,Johor,register
+14032-8,Johor,register
+14032-9,Johor,register
+14035-4,Kuala Lumpur,register
+14035-5,Kuala Lumpur,register
+14035-6,Kuala Lumpur,register
+14050-10,Selangor,register
+14050-8,Selangor,register
+14134-4,Selangor,register
+14134-5,Selangor,register
+14134-6,Selangor,register
+14134-7,Selangor,register
+14228-12,Johor,register
+14228-13,Johor,register
+14228-14,Johor,register
+14228-15,Johor,register
+14228-16,Johor,register
+14228-7,Johor,register
+14228-8,Johor,register
+14283-13,Perak,register
+14283-14,Perak,register
+14283-15,Perak,register
+14283-16,Perak,register
+14283-17,Perak,register
+14283-18,Perak,register
+14283-19,Perak,register
+14283-20,Perak,register
+14283-9,Perak,register
+14297-24,Johor,register
+14297-25,Johor,register
+14297-28,Johor,register
+14320-14,Johor,register
+14320-17,Johor,register
+14320-18,Johor,register
+14320-19,Johor,register
+14320-20,Johor,register
+14320-21,Johor,register
+14320-22,Johor,register
+14320-23,Johor,register
+14320-24,Johor,register
+14320-25,Johor,register
+14331-1,Selangor,register
+14331-3,Selangor,register
+14331-4,Selangor,register
+14331-5,Selangor,register
+14331-6,Selangor,register
+14331-7,Selangor,register
+14331-8,Selangor,register
+14350-1,Kuala Lumpur,register
+14358-4,Johor,register
+14377-1,Negeri Sembilan,register
+14421-10,Selangor,register
+14421-11,Selangor,register
+14421-12,Selangor,register
+14421-13,Selangor,register
+14421-14,Selangor,register
+14421-15,Selangor,register
+14421-16,Selangor,register
+14421-17,Selangor,register
+14421-18,Selangor,register
+14421-19,Selangor,register
+14421-20,Selangor,register
+14421-21,Selangor,register
+14421-22,Selangor,register
+14421-6,Selangor,register
+14421-7,Selangor,register
+14421-8,Selangor,register
+14421-9,Selangor,register
+14504-2,Selangor,register
+14504-3,Selangor,register
+14504-4,Selangor,register
+14504-5,Selangor,register
+14504-6,Selangor,register
+14504-7,Selangor,register
+14504-8,Selangor,register
+14505-7,Selangor,register
+14510-1,Kuala Lumpur,register
+14518-1,Penang,register
+14523-4,Johor,register
+14589-11,Johor,register
+14638-1,Penang,register
+14638-2,Penang,register
+14638-3,Penang,register
+14638-4,Penang,register
+14638-5,Penang,register
+14641-2,Johor,register
+18-4,Selangor,teduh
+18-5,Selangor,teduh
+19088-3,Kuala Lumpur,register
+19150-15,Selangor,register
+19150-16,Selangor,register
+19150-17,Selangor,register
+19150-18,Selangor,register
+19152-1,Penang,register
+19152-10,Penang,register
+19152-11,Penang,register
+19152-12,Penang,register
+19152-13,Penang,register
+19152-14,Penang,register
+19152-15,Penang,register
+19152-2,Penang,register
+19152-4,Penang,register
+19152-5,Penang,register
+19152-6,Penang,register
+19152-7,Penang,register
+19152-8,Penang,register
+19152-9,Penang,register
+19183-11,Selangor,register
+19183-13,Selangor,register
+19301-1,Kuala Lumpur,register
+19314-1,Melaka,register
+19346-4,Negeri Sembilan,register
+19355-3,Selangor,register
+19355-4,Selangor,register
+19355-5,Selangor,register
+19355-6,Selangor,register
+19355-7,Selangor,register
+19355-8,Selangor,teduh
+19355-9,Selangor,teduh
+19387-2,Penang,register
+19398-5,Johor,register
+19398-6,Johor,register
+19533-5,Selangor,register
+19533-6,Selangor,register
+19599-2,Pahang,register
+19599-3,Perak,register
+19599-4,Perak,register
+19599-5,Pahang,register
+19599-6,Pahang,register
+19632-1,Perak,register
+19632-10,Perak,register
+19632-11,Perak,register
+19632-12,Perak,register
+19632-13,Perak,register
+19632-2,Perak,register
+19632-3,Perak,register
+19632-4,Perak,register
+19632-5,Perak,register
+19632-6,Perak,register
+19632-7,Perak,register
+19632-8,Perak,register
+19632-9,Perak,register
+19642-1,Johor,register
+19642-2,Johor,register
+19700-5,Selangor,register
+19700-6,Selangor,register
+19732-10,Penang,register
+19732-4,Penang,register
+19732-5,Penang,register
+19732-6,Penang,register
+19732-7,Penang,register
+19732-8,Penang,register
+19732-9,Penang,register
+19740-1,Selangor,register
+19740-2,Selangor,register
+19740-3,Selangor,register
+19740-4,Selangor,register
+19740-5,Selangor,register
+19740-6,Selangor,register
+19740-7,Selangor,register
+19757-1,Johor,register
+19760-1,Kuala Lumpur,register
+19760-2,Kuala Lumpur,register
+19794-14,Johor,register
+19794-15,Johor,register
+19794-16,Johor,register
+19794-18,Johor,register
+19794-19,Johor,register
+19795-1,Kuala Lumpur,register
+19806-1,Selangor,register
+19806-2,Selangor,register
+19806-3,Selangor,register
+19840-2,Kuala Lumpur,register
+19907-1,Selangor,register
+19924-3,Selangor,register
+19932-2,Johor,register
+19950-1,Perak,register
+19950-2,Perak,register
+19985-10,Johor,register
+19985-6,Johor,register
+19985-7,Johor,register
+19985-8,Johor,register
+19985-9,Johor,register
+19991-1,Selangor,register
+20011-2,Selangor,register
+20011-3,Selangor,register
+20011-4,Selangor,register
+20011-5,Selangor,register
+20014-3,Selangor,register
+20014-4,Selangor,register
+20017-1,Selangor,register
+2003-72,Kedah,teduh
+2003-73,Kedah,teduh
+2003-74,Kedah,teduh
+2003-75,Kedah,teduh
+2003-76,Kedah,teduh
+2003-77,Kedah,teduh
+2003-78,Kedah,teduh
+2003-79,Kedah,teduh
+2003-80,Kedah,teduh
+20047-1,Selangor,register
+20047-2,Selangor,register
+20060-1,Kuala Lumpur,register
+20081-2,Johor,register
+20081-3,Johor,register
+20084-1,Kuala Lumpur,register
+20101-2,Johor,register
+20140-1,Selangor,register
+20140-2,Selangor,register
+20162-1,Selangor,register
+20162-2,Selangor,register
+20164-2,Selangor,register
+20164-3,Selangor,register
+20171-2,Selangor,register
+20171-3,Selangor,teduh
+20172-1,Kuala Lumpur,register
+20172-2,Kuala Lumpur,register
+20179-1,Kuala Lumpur,register
+20185-3,Selangor,register
+20253-2,Kuala Lumpur,register
+20253-3,Kuala Lumpur,register
+2387-21,Johor,register
+2387-22,Johor,register
+2387-23,Johor,register
+2463-23,Kuala Lumpur,register
+30027-1,Selangor,register
+30037-1,Kuala Lumpur,register
+30064-1,Selangor,register
+30101-1,Selangor,register
+30101-2,Selangor,register
+30101-3,Selangor,register
+30101-4,Selangor,register
+30101-5,Selangor,register
+30101-6,Selangor,register
+30101-7,Selangor,register
+30101-8,Selangor,register
+30101-9,Selangor,register
+30102-3,Kedah,register
+30102-4,Kedah,register
+30121-1,Kuala Lumpur,register
+30131-1,Perak,register
+30135-2,Kuala Lumpur,register
+30135-3,Selangor,register
+30141-1,Kuala Lumpur,register
+30141-2,Kuala Lumpur,register
+30155-1,Perak,register
+30155-2,Perak,register
+30161-1,Selangor,register
+30161-2,Selangor,register
+30162-1,Selangor,register
+30162-2,Selangor,register
+30176-1,Kuala Lumpur,register
+30178-1,Selangor,register
+30178-2,Selangor,register
+30190-1,Selangor,register
+30216-1,Kuala Lumpur,register
+30216-2,Kuala Lumpur,register
+30223-1,Johor,register
+30223-2,Johor,register
+30223-3,Johor,register
+30223-4,Johor,register
+30223-5,Johor,register
+30223-6,Johor,register
+30223-7,Johor,register
+30240-3,Selangor,register
+30240-4,Selangor,register
+30244-1,Kuala Lumpur,register
+30250-2,Kuala Lumpur,register
+30256-2,Kuala Lumpur,register
+30260-1,Selangor,register
+30267-1,Kuala Lumpur,register
+30273-1,Pahang,register
+30273-2,Pahang,register
+30331-1,Kuala Lumpur,register
+30331-2,Kuala Lumpur,register
+30339-1,Selangor,register
+30348-3,Melaka,register
+30348-4,Melaka,register
+30348-5,Melaka,register
+30357-1,Kuala Lumpur,register
+30357-2,Kuala Lumpur,register
+30363-1,Kuala Lumpur,register
+30363-2,Kuala Lumpur,register
+30366-1,Kuala Lumpur,register
+30367-1,Selangor,register
+30370-1,Kuala Lumpur,register
+30371-1,Kelantan,register
+30377-1,Perak,register
+30382-1,Kuala Lumpur,register
+30382-2,Kuala Lumpur,register
+30382-3,Kuala Lumpur,register
+30393-1,Pahang,register
+30401-1,Pahang,register
+30428-1,Melaka,register
+30440-1,Johor,register
+30440-2,Johor,register
+30440-3,Johor,register
+30442-1,Perak,register
+30442-2,Perak,register
+30482-1,Negeri Sembilan,register
+30500-1,Kuala Lumpur,register
+30552-1,Selangor,register
+30552-2,Selangor,register
+30561-1,Selangor,register
+30571-1,Penang,register
+30581-1,Kuala Lumpur,register
+30588-1,Johor,register
+30588-2,Johor,register
+30588-3,Johor,register
+30588-4,Johor,register
+30590-1,Kuala Lumpur,register
+30590-2,Kuala Lumpur,register
+30622-1,Johor,register
+30622-2,Johor,register
+30622-3,Johor,register
+30622-4,Johor,register
+30624-1,Kuala Lumpur,register
+30629-2,Kuala Lumpur,register
+30632-1,Kuala Lumpur,register
+30635-1,Johor,register
+30635-2,Johor,register
+30641-1,Kuala Lumpur,register
+30641-2,Selangor,teduh
+30667-1,Kuala Lumpur,register
+30688-1,Johor,register
+30688-2,Johor,teduh
+30705-2,Selangor,register
+30714-3,Selangor,register
+30714-4,Selangor,register
+30714-5,Selangor,register
+30714-6,Selangor,register
+30727-1,Selangor,register
+30727-2,Selangor,register
+30741-1,Kuala Lumpur,register
+30741-2,Kuala Lumpur,register
+30744-1,Penang,register
+30783-1,Melaka,register
+30783-2,Melaka,register
+30784-1,Kuala Lumpur,register
+30789-1,Kuala Lumpur,register
+30799-1,Selangor,register
+30805-1,Selangor,register
+30821-1,Kuala Lumpur,register
+30828-1,Kuala Lumpur,register
+30828-2,Johor,register
+30828-3,Johor,register
+30830-1,Pahang,register
+30834-1,Kuala Lumpur,register
+30857-1,Selangor,register
+30874-1,Kuala Lumpur,register
+30876-1,Selangor,register
+30884-1,Johor,register
+30884-2,Johor,register
+30884-3,Johor,register
+30884-4,Johor,register
+30884-5,Johor,register
+30884-6,Johor,register
+30884-7,Johor,register
+30884-8,Johor,register
+30884-9,Johor,teduh
+30897-1,Selangor,register
+30897-2,Selangor,register
+30897-3,Selangor,register
+30907-1,Selangor,register
+30907-2,Selangor,register
+30914-1,Terengganu,register
+30937-1,Kuala Lumpur,register
+30946-1,Johor,register
+30948-1,Penang,register
+30948-2,Penang,teduh
+30962-1,Selangor,register
+30962-2,Selangor,register
+30965-1,Selangor,register
+30976-1,Kuala Lumpur,register
+30981-1,Johor,register
+30989-1,Penang,register
+30990-1,Negeri Sembilan,register
+31007-1,Johor,register
+31007-2,Johor,teduh
+31008-1,Kuala Lumpur,register
+31031-1,Johor,register
+31034-1,Johor,register
+31041-1,Selangor,register
+31046-1,Kuala Lumpur,register
+31051-1,Kuala Lumpur,register
+31063-1,Johor,register
+31063-2,Johor,register
+31063-3,Johor,register
+31063-4,Johor,register
+31063-5,Johor,register
+31063-6,Johor,teduh
+31063-7,Johor,teduh
+31064-1,Selangor,register
+31064-2,Selangor,teduh
+31070-1,Selangor,register
+31074-1,Johor,register
+31075-1,Penang,register
+31075-2,Penang,register
+31078-1,Kuala Lumpur,register
+31088-1,Penang,register
+31088-2,Penang,register
+31096-1,Kuala Lumpur,register
+31100-1,Johor,register
+31100-2,Johor,register
+31100-3,Johor,register
+31100-4,Johor,register
+31112-1,Kuala Lumpur,register
+31135-1,Johor,register
+31135-2,Johor,register
+31135-3,Johor,register
+31135-4,Johor,register
+31135-5,Johor,register
+31135-6,Johor,register
+31135-7,Johor,register
+31139-1,Johor,register
+31149-1,Johor,register
+31192-1,Kuala Lumpur,register
+31202-1,Kuala Lumpur,register
+31251-1,Kuala Lumpur,register
+31269-1,Selangor,teduh
+31274-1,Kuala Lumpur,register
+31282-1,Penang,register
+31310-1,Kuala Lumpur,register
+31332-1,Kuala Lumpur,register
+31356-1,Selangor,teduh
+31366-1,Johor,teduh
+31426-1,Kuala Lumpur,teduh
+31436-1,Kuala Lumpur,teduh
+31451-1,Johor,teduh
+31489-1,Selangor,teduh
+31489-2,Selangor,teduh
+31489-3,Selangor,teduh
+31489-4,Selangor,teduh
+31489-5,Selangor,teduh
+32-15,Kuala Lumpur,register
+32-16,Kuala Lumpur,register
+3390-64,Johor,register
+3390-71,Johor,register
+3390-73,Johor,register
+3390-76,Johor,register
+3390-77,Selangor,register
+3390-78,Johor,register
+3390-79,Johor,register
+3390-80,Johor,register
+3390-81,Johor,register
+3390-82,Johor,register
+3390-83,Johor,register
+3390-84,Johor,register
+3390-85,Johor,register
+3390-86,Johor,register
+3390-87,Johor,teduh
+3390-88,Johor,teduh
+37-10,Selangor,register
+37-5,Kuala Lumpur,register
+37-6,Selangor,register
+37-7,Selangor,register
+37-9,Selangor,register
+3780-6,Selangor,register
+3780-7,Selangor,register
+3927-154,Selangor,register
+3927-155,Selangor,register
+3927-156,Selangor,register
+3927-157,Selangor,register
+3927-158,Selangor,register
+3927-159,Selangor,register
+3927-160,Selangor,register
+3927-161,Selangor,register
+3927-162,Selangor,register
+3927-163,Selangor,register
+3927-164,Selangor,register
+3927-165,Selangor,register
+3927-166,Selangor,register
+3927-167,Selangor,register
+4204-16,Johor,register
+4204-17,Johor,register
+4205-10,Johor,register
+4205-11,Johor,register
+4205-12,Johor,register
+4625-7,Selangor,register
+4625-8,Selangor,register
+4924-79,Selangor,register
+4924-80,Selangor,register
+4924-81,Selangor,register
+4924-82,Selangor,register
+4924-83,Selangor,register
+5192-10,Johor,register
+5192-9,Johor,register
+5534-24,Melaka,register
+5534-25,Selangor,register
+5534-27,Selangor,register
+5534-30,Selangor,register
+5534-31,Selangor,register
+5534-32,Selangor,register
+5911-31,Kuala Lumpur,register
+5911-33,Kuala Lumpur,register
+597-13,Selangor,register
+597-14,Kuala Lumpur,register
+597-15,Kuala Lumpur,register
+6034-32,Johor,register
+6034-33,Johor,register
+6034-34,Johor,register
+6034-35,Johor,register
+6034-36,Johor,register
+6331-22,Selangor,register
+6331-25,Selangor,register
+6331-26,Negeri Sembilan,register
+6331-27,Selangor,register
+6331-28,Selangor,register
+6331-29,Selangor,register
+6331-30,Selangor,register
+6331-8,Selangor,register
+6418-41,Johor,register
+6443-17,Johor,register
+6443-18,Johor,register
+6443-19,Johor,register
+6443-20,Johor,register
+6443-21,Johor,register
+6443-22,Johor,register
+6443-23,Johor,register
+6443-24,Johor,register
+6443-25,Johor,register
+6443-26,Johor,register
+6443-27,Johor,register
+6443-28,Johor,register
+6443-29,Johor,register
+6443-30,Johor,register
+6443-31,Johor,register
+6443-32,Johor,register
+6443-33,Johor,register
+6443-34,Johor,register
+6575-18,Melaka,register
+6575-19,Melaka,register
+6575-20,Melaka,register
+6575-21,Melaka,register
+6575-22,Melaka,register
+6575-31,Melaka,register
+6575-32,Melaka,register
+6575-33,Melaka,register
+6575-34,Melaka,register
+6575-36,Melaka,register
+6575-37,Melaka,register
+6575-38,Melaka,register
+6575-39,Melaka,register
+6575-40,Melaka,register
+6575-41,Melaka,register
+6575-42,Melaka,register
+6575-43,Melaka,register
+6575-44,Melaka,register
+6575-48,Melaka,register
+6575-49,Melaka,register
+6575-50,Melaka,register
+6575-51,Melaka,register
+6575-52,Melaka,register
+6575-53,Johor,register
+6575-54,Johor,register
+6575-55,Melaka,register
+6575-56,Melaka,register
+6575-58,Johor,register
+6575-59,Johor,register
+6575-60,Melaka,teduh
+6575-61,Johor,teduh
+6575-62,Melaka,teduh
+673-12,Johor,register
+6755-11,Negeri Sembilan,register
+6755-12,Negeri Sembilan,register
+6755-13,Negeri Sembilan,register
+6755-14,Negeri Sembilan,teduh
+6755-15,Negeri Sembilan,teduh
+6755-16,Negeri Sembilan,teduh
+6755-7,Negeri Sembilan,register
+6755-9,Negeri Sembilan,register
+6785-10,Selangor,register
+6785-11,Selangor,register
+6785-12,Selangor,register
+6785-13,Selangor,register
+6785-14,Selangor,register
+6785-15,Selangor,register
+6785-18,Selangor,register
+6785-19,Selangor,register
+6785-20,Selangor,register
+6785-21,Selangor,register
+6785-22,Selangor,register
+6785-23,Selangor,register
+6785-24,Selangor,register
+6785-25,Selangor,register
+6785-26,Selangor,register
+6785-27,Selangor,register
+6785-28,Selangor,register
+6785-29,Selangor,register
+6785-30,Selangor,register
+6785-31,Selangor,register
+6785-7,Selangor,register
+6785-8,Selangor,register
+6785-9,Selangor,register
+7180-39,Johor,register
+7180-40,Johor,register
+7180-41,Johor,register
+7277-27,Selangor,register
+7277-28,Selangor,register
+7277-30,Selangor,register
+7466-5,Kuala Lumpur,register
+7702-44,Johor,register
+7702-45,Johor,register
+7702-46,Johor,register
+7702-47,Johor,register
+7702-48,Johor,register
+7777-11,Johor,register
+7777-12,Johor,register
+7777-13,Johor,register
+7777-14,Johor,register
+7777-15,Johor,register
+7777-16,Johor,register
+7777-17,Johor,register
+7777-18,Johor,register
+7935-10,Kedah,teduh
+7935-7,Negeri Sembilan,register
+7935-8,Negeri Sembilan,register
+7935-9,Selangor,register
+8118-60,Johor,register
+8118-74,Johor,register
+8118-75,Johor,register
+8118-76,Johor,register
+8118-77,Johor,register
+8118-78,Johor,register
+8118-79,Johor,register
+8118-80,Johor,register
+8118-81,Johor,register
+8118-82,Johor,register
+835-10,Johor,register
+835-11,Johor,register
+835-12,Johor,register
+835-13,Johor,register
+835-14,Johor,register
+835-15,Johor,register
+835-6,Johor,register
+835-7,Johor,register
+835-8,Johor,register
+835-9,Johor,register
+8695-14,Selangor,register
+8824-5,Kuala Lumpur,register
+8945-3,Selangor,register
+8945-4,Selangor,register
+8945-5,Selangor,register
+8945-6,Selangor,register
+8945-7,Selangor,register
+8950-4,Selangor,register
+9158-9,Negeri Sembilan,register
+9202-21,Selangor,register
+9202-22,Selangor,register
+9202-23,Selangor,register
+9246-123,Selangor,register
+9246-124,Selangor,register
+9246-125,Selangor,register
+9246-126,Selangor,register
+9294-45,Johor,register
+9294-51,Johor,register
+9294-52,Johor,register
+9294-53,Perak,register
+9294-54,Johor,register
+9294-55,Johor,register
+9294-56,Johor,register
+9294-57,Johor,register
+9294-58,Johor,register
+9294-59,Johor,register
+9294-60,Perak,register
+9294-61,Perak,register
+9294-62,Johor,register
+9294-63,Perak,register
+9294-64,Perak,register
+9294-65,Johor,register
+9294-66,Johor,register
+9294-67,Johor,register
+9294-68,Perak,register
+9294-69,Johor,register
+9294-70,Johor,register
+9294-71,Perak,register
+9294-72,Penang,register
+9294-73,Johor,register
+9294-74,Johor,register
+9294-75,Penang,register
+9294-76,Perak,register
+9294-77,Johor,register
+9294-78,Johor,register
+9294-79,Johor,register
+9294-80,Penang,register
+9294-81,Penang,register
+9294-82,Perak,register
+9294-83,Perak,register
+9294-84,Johor,register
+9294-85,Penang,register
+9294-86,Johor,register
+9294-87,Johor,register
+9294-88,Johor,register
+9294-89,Perak,register
+9294-90,Penang,teduh
+9294-91,Johor,teduh
+9294-92,Johor,teduh
+9490-3,Selangor,register
+9490-4,Selangor,register
+9500-2,Selangor,register
+9500-7,Selangor,register
+9500-8,Selangor,register
+9586-34,Selangor,register
+9586-35,Selangor,register
+9586-36,Selangor,register
+9586-37,Selangor,register
+9586-38,Selangor,teduh
+9600-6,Johor,register
+9600-7,Johor,register
+9736-4,Johor,register
+9796-19,Selangor,register
+9796-20,Selangor,register
+9796-21,Selangor,register
+9796-22,Selangor,register
+9796-23,Selangor,register
+9796-24,Selangor,register
+9796-25,Selangor,register
+9796-26,Selangor,register
+9796-27,Selangor,register
+9829-28,Selangor,register
+9829-29,Selangor,register
+9829-30,Selangor,register
+9829-31,Selangor,register
+9829-33,Selangor,register
+9829-34,Selangor,register
+9832-11,Kuala Lumpur,register
+9851-25,Selangor,register
+9851-26,Selangor,teduh
+9994-3,Selangor,register
+9994-4,Selangor,register

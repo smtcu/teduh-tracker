@@ -38,7 +38,8 @@ mods = {}
 for name in ["unit_types", "scrape_teduh", "build_dashboard", "build_trackers",
              "build_daily_xlsx", "build_pdf", "build_unit_workbook", "weekly_summary",
              "fill_apdl", "watch_developers", "survey_area", "apply_resolutions",
-             "watch_prelaunch", "prelaunch_images", "watch_brochures"]:
+             "watch_prelaunch", "prelaunch_images", "watch_brochures",
+             "fill_places"]:
     try:
         mods[name] = __import__(name)
         ck(True, name)
@@ -580,6 +581,28 @@ for note, want in [
 ]:
     got = APR.name_from_note(note)
     ck(got == want, f"pre-launch accept: {note[:45]!r}... -> {want} (got {got})")
+
+# --------------------------------------------------------------------------
+section("sort and filter: states, types, stalled")
+# --------------------------------------------------------------------------
+FP = mods.get("fill_places")
+if FP:
+    for raw, want in [("Wp Kuala Lumpur", "Kuala Lumpur"), ("Pulau Pinang", "Penang"), ("Selangor", "Selangor"),
+                      ("Petaling ", ""), ("-", ""), ("", ""), (None, "")]:
+        ck(FP.clean_state(raw) == want, f"clean_state({raw!r}) -> {want!r} (got {FP.clean_state(raw)!r})")
+    with open(os.path.join(ROOT, "data", "project_places.csv"), newline="", encoding="utf-8") as fh:
+        rows_ = list(csv.DictReader(fh))
+    ck(all(r["state"] in FP.STATES for r in rows_), "project_places.csv holds only real states")
+    ck(len({r["code"] for r in rows_}) == len(rows_), "project_places.csv has one line per code")
+if BD:
+    for names, want in [(["Rumah Teres"], "Landed"), (["Rumah Bandar"], "Landed"), (["Pangsapuri Servis", "Soho"], "High-rise"),
+                        (["Rumah Teres", "Rumah Pangsa/Kondo"], "Mixed"), (["Something New"], ""), ([], "")]:
+        ck(BD.type_bucket(names) == want, f"type_bucket({names}) -> {want!r}")
+    five = [("2026-10-23", 10), ("2026-10-30", 10), ("2026-11-06", 10), ("2026-11-13", 10), ("2026-11-20", 10)]
+    ck(BD.stalled(five, 0) is True, "stalled: nothing sold across four weeks")
+    ck(BD.stalled(five, 2) is False, "stalled: a sale since the last Friday is not stalled")
+    ck(BD.stalled(five[:-1] + [("2026-11-20", 11)], 0) is False, "stalled: one sale in the window is not stalled")
+    ck(BD.stalled(five[1:], 0) is None, "stalled: under four weeks of readings is too new to say")
 
 print()
 if FAILS:
