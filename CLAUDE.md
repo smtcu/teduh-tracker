@@ -147,6 +147,19 @@ checkout mid-rebase. A Worker-dispatched watch was the first draft of this fix
 and was dropped because redeploying the Worker needs a laptop or a keyboard
 select-all in the Cloudflare editor, neither of which the iPad offers.
 
+**The queue, fixed 23 Nov 2026.** Both workflows share the `teduh-refresh`
+concurrency group, and GitHub keeps only *one* run waiting per group (a newer
+waiting run cancels the older). Two things went wrong that morning. Merging PR
+#64 during the 07:17 refresh queued a second refresh that then scraped on the
+files as they were when it was *created*, missing the first run's commit, and
+its push conflicted. And watches that were going to skip themselves (started
+by later refreshes ending) took the one waiting place and cancelled her
+Horizon 27 refresh. Now both checkouts use `ref: main` (latest main when the
+run *starts*), and the watch's `concurrency` sits on its job under the `if:`,
+so a skipped watch never joins the group. Still true: a refresh waiting
+behind another can be replaced by a newer one -- harmless, since the newer one
+starts from the latest main and includes the same changes.
+
 The Worker holds a fine-grained PAT (repo-scoped, Actions: read and write) as an
 encrypted secret named `GITHUB_TOKEN`. It is never in the repo or in the Worker
 source — set it with `wrangler secret put`, or in the Cloudflare dashboard.

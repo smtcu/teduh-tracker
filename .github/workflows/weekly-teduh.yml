@@ -74,7 +74,18 @@ jobs:
     # letting it burn the 6-hour Actions maximum.
     timeout-minutes: 100
     steps:
+      # ref: main = main as it is when this run STARTS, not when it was
+      # created. A run queued behind another (the teduh-refresh group) used to
+      # start from the files as they were when it was created, without the
+      # commit the run ahead of it had just pushed. On 23 Nov 2026 a refresh
+      # started by merging PR #64 at 07:31 MYT waited for the 07:17 refresh,
+      # then scraped on top of the 07:31 files; both had written today's
+      # teduh_daily.csv, index.html and daily xlsx/pdf, and its push failed
+      # on a conflict three times. Starting from the latest main, a queued
+      # run's commit simply follows the one before it.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
