@@ -171,6 +171,14 @@ button{width:100%;margin-top:20px;padding:12px;font:inherit;font-size:16px;font-
   <input id="p" name="password" type="password" autocomplete="current-password" required>
   <button type="submit">Sign in</button>
 </form>
+<script>
+// The tracker, filter or answer is the part of the address after "#", which a
+// browser never sends to a server. Add it to where the form goes back to.
+document.querySelector("form").addEventListener("submit", function () {
+  var next = this.elements.next;
+  if (location.hash.length > 1 && next.value.indexOf("#") < 0) next.value += location.hash;
+});
+</script>
 </body>
 </html>`;
   return new Response(html, {
