@@ -22,7 +22,11 @@ right after apply_resolutions.py.
                           taken from the notice -- and the find moves onto
                           it. "accept Some Other Name" uses that name instead.
                           If the tracker already has a row of that name, the
-                          find simply joins it.
+                          find simply joins it. A note that does not start
+                          with a name ("Unnamed ...", "Posted 7 Nov: ...",
+                          an agent's slogan) adds nothing: answer "accept
+                          Some Name". Units are filled only when the note
+                          gives exactly one "N units" figure.
   accept, on a project's  the find is marked accepted (it already sits on her
   own find                row); nothing else changes.
 
@@ -70,16 +74,45 @@ def read_answers(folder=RESOLVED):
     return out
 
 
+# A bracket after the name that names who posted it, not who builds it:
+# "(agent HomeCity, Seputeh search)", "(Chinese agent ad)", "(MKH Property page)".
+NOT_DEVELOPER = re.compile(r"\bagents?\b|\bads?\b|\bpage\b|\bsearch\b|\bpost\b", re.I)
+NAME_MAX = 60
+
+
 def name_from_note(note):
-    """'LUNAR Seputeh (MRCB Land) -- 483 units ...' -> ('LUNAR Seputeh', 'MRCB Land', '483')."""
-    head = re.split(r"\s+--\s+|;", note, maxsplit=1)[0].strip()
+    """'LUNAR Seputeh (MRCB Land) -- 483 units ...' -> ('LUNAR Seputeh', 'MRCB Land', '483').
+
+    Returns a blank name when the note does not start with one ("Unnamed ...",
+    a quoted slogan, an agent's description), so the accept asks for
+    'accept Project Name' instead of putting a sentence on her tracker.
+    On 23 Nov 2026 the Armani find's note ran "Armani Hallson Bukit Bintang:
+    Armani Group's own post ..." -- the name ended at a colon, which was not
+    a break, and the whole sentence became the row's name. The units were
+    8 Conlay's 1,062, mentioned in the same note for comparison, not the
+    project's own 1,072: a figure is now taken only when the note has one.
+    """
+    head = re.split(r"\s+--\s+|;|:\s", note, maxsplit=1)[0].strip()
     dev = ""
     m = re.match(r"^(.*?)\s*\(([^()]*)\)\s*$", head)
     if m:
         head, dev = m.group(1).strip(), m.group(2).strip()
-    head = head.split(",")[0]          # 'The ATAS, Taman Desa' -> 'The ATAS'; the place is not the name
-    units = (re.search(r"\b(\d[\d,]{1,6})\s+units\b", note) or [None, ""])[1].replace(",", "")
-    return head.rstrip(" ,"), dev, units
+        if NOT_DEVELOPER.search(dev):
+            dev = ""
+    head = head.split(",")[0].strip().rstrip(" ,")  # 'The ATAS, Taman Desa' -> 'The ATAS'; the place is not the name
+    q = re.fullmatch(r"(['\"‘“])(.+?)(['\"’”])", head)
+    if q:
+        head = q.group(2).strip()       # "'W Project Cochrane'" -> W Project Cochrane
+    # Not a name: a sentence, a slogan in quotes, "Unnamed ...", who posted
+    # it ("Chinese agent ads", "Page 'X'") or when ("Posted 7 Nov", "EdgeProp 21 Nov").
+    if (not head or len(head) > NAME_MAX or head[0] in "'\"‘“("
+            or re.match(r"(unnamed|posted)\b", head, re.I)
+            or NOT_DEVELOPER.search(head)
+            or re.search(r"\b\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b", head, re.I)):
+        head = ""
+    figures = {u.replace(",", "") for u in re.findall(r"\b(\d[\d,]{1,6})\s+units\b", note)}
+    units = figures.pop() if len(figures) == 1 else ""
+    return head, dev, units
 
 
 def apply(answers, finds, cols, rows):

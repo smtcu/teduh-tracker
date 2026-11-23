@@ -559,6 +559,28 @@ if os.path.isdir(rdir) and projects:
         ck(fid in answers, f"data/prelaunch_resolved/{name}: says accept or dismiss")
         ck(fid in ids, f"data/prelaunch_resolved/{name}: matches a line in prelaunch_finds.csv")
 
+# Accepting a "new in your area" check makes a projects.csv row from the
+# find's note. On 23 Nov 2026 a note whose name ended at a colon put the
+# whole sentence in as the name, with 8 Conlay's 1,062 units (named in the
+# note for comparison) instead of the project's 1,072.
+import apply_prelaunch_resolutions as APR
+for note, want in [
+    ("LUNAR Seputeh (MRCB Land) -- 483 units, 683-1,646 sf; Unveiled 2 Oct", ("LUNAR Seputeh", "MRCB Land", "483")),
+    ("The ATAS, Taman Desa (Maxim Global) -- 624 units; Check", ("The ATAS", "Maxim Global", "624")),
+    ("Armani Hallson Bukit Bintang: Armani Group's own post 21 Nov on 'today's official launch'; "
+     "may or may not be 8 Conlay (8 Conlay is on Jalan Conlay with 1,062 units; this one is near "
+     "Jalan Alor with 1,072 units)", ("Armani Hallson Bukit Bintang", "", "")),
+    ("The Reya @ KL East (Sime Darby): 'Your Greatest Move' event Sat 14 Nov", ("The Reya @ KL East", "Sime Darby", "")),
+    ("'W Project Cochrane' (Chinese agent ad, Adrian Property): freehold", ("W Project Cochrane", "", "")),
+    ("TR Prestige (MKH Property page) -- 'in the heart of Kuala Lumpur'", ("TR Prestige", "", "")),
+    ("Unnamed Melawati freehold semi-D condo -- 200 units, 4-5 bed", ("", "", "200")),
+    ("Posted 7 Nov: 'KSL Mutiara Bestari 4', gated double-storey", ("", "", "")),
+    ("EdgeProp 21 Nov: Armani Group launched Armani Hallson Bukit Bintang", ("", "", "")),
+    ("'The only affordable freehold, 5 minutes to Mid Valley' (agent HomeCity, Seputeh search)", ("", "", "")),
+]:
+    got = APR.name_from_note(note)
+    ck(got == want, f"pre-launch accept: {note[:45]!r}... -> {want} (got {got})")
+
 print()
 if FAILS:
     print(f"{len(FAILS)} check(s) FAILED")
