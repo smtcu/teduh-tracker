@@ -128616,6 +128616,9 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-11-23,ukay,12437-2,1,Rumah Teres,40,39
 2026-11-23,ukay,12437-2,2,Rumah Teres,25,24
 2026-11-23,ukay,11602-1,0,Rumah Teres,11,11
+2026-11-23,ukay,31269-1,0,Rumah Pangsa/Kondo,384,0
+2026-11-23,ukay,31269-1,1,Rumah Pangsa/Kondo,513,0
+2026-11-23,ukay,31269-1,2,Rumah Pangsa/Kondo,375,0
 2026-11-23,seputeh,30141-2,0,Rumah Pangsa/Kondo,247,99
 2026-11-23,seputeh,30141-2,1,Rumah Pangsa/Kondo,248,107
 2026-11-23,seputeh,31192-1,0,Pangsapuri Servis,476,67
@@ -129069,6 +129072,9 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-11-23,setiaawan,30155-1,1,Rumah Pangsa/Kondo,542,496
 2026-11-23,setiaawan,30155-2,0,Rumah Pangsa/Kondo,542,51
 2026-11-23,setiaawan,30155-2,1,Rumah Pangsa/Kondo,542,0
+2026-11-23,setiaawan,31269-1,0,Rumah Pangsa/Kondo,384,0
+2026-11-23,setiaawan,31269-1,1,Rumah Pangsa/Kondo,513,0
+2026-11-23,setiaawan,31269-1,2,Rumah Pangsa/Kondo,375,0
 2026-11-23,mbworld,30688-1,0,Pangsapuri Servis,911,550
 2026-11-23,mbworld,30688-1,1,Pangsapuri Servis,388,261
 2026-11-23,mbworld,30946-1,0,Pangsapuri Servis,1950,1081
@@ -130282,3 +130288,6 @@ week,tracker,code,group_idx,unit_type,units,sold
 2026-11-23,johor,6034-32,8,Rumah Teres,10,4
 2026-11-23,johor,6034-32,9,Rumah Teres,19,9
 2026-11-23,johor,6034-32,10,Rumah Teres,17,11
+2026-11-23,ukay,12369-3,0,Rumah Berpagar & Berpengawal,24,0
+2026-11-23,ukay,12369-3,1,Rumah Berpagar & Berpengawal,22,0
+2026-11-23,ukay,12369-3,2,Rumah Berpagar & Berpengawal,24,0
