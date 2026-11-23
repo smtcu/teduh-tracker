@@ -184,8 +184,15 @@ def permits_in(text):
         v = VALID.search(text[m.end(): min(m.end() + 250, nxt.start() if nxt else len(text))]) \
             or (VALID.search(text[m.start() - 120: m.start()]) if prev_end <= m.start() - 120 else None)
         prev_end = m.end()
+        # Tidied outside the f-string: Python 3.11 (what the workflows run)
+        # refuses a backslash inside an f-string's {...}.
+        valid = ""
+        if v:
+            start = re.sub(r"\s+", " ", v.group(1))
+            end = re.sub(r"\s+", " ", v.group(2))
+            valid = f"{start} - {end}"
         out.append({"code": m.group(1), "number": re.sub(r"\s+", "", m.group(0)),
-                    "valid": f"{re.sub(r'\s+', ' ', v.group(1))} - {re.sub(r'\s+', ' ', v.group(2))}" if v else "",
+                    "valid": valid,
                     "around": re.sub(r"\s+", " ", around)})
     return out
 
