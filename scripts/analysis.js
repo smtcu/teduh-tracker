@@ -7,7 +7,12 @@
    - only projects on her trackers are ranked, and every answer says how many;
    - a code on two trackers counts once, unless a developer is named, when it
      counts for that developer;
-   - "top" is sold %, sold-out projects included, ties to more units sold;
+   - "top" is sold %, sold-out projects included; ties at 100% go to the one
+     that sold out faster, other ties to more units sold;
+   - time to sell out runs from the first APDL date to the first reading at
+     100% after the last one below it. A project already sold out at its first
+     reading was never seen selling out, so its time is only "at most" (APDL to
+     that reading) and is drawn pale; it ranks by that figure (25 Nov 2026);
    - rows with the same name on one tracker are one project, but a year or type
      only brings in the phases that fit it;
    - "last five years" is calendar years, by APDL date;
@@ -144,6 +149,33 @@ const AN = (() => {
     return { out, short };
   }
 
+  /* Time to sell out, for a combined project that is 100% sold: the first
+     reading at 100% after the last one below it (a cancellation that drops it
+     back resets the date). seen = a reading below 100% came first, so the date
+     is known to the reading; otherwise it was sold out at its first reading and
+     the time is at most APDL to that reading. */
+  const outMemo = new Map();
+  function soldOutOf(g) {
+    if (g.sold < g.units || !g.apdl) return null;
+    const k = g.rows.map(p => p.codes.join(',')).join('|');
+    if (!outMemo.has(k)) {
+      const dates = [...new Set(g.rows.flatMap(p => readsOf(p).map(x => x[0])))].sort();
+      let end = null, seen = false, any = false;
+      dates.forEach(d => {
+        const v = g.rows.map(p => at(p, d)); if (v.some(nil)) return;
+        const s = v.reduce((a, b) => a + b, 0);
+        if (s < g.units) { end = null; seen = true; } else if (end === null) end = d;
+        any = true;
+      });
+      if (!any) outMemo.set(k, null);
+      else { if (end === null) end = DATA.todayDate;      // today's figure is 100%, the readings lag
+        outMemo.set(k, { end, seen, months: Math.max(0, days(g.apdl, end) / 30.44) }); }
+    }
+    const o = outMemo.get(k); return o && { end: o.end, seen: o.seen, months: o.months };
+  }
+  /* Faster sell-out first; a seen date beats an "at most" on the same figure. */
+  const fasterOut = dir => (a, b) => (a.months - b.months) * (dir < 0 ? 1 : -1) || (b.seen - a.seen) || (b.sold - a.sold) || a.name.localeCompare(b.name);
+
   /* ---------- words ---------- */
   const yearText = Q => !Q.y0 && !Q.y1 ? '' : Q.y0 === Q.y1 ? 'launched ' + Q.y0 : Q.y0 && Q.y1 ? 'launched ' + Q.y0 + '–' + Q.y1
     : Q.y0 ? 'launched from ' + Q.y0 : 'launched up to ' + Q.y1;
@@ -182,10 +214,12 @@ const AN = (() => {
     unsold: { h: 'Unsold', t: 'int', f: g => g.unsold }, pct: { h: 'Sold %', t: 'pct', f: g => g.pct },
     apdl: { h: 'APDL', t: 'date', f: g => g.apdl }, perMonth: { h: 'Sold per month since APDL', t: 'dec', f: g => g.perMonth },
     dev: { h: 'Developer', t: 'text', f: g => g.dev }, state: { h: 'State', t: 'text', f: g => g.state }, kind: { h: 'Type', t: 'text', f: g => g.kind },
+    outM: { h: 'Months to sell out', t: 'dec', f: g => g.months }, outD: { h: 'Sold out by', t: 'date', f: g => g.end },
+    outK: { h: 'How known', t: 'text', f: g => g.seen ? 'Seen selling out' : 'At most: already sold out at first reading' },
     inP: { h: 'Sold in period', t: 'plus', f: g => g.inP }, pw: { h: 'Per week', t: 'dec', f: g => g.pw }, months: { h: 'Months left', t: 'dec', f: g => g.months },
   };
   const cols = keys => keys.split(' ').map(k => COL[k]);
-  const BY = { pct: 'sold %', sold: 'units sold', perMonth: 'units sold per month since APDL' };
+  const BY = { pct: 'sold %', sold: 'units sold', perMonth: 'units sold per month since APDL', soldOut: 'time to sell out' };
   const ranker = (k, dir) => (a, b) => {
     const x = a[k], y = b[k];
     if (nil(x) || nil(y)) return nil(x) - nil(y);
@@ -197,13 +231,16 @@ const AN = (() => {
      Each returns {head, line, note, cols, rows, chart}. */
   const ANSWERS = {
     top(Q) {
-      const P = pool(Q), L = cut(P.list.slice().sort(ranker(Q.by, Q.dir)), Q.n), st = scopeText(Q);
+      if (Q.by === 'soldOut') return soldOutTop(Q);
+      /* Ties at 100%: the one that sold out faster first. */
+      const byPct = (a, b) => { if (a.pct >= 1 && b.pct >= 1) { const x = soldOutOf(a), y = soldOutOf(b); if (x && y) return fasterOut(-1)({ ...a, ...x }, { ...b, ...y }); } return ranker('pct', Q.dir)(a, b); };
+      const P = pool(Q), L = cut(P.list.slice().sort(Q.by === 'pct' ? byPct : ranker(Q.by, Q.dir)), Q.n), st = scopeText(Q);
       const val = g => Q.by === 'pct' ? pf(g.pct) + ' sold (' + nf(g.sold) + ' of ' + nf(g.units) + ')'
         : Q.by === 'sold' ? nf(g.sold) + ' units sold (of ' + nf(g.units) + ')' : num(g.perMonth, 1) + ' units a month';
       const head = (Q.dir < 0 ? 'Top ' : 'Lowest ') + (Q.n > 0 ? Math.min(Q.n, L.length) : 'all ' + L.length) + ' by ' + BY[Q.by] + ': ' + st;
       const line = !L.length ? '' : L[0].name + (Q.dir < 0 ? ' leads at ' : ' is lowest at ') + val(L[0])
         + (L.length > 1 ? ', then ' + listOf(L.slice(1, 3).map(g => g.name + ' (' + (Q.by === 'pct' ? pf(g.pct) : Q.by === 'sold' ? nf(g.sold) : num(g.perMonth, 1)) + ')')) : '') + '.';
-      return { head, line, note: among(P.list.length, P.phases) + ' Sold-out projects are included; ties go to the one with more units sold.' + (Q.by === 'perMonth' ? ' Per month runs from the first APDL date to today, so a project that sold out long ago reads low.' : '') + COMB + leftText(P.left),
+      return { head, line, note: among(P.list.length, P.phases) + (Q.by === 'pct' ? ' Sold-out projects are included; ties at 100% go to the one that sold out faster, other ties to more units sold.' : ' Sold-out projects are included; ties go to the one with more units sold.') + (Q.by === 'perMonth' ? ' Per month runs from the first APDL date to today, so a project that sold out long ago reads low.' : '') + COMB + leftText(P.left),
         cols: cols('rank name sold units pct perMonth apdl dev state'), rows: L,
         chart: h => bars(h, L, g => Q.by === 'pct' ? g.pct : g[Q.by], { max: Q.by === 'pct' ? 1 : 0, track: Q.by === 'pct', text: g => Q.by === 'pct' ? pf(g.pct) : Q.by === 'sold' ? nf(g.sold) : num(g.perMonth, 1), label: BY[Q.by] }) };
     },
@@ -302,6 +339,23 @@ const AN = (() => {
     },
   };
 
+  /* Top by time to sell out: only projects at 100% today. */
+  function soldOutTop(Q) {
+    const P = pool(Q), st = scopeText(Q);
+    const all = P.list.map(g => { const o = soldOutOf(g); return o && { ...g, ...o }; }).filter(Boolean);
+    const L = cut(all.slice().sort(fasterOut(Q.dir)), Q.n), notYet = P.list.length - all.length, seenN = all.filter(g => g.seen).length;
+    const mo = g => (g.seen ? '' : '≤ ') + num(g.months, 1);
+    const head = (Q.dir < 0 ? 'Fastest ' : 'Slowest ') + (Q.n > 0 ? Math.min(Q.n, L.length) : 'all ' + L.length) + ' to sell out: ' + st;
+    const line = !L.length ? '' : L[0].name + ' sold out ' + (L[0].seen ? 'in ' : 'within ') + num(L[0].months, 1) + ' months of its APDL date (' + fdate(L[0].apdl) + (L[0].seen ? ', sold out by ' : ', already sold out at its first reading on ') + fdate(L[0].end) + ')'
+      + (L.length > 1 ? ', then ' + listOf(L.slice(1, 3).map(g => g.name + ' (' + mo(g) + ' months)')) : '') + '.';
+    const note = 'Among ' + plural(all.length, 'sold-out project') + ', as at ' + fdate(DATA.todayDate) + '; ' + nf(seenN) + ' of them sold out while tracked.'
+      + ' Time runs from the first APDL date to the first reading at 100%.'
+      + (all.length > seenN ? ' A pale bar (≤) was already sold out at its first reading, so it is the most it can have taken: TEDUH does not say when a unit sold, and its true place may be higher.' : '')
+      + ' Ties go to the one seen selling out, then more units sold.'
+      + (notYet ? ' Not sold out yet, so not ranked: ' + plural(notYet, 'project') + '.' : '') + COMB + leftText(P.left);
+    return { head, line, note, cols: cols('rank name outM outK outD apdl units dev state'), rows: L, chart: h => timeline(h, L) };
+  }
+
   /* Every project once, for Compare projects. */
   const BYKEY = new Map(combine(ONCE.filter(p => !whyOut(p))).map(g => [g.key, g]));
   const KEYFOR = new Map();           // any tracker's row -> the key it is compared under
@@ -352,6 +406,41 @@ const AN = (() => {
       if (s > 3) c.svg.appendChild(sv('rect', { x: c.LW, y, width: Math.max(2, s - (g.sold < g.units ? 2 : 0)), height: c.BH, rx: 4, fill: 'var(--blue)', class: 'mark' }));
       rowValue(c, c.LW + full + 8, y, nf(g.sold) + ' / ' + nf(g.units));
       hot(c.svg, 0, y - c.GAP / 2, c.W, c.BH + c.GAP, e => showTip(e, gTip(g), g.name));
+    });
+    if (list.length > L.length) host.appendChild(el('p', 'note', 'The chart shows the first ' + CHART_MAX + '; the table has all ' + list.length + '.'));
+  }
+  /* APDL date to sell-out, one bar per project on a shared calendar. Solid:
+     seen selling out. Pale with a dashed edge: at most (already sold out at
+     the first reading). */
+  function timeline(host, list) {
+    const L = list.slice(0, CHART_MAX);
+    if (!L.length) return;
+    const lg = el('div', 'lg');
+    [['var(--blue)', 'Seen selling out while tracked', ''], ['var(--track)', 'Already sold out at first reading (at most)', '1px dashed var(--blue)']].forEach(([col, t, bd]) => {
+      const s = el('span'), i = el('i', 'sw'); i.style.background = col; if (bd) { i.style.border = bd; i.style.boxSizing = 'border-box'; } s.appendChild(i); s.appendChild(document.createTextNode(t)); lg.appendChild(s); });
+    host.appendChild(lg);
+    const W = CW(host), narrow = W < 560, LW = narrow ? 128 : 250, BH = 18, GAP = 13, TOP = 22, RW = 64, PW = Math.max(80, W - LW - RW);
+    const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${TOP + L.length * (BH + GAP) + 6}`, role: 'img' });
+    host.appendChild(svg);
+    const t = d => Date.parse(d + 'T00:00:00Z');
+    const y0 = +L.map(g => g.apdl).sort()[0].slice(0, 4), y1 = +L.map(g => g.end).sort().pop().slice(0, 4) + 1;
+    const t0 = t(y0 + '-01-01'), t1 = t(y1 + '-01-01'), X = d => LW + (t(d) - t0) / (t1 - t0) * PW;
+    const every = Math.max(1, Math.ceil((y1 - y0) / (narrow ? 4 : 8)));
+    for (let y = y0; y <= y1; y += every) {
+      const x = X(y + '-01-01');
+      svg.appendChild(sv('line', { x1: x, x2: x, y1: TOP - 4, y2: TOP + L.length * (BH + GAP), class: 'gl' }));
+      if (y < y1 || every === 1) { const k = sv('text', { x: x + 3, y: 13, class: 'tk' }); k.textContent = y; svg.appendChild(k); }
+    }
+    L.forEach((g, i) => {
+      const y = TOP + i * (BH + GAP) + 3, a = X(g.apdl), w = Math.max(3, X(g.end) - a);
+      const l = sv('text', { x: LW - 10, y: y + BH / 2 + 4, 'text-anchor': 'end', class: 'clab' }); l.textContent = trunc((i + 1) + '. ' + g.name, narrow ? 17 : 36); svg.appendChild(l);
+      svg.appendChild(sv('rect', g.seen ? { x: a, y, width: w, height: BH, rx: 4, fill: 'var(--blue)', class: 'mark' }
+        : { x: a + .5, y: y + .5, width: w - 1, height: BH - 1, rx: 4, fill: 'var(--track)', stroke: 'var(--blue)', 'stroke-width': 1, 'stroke-dasharray': '3 2', class: 'mark' }));
+      const v = sv('text', { x: a + w + 6, y: y + BH / 2 + 4, class: 'vlab' }); v.textContent = (g.seen ? '' : '≤ ') + num(g.months, 1) + ' mo'; svg.appendChild(v);
+      hot(svg, 0, y - GAP / 2, W, BH + GAP, e => showTip(e, [
+        { value: (g.seen ? '' : '≤ ') + num(g.months, 1), label: g.seen ? 'months to sell out' : 'months at most', color: 'var(--blue)' },
+        { value: fdate(g.apdl), label: 'APDL' }, { value: fdate(g.end), label: g.seen ? 'sold out by' : 'first reading, already sold out' },
+        { value: nf(g.units), label: 'units' }], g.name));
     });
     if (list.length > L.length) host.appendChild(el('p', 'note', 'The chart shows the first ' + CHART_MAX + '; the table has all ' + list.length + '.'));
   }
@@ -428,6 +517,8 @@ const AN = (() => {
     'low:': ['bottom', 'worst', 'lowest', 'worst selling', 'least sold'],
     'by:pct': ['sold percentage', 'percentage sold', 'percentage', 'percent', 'percent sold', 'sold percent', 'take up', 'take up rate', 'takeup', 'sell through'],
     'by:sold': ['units sold', 'by units sold', 'most units sold', 'by units', 'by volume', 'biggest seller', 'biggest sellers', 'number of units sold'],
+    'by:soldOut': ['time to sell out', 'time taken to sell out', 'time taken to fully sell', 'time to fully sell', 'time taken to sell off', 'time to sell off', 'fastest to sell out', 'quickest to sell out', 'fastest sold out', 'sold out fastest', 'took to sell out'],
+    'by:soldOutSlow': ['longest to sell out', 'slowest to sell out', 'slowest sold out', 'took longest to sell out'],
     'by:perMonth': ['per month', 'a month', 'monthly', 'units per month', 'sold per month'],
     'pm:fast': ['fastest', 'fastest selling', 'fast selling', 'sold the most', 'most sales', 'sold most', 'selling fastest', 'selling the most', 'fast movers', 'movers', 'pace', 'speed', 'momentum'],
     'pm:slow': ['slowest', 'slowest selling', 'slow selling', 'slow', 'selling slowest', 'slow movers', 'sold the least'],
@@ -549,6 +640,7 @@ const AN = (() => {
       q.name = [...new Set(got.town.concat(got.proj.map(k => norm(BYKEY.get(k).name))))];
       if (got.n) q.n = got.n; if (got.per) q.per = got.per;
       [...got.cmd].forEach(c => { const [k, v] = c.split(':'); if (k === 'by') q.by = v; if (k === 'low') q.dir = 1; });
+      if (q.by === 'soldOutSlow') { q.by = 'soldOut'; q.dir = 1; }
       return q; };
     const projQ = () => { const q = base(); q.a = 'projects'; q.picks = [...new Set(got.proj)].slice(0, 6); q.name = []; return q; };
     const groupQ = ents => { const q = base(); q.a = 'groups'; q.ents = ents; if (ents.length) { q.dev = new Set(); q.place = new Set(); } return q; };
@@ -598,7 +690,7 @@ const AN = (() => {
     const u = new URLSearchParams(location.hash.slice(i + 1)), g = k => u.get(k) || '';
     const oneOf = (v, list, dv) => list.includes(v) ? v : dv;
     S.a = oneOf(g('a'), Object.keys(ANSWERS), 'top'); if (/^\d{1,3}$/.test(g('n'))) S.n = +g('n');
-    S.by = oneOf(g('by'), ['pct', 'sold', 'perMonth', 'units', 'unsold', 'inP'], 'pct'); S.dir = g('dir') === '1' ? 1 : -1;
+    S.by = oneOf(g('by'), ['pct', 'sold', 'perMonth', 'soldOut', 'units', 'unsold', 'inP'], 'pct'); S.dir = g('dir') === '1' ? 1 : -1;
     S.type = oneOf(g('type'), ['Landed', 'High-rise', 'Mixed'], '');
     const y = g('y').split('_'); if (/^\d{4}$/.test(y[0])) S.y0 = y[0]; if (/^\d{4}$/.test(y[1] || '')) S.y1 = y[1];
     const okPlace = v => v.startsWith('s:') ? STATES.includes(v.slice(2)) : codesOf.has(v);
@@ -609,7 +701,7 @@ const AN = (() => {
     S.ents = g('ents').split(',').filter(e => e.startsWith('d:') ? okDev(e.slice(2)) : e && okPlace(e)); S.picks = g('picks').split('~').filter(k => BYKEY.has(k)).slice(0, 6);
     S.sv = oneOf(g('sv'), ['year', 'unsold'], 'year'); S.ly = oneOf(g('ly'), ['pct', 'units'], 'pct'); fixBy();
   }
-  const BYS = { top: ['pct', 'sold', 'perMonth'], groups: ['pct', 'sold', 'units', 'unsold', 'inP'] };
+  const BYS = { top: ['pct', 'sold', 'perMonth', 'soldOut'], groups: ['pct', 'sold', 'units', 'unsold', 'inP'] };
   function fixBy() { if (BYS[S.a] && !BYS[S.a].includes(S.by)) S.by = 'pct'; }
 
   /* ---------- controls ---------- */
@@ -655,7 +747,7 @@ const AN = (() => {
         select(row, 'To', wk, p.to, v => { S.per = 'c' + [p.from, v].sort().join('_'); show(); });
       }
     };
-    if (S.a === 'top') { N(); select(row, 'Rank by', [['pct', 'Sold %'], ['sold', 'Units sold'], ['perMonth', 'Sold per month since APDL']], S.by, v => set('by', v)); select(row, 'Order', [[-1, 'Highest first'], [1, 'Lowest first']], S.dir, v => set('dir', +v)); }
+    if (S.a === 'top') { N(); select(row, 'Rank by', [['pct', 'Sold %'], ['sold', 'Units sold'], ['perMonth', 'Sold per month since APDL'], ['soldOut', 'Time to sell out']], S.by, v => set('by', v)); select(row, 'Order', S.by === 'soldOut' ? [[-1, 'Fastest first'], [1, 'Slowest first']] : [[-1, 'Highest first'], [1, 'Lowest first']], S.dir, v => set('dir', +v)); }
     if (S.a === 'pace') { select(row, 'Show', [['fast', 'Fastest selling'], ['slow', 'Slowest selling'], ['stalled', 'No sales'], ['left', 'Closest to selling out']], S.pm, v => set('pm', v)); PER(); N(); }
     if (S.a === 'supply') { select(row, 'Show', [['year', 'Launches by year'], ['unsold', 'Most unsold units']], S.sv, v => set('sv', v)); if (S.sv === 'unsold') N(); }
     if (S.a === 'groups') {
