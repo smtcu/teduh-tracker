@@ -68,6 +68,7 @@ scripts/build_unit_workbook.py   unit-type and unit-list workbook
 scripts/weekly_summary.py        the summary text used in the email and WhatsApp
 scripts/watch_developers.py      new-launch watch -- see its own section below
 scripts/apply_resolutions.py     applies her Resolve answers to purple Check notices
+scripts/analysis.js              the Analysis page (put into docs/index.html at build)
 scripts/fill_places.py           one state per tracked code -> data/project_places.csv (state filter)
 data/teduh_watch.csv             what the watch has found (and is still waiting on)
 data/teduh_watch_extra.csv       extra things to watch that projects.csv cannot imply
@@ -305,6 +306,19 @@ touches projects.csv or the Excel files.
   build_dashboard.py); both = Mixed. Townhouses are landed. A type TEDUH invents
   is named in the build log until it is put in one.
 - **State** is where the project is, from `data/project_places.csv`.
+
+## The Analysis page
+
+`#analysis`, agreed with her 24 Nov 2026. `scripts/analysis.js` is put into the
+page by build_dashboard.py; its header comment carries the agreed rules (what
+"top" means, phases, years, pace, double counting) -- read it before changing a
+figure. No AI and no server: a typed question is read by `parse()`, which names
+the words it does not know and offers the nearest analyses rather than guess.
+
+Five analyses: Top, Pace, Compare developers / places, Compare projects,
+Launches and unsold. The address carries every setting, so an answer can be
+shared. Excel files are written by hand (`xlsx()`), no library. A row showing
+more sold than its total (Emilia: 80 of 24 on 23 Nov 2026) is left out and named.
 
 ## The new-launch watch
 

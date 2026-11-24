@@ -1036,7 +1036,49 @@ tr:last-child td{border-bottom:0}
 .secnav .fnav{flex:0 0 auto;border-color:var(--blue);color:var(--blue);padding:6px 11px;font-size:12.5px}
 .kpi .d.all{color:var(--ink-2)}
 .fempty{padding:22px 14px;font-size:14px;color:var(--ink-2)}
-@media(max-width:640px){.ssel{flex:1 1 200px;min-width:0}}
+@media(max-width:640px){.tbar .ssel{flex:1 1 200px;min-width:0}}
+/* Analysis page. --s1..--s6 are the line colours for Compare projects. */
+:root{--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300}
+html[data-theme="dark"]{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#0ca30c}
+.askf{display:flex;gap:8px;margin:0 0 10px}
+.askf .sgin{flex:1 1 auto;font-size:15px;min-height:44px}
+.askf .ghost{flex:0 0 auto;background:var(--blue);border-color:var(--blue);color:#fff}
+#homeask{margin:0 0 22px;max-width:760px}
+#sec-analysis .chips{display:flex}
+#anex{margin:0 0 14px;gap:6px}
+#anex[hidden]{display:none!important}
+.anfold{background:none;border-color:var(--border);margin-left:auto}
+#anex .chip{padding:5px 10px;min-height:34px;font-size:12.5px}
+.anread{background:var(--sunk);border-radius:10px;padding:10px 13px;margin:0 0 14px;font-size:13.5px}
+.anread[hidden]{display:none}
+.anread p{margin:0 0 6px}
+.anread .chips{margin:0}
+.anread .chip{background:var(--surface);border-color:var(--border)}
+#antabs{border-top:1.5px solid var(--rule);padding-top:14px;margin:0 0 12px}
+.anrow{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:flex-end}
+.anf{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink-2);min-width:0}
+.anf .ssel{max-width:230px}
+.anf .sgin{flex:none;width:100%}
+.anwide{flex:1 1 280px;max-width:420px}
+.anchips{margin:10px 0 0}
+.anchip{background:var(--pinbg);color:var(--ink)}
+#anout{margin-top:18px}
+.anhead{font-size:17px;font-weight:750;margin:0 0 6px;letter-spacing:-.01em}
+.anline{font-size:15px;margin:0 0 6px}
+#anout>.note{margin:0 0 12px}
+.anbtns{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.anbtns .ghost{padding:6px 12px;min-height:36px;font-size:12.5px}
+.anchart{margin:0 0 14px}
+.antab td.nm{white-space:normal;min-width:170px}
+.anlink{all:unset;cursor:pointer;font-weight:700}
+.anlink:hover{text-decoration:underline}
+.anlink:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+.hit:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+@media(max-width:640px){
+  .anf{flex:1 1 calc(50% - 10px)} .anf .ssel{max-width:100%;width:100%}
+  #antabs .chip{padding:6px 10px;font-size:12.5px;min-height:36px}
+  .antab td.nm{min-width:130px}
+}
 .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .bar button{flex:1 1 auto;min-width:150px}
 /* Seventeen trackers in one flat row pushed the table below the fold, so they
@@ -1340,6 +1382,10 @@ table.pct tr.live td.l{color:var(--orange)}
 </div>
 
 <div id="home" hidden>
+  <form class="askf" id="homeask">
+    <input class="sgin" id="homeq" type="search" placeholder="Ask: top 10 UEM last five years" autocomplete="off" aria-label="Ask a question about your trackers">
+    <button class="ghost" type="submit">Ask</button>
+  </form>
   <h2 class="homehead">Choose a tracker</h2>
   <p class="note">Select a category for more info.</p>
   <div class="nav" id="ftrack"></div>
@@ -1431,6 +1477,20 @@ table.pct tr.live td.l{color:var(--orange)}
   <div id="pltabwrap"></div>
 </div>
 
+<div class="card" id="sec-analysis" hidden>
+  <h2>Analysis</h2>
+  <p class="note">Type a question, or pick one below and set the boxes. Worked out on this page from your trackers: no AI, and nothing is sent anywhere.</p>
+  <form class="askf" id="anform">
+    <input class="sgin" id="anq" type="search" placeholder="Ask: top 10 KL 2026" autocomplete="off" aria-label="Ask a question about your trackers">
+    <button class="ghost" type="submit">Ask</button>
+  </form>
+  <div class="chips" id="anex"></div>
+  <div class="anread" id="anread" role="status" hidden></div>
+  <div class="chips" id="antabs"></div>
+  <div id="anctl"></div>
+  <div id="anout"></div>
+</div>
+
 <div class="card" id="sec-dl">
   <h2>Download Data</h2>
   <p class="note">To download the lists generated from the trackers daily. The weekly PDFs and Excel Sheets include the four areas and the 13 developers, which will be refreshed every Friday.</p>
@@ -1515,7 +1575,7 @@ const TRACKERS = DATA.trackers && DATA.trackers.length ? DATA.trackers : (() => 
 })();
 /* '' is the home page. The tracker lives in the address (#johor), so the
    phone's back button returns to Home and a bookmark reopens the same tracker. */
-const KEYS = new Set(TRACKERS.map(t => t.key).concat('prelaunch'));
+const KEYS = new Set(TRACKERS.map(t => t.key).concat('prelaunch', 'analysis'));
 const fromHash = () => {
   let h = location.hash.slice(1).split('?')[0];
   try { h = decodeURIComponent(h); } catch (e) {}
@@ -1527,6 +1587,7 @@ function route(key) {
   history.pushState(null, '', key ? '#' + key : location.pathname + location.search);
   tracker = key;
   clearView(); closeFilter();
+  if (key === 'analysis') AN.reset();
 }
 
 /* ---------- sort + filter ----------
@@ -1553,6 +1614,7 @@ const nFilters = () => (flt.q.trim() ? 1 : 0) + FACETS.reduce((a, f) => a + flt[
 const filtered = () => nFilters() > 0;
 function readView() {
   clearView();
+  if (tracker === 'analysis') { AN.reset(); AN.readHash(); return; }
   const i = location.hash.indexOf('?');
   if (i < 0 || !tracker) return;
   const u = new URLSearchParams(location.hash.slice(i + 1));
@@ -1843,7 +1905,7 @@ function trackerBar() {
     if (nCheck) { const s = el('span', 'plus check', '+' + nCheck); s.title = 'Needs your check'; hp.appendChild(s); }
     b.appendChild(hp);
     b.appendChild(el('span', 'hs', kind === 'area'
-      ? n + ' area trackers + Pre-launch' : n + ' developer trackers'));
+      ? n + ' area trackers + Pre-launch + Analysis' : n + ' developer trackers'));
     b.setAttribute('aria-expanded', String(homeOpen === kind));
     b.onclick = () => {
       homeOpen = homeOpen === kind ? '' : kind;
@@ -1859,7 +1921,7 @@ function trackerBar() {
     const row = el('div', 'navrow ' + (kind === 'area' ? 'areas' : 'devs'));
     row.appendChild(el('div', 'navlab', label));
     row.appendChild(el('div', 'navcap', kind === 'area'
-      ? 'Projects grouped by location, plus Pre-launch.'
+      ? 'Projects grouped by location, plus Pre-launch and Analysis.'
       : 'Projects grouped by developer.'));
     const btns = el('div', 'navbtns');
     mine.forEach(t => {
@@ -1889,6 +1951,10 @@ function trackerBar() {
       b.setAttribute('aria-pressed', String(tracker === 'prelaunch'));
       b.onclick = () => { route('prelaunch'); pickedKey = null; FOCUS = null; render(); scrollTo(0, 0); };
       btns.appendChild(b);
+      const a = el('button', 'ghost'); a.appendChild(el('span', 'tn', 'Analysis'));
+      a.title = 'Ask a question across every tracker';
+      a.onclick = () => { route('analysis'); pickedKey = null; FOCUS = null; render(); scrollTo(0, 0); };
+      btns.appendChild(a);
     }
     row.appendChild(btns); host.appendChild(row);
   });
@@ -3193,14 +3259,15 @@ function secnav() {
   [['area', 'Areas'], ['developer', 'Developers']].forEach(([kind, label]) => {
     const g = document.createElement('optgroup'); g.label = label;
     TRACKERS.filter(t => (t.kind || 'area') === kind).forEach(t => { const o = el('option', '', t.label); o.value = t.key; g.appendChild(o); });
-    if (kind === 'area') { const o = el('option', '', 'Pre-launch'); o.value = 'prelaunch'; g.appendChild(o); }
+    if (kind === 'area') { const o = el('option', '', 'Pre-launch'); o.value = 'prelaunch'; g.appendChild(o);
+      const a = el('option', '', 'Analysis'); a.value = 'analysis'; g.appendChild(a); }
     if (g.children.length) sel.appendChild(g);
   });
   sel.value = tracker;
   sel.onchange = () => { route(sel.value); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0); };
   host.appendChild(sel);
   host.hidden = false;
-  if (tracker === 'prelaunch') return;
+  if (tracker === 'prelaunch' || tracker === 'analysis') return;
   host.appendChild(el('span', 'sep'));
   [['#sec-table', 'Table'], ['#sec-weekly', 'Weekly sales'], ['#btcard', 'Sold/unsold'],
    ['#sec-movers', 'Movement'], ['#sec-sellthru', 'Sell-through'], ['#sec-trends', 'Trends'],
@@ -3251,12 +3318,14 @@ function fchip() {
 }
 
 function render() {
-  const home = !tracker, pre = tracker === 'prelaunch';
+  const home = !tracker, pre = tracker === 'prelaunch', ana = tracker === 'analysis';
   $('#home').hidden = !home;
-  $('#mainview').hidden = home || pre;
+  $('#mainview').hidden = home || pre || ana;
+  $('#sec-analysis').hidden = !ana;
   $('#sec-prelaunch').hidden = !pre;
   if (home) { $('#secnav').hidden = true; trackerBar(); fchip(); return; }
   if (pre) { secnav(); prelaunchView(); fchip(); return; }
+  if (ana) { secnav(); AN.open(); fchip(); return; }
   secnav(); sortFilterBar(); table(); insight(); picker(); weekly(); kpis(); movers(); sellthru(); bytype(); trends(); fchip();
 }
 
@@ -3359,12 +3428,15 @@ function render() {
   });
 })();
 
+__ANALYSIS_JS__
+
 addEventListener('popstate', () => {
   tracker = fromHash(); readView(); closeFilter(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
 });
 readView();
 render();
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => {
+  if (tracker === 'analysis') { AN.resize(); return; }
   if (!tracker || tracker === 'prelaunch') return;
   weekly(); movers(); sellthru(); bytype(); }, 160); });
 </script>
@@ -3377,6 +3449,8 @@ def main():
     os.makedirs(DOCS, exist_ok=True)
     payload = build_payload()
     html_out = TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False).replace("</", "<\\/"))
+    with open(os.path.join(ROOT, "scripts", "analysis.js"), encoding="utf-8") as f:
+        html_out = html_out.replace("__ANALYSIS_JS__", f.read())
     html_out = html_out.replace("__SUGGEST_URL__", SUGGEST_URL.rstrip("/"))
     html_out = html_out.replace("__LOGO_V__", logo_version())
     out = os.path.join(DOCS, "index.html")

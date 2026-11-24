@@ -604,6 +604,21 @@ if BD:
     ck(BD.stalled(five[:-1] + [("2026-11-20", 11)], 0) is False, "stalled: one sale in the window is not stalled")
     ck(BD.stalled(five[1:], 0) is None, "stalled: under four weeks of readings is too new to say")
 
+# --------------------------------------------------------------------------
+section("Analysis page")
+# --------------------------------------------------------------------------
+if BD:
+    with open(os.path.join(ROOT, "scripts", "analysis.js"), encoding="utf-8") as fh:
+        ajs = fh.read()
+    ck(BD.TEMPLATE.count("__ANALYSIS_JS__") == 1, "the page has one place for analysis.js")
+    ck("</script" not in ajs.lower(), "analysis.js cannot close the page's script tag early")
+    for aid in ["sec-analysis", "anform", "anq", "anex", "anread", "antabs", "anctl", "anout", "homeask", "homeq"]:
+        ck(f'id="{aid}"' in BD.TEMPLATE, f"the page has #{aid}, which analysis.js looks up")
+    import shutil, subprocess
+    if shutil.which("node"):
+        rc = subprocess.run(["node", "--check", os.path.join(ROOT, "scripts", "analysis.js")], capture_output=True)
+        ck(rc.returncode == 0, "analysis.js parses")
+
 print()
 if FAILS:
     print(f"{len(FAILS)} check(s) FAILED")
