@@ -1,77 +1,110 @@
 {
 "codes": {
 "11482-10": "2026-11-24",
+"12408-22": "2026-11-25",
+"13017-43": "2026-11-25",
+"13017-45": "2026-11-25",
+"597-14": "2026-11-25",
+"597-15": "2026-11-25",
 "6755-12": "2026-11-24",
-"6755-13": "2026-11-24"
+"6755-13": "2026-11-24",
+"6785-30": "2026-11-25",
+"6785-31": "2026-11-25"
 },
 "pages": {
-"https://aetas-tamandesa.my/": "2026-11-24",
-"https://amiraresidences.com.my/": "2026-11-24",
-"https://binastra.com.my/collection/binastra-cochrane-2/": "2026-11-24",
-"https://binastra.com.my/collection/binastra-the-hill/": "2026-11-24",
-"https://brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-24",
-"https://chinhinproperty.com/property/nature-splendour-life-connect": "2026-11-24",
-"https://eclipsejb.com/": "2026-11-24",
-"https://findestate.net/project.php?slug=the-shang-residence": "2026-11-24",
-"https://goldenproperty.my/projects/the-capehauz.html": "2026-11-24",
-"https://k-estate.my/projects/the-capehauz/": "2026-11-24",
-"https://majesticpd.com.my/": "2026-11-24",
-"https://maxxanproject.com/sapphire-springs": "2026-11-24",
-"https://mydreamprop.com/property/ophira-resort-residences/": "2026-11-24",
-"https://mydreamprop.com/property/the-shang-residence/": "2026-11-24",
-"https://ophiraresortresidences.com.my/": "2026-11-24",
-"https://paramountproperty.my/developments/sejati-by-the-lake-main/": "2026-11-24",
-"https://paramountproperty.my/developments/sejati-by-the-lake/": "2026-11-24",
-"https://paramountproperty.my/developments/the-ashbourne-main/the-ashbourne/": "2026-11-24",
-"https://paramountproperty.my/developments/the-ashbourne/": "2026-11-24",
-"https://paramountproperty.my/paramount-mitsui-fudosan-join-forces-for-rm1-3-billion-residential-development-in-kuala-lumpur/": "2026-11-24",
-"https://sapphiresprings.com.my/": "2026-11-24",
-"https://skyline-bukitbintang.com.my/": "2026-11-24",
-"https://skyline-bukitbintang.my/": "2026-11-24",
-"https://skylinebukitbintang.com.my/": "2026-11-24",
-"https://terrytohproperty.com/ksl-projects/ksl-puteri-residences/": "2026-11-24",
-"https://theashbourne-kl.my/": "2026-11-24",
-"https://theeclipse.my/": "2026-11-24",
-"https://thereserva.my/": "2026-11-24",
-"https://theshangpublic.youcanbook.me/": "2026-11-24",
-"https://theshangresidences.com/": "2026-11-24",
-"https://ukayspring.com.my/ampang-property-market-guide/": "2026-11-24",
-"https://www.askhenry.site/project/ukay-spring": "2026-11-24",
-"https://www.brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-24",
-"https://www.ksl-riveria.com/avenia/": "2026-11-24",
-"https://www.malton.com.my/portfolio-items/ukay-spring/": "2026-11-24",
-"https://www.shangheight.com/the-shang-residence": "2026-11-24",
+"http://ecoworld.my/ecomajestic": "2026-11-25",
+"https://aetas-tamandesa.my/": "2026-11-25",
+"https://amiraresidences.com.my/": "2026-11-25",
+"https://binastra.com.my/collection/binastra-cochrane-2/": "2026-11-25",
+"https://binastra.com.my/collection/binastra-the-hill/": "2026-11-25",
+"https://brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-25",
+"https://chinhinproperty.com/property/nature-splendour-life-connect": "2026-11-25",
+"https://eclipsejb.com/": "2026-11-25",
+"https://ecoworld.my/bursa-announcements": "2026-11-25",
+"https://ecoworld.my/crafted-by-ecoworld": "2026-11-25",
+"https://ecoworld.my/happenings": "2026-11-25",
+"https://findestate.net/project.php?slug=the-shang-residence": "2026-11-25",
+"https://goldenproperty.my/projects/the-capehauz.html": "2026-11-25",
+"https://k-estate.my/projects/the-capehauz/": "2026-11-25",
+"https://majesticpd.com.my/": "2026-11-25",
+"https://maxxanproject.com/sapphire-springs": "2026-11-25",
+"https://mydreamprop.com/property/ophira-resort-residences/": "2026-11-25",
+"https://mydreamprop.com/property/the-shang-residence/": "2026-11-25",
+"https://ophiraresortresidences.com.my/": "2026-11-25",
+"https://paramountproperty.my/developments/sejati-by-the-lake-main/": "2026-11-25",
+"https://paramountproperty.my/developments/sejati-by-the-lake/": "2026-11-25",
+"https://paramountproperty.my/developments/the-ashbourne-main/the-ashbourne/": "2026-11-25",
+"https://paramountproperty.my/developments/the-ashbourne/": "2026-11-25",
+"https://paramountproperty.my/paramount-mitsui-fudosan-join-forces-for-rm1-3-billion-residential-development-in-kuala-lumpur/": "2026-11-25",
+"https://sapphiresprings.com.my/": "2026-11-25",
+"https://simedarbyproperty.com/malls/kleast-mall/": "2026-11-25",
+"https://simedarbyproperty.com/malls/klgcc-mall/": "2026-11-25",
+"https://skyline-bukitbintang.com.my/": "2026-11-25",
+"https://skyline-bukitbintang.my/": "2026-11-25",
+"https://skylinebukitbintang.com.my/": "2026-11-25",
+"https://terrytohproperty.com/ksl-projects/ksl-puteri-residences/": "2026-11-25",
+"https://theashbourne-kl.my/": "2026-11-25",
+"https://theeclipse.my/": "2026-11-25",
+"https://thereserva.my/": "2026-11-25",
+"https://theshangpublic.youcanbook.me/": "2026-11-25",
+"https://theshangresidences.com/": "2026-11-25",
+"https://ukayspring.com.my/ampang-property-market-guide/": "2026-11-25",
+"https://www.askhenry.site/project/ukay-spring": "2026-11-25",
+"https://www.brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-25",
+"https://www.ksl-riveria.com/avenia/": "2026-11-25",
+"https://www.malton.com.my/portfolio-items/ukay-spring/": "2026-11-25",
+"https://www.shangheight.com/the-shang-residence": "2026-11-25",
 "https://www.simedarbyproperty.com/ara-damansara/": "2026-11-24",
 "https://www.simedarbyproperty.com/ara-damansara/arabloc/": "2026-11-24",
 "https://www.simedarbyproperty.com/bandar-ainsdale/": "2026-11-24",
+"https://www.simedarbyproperty.com/bandar-ainsdale/arina/": "2026-11-25",
 "https://www.simedarbyproperty.com/bandar-ainsdale/avira-hills-2/": "2026-11-24",
+"https://www.simedarbyproperty.com/bandar-ainsdale/avira-hills/": "2026-11-25",
 "https://www.simedarbyproperty.com/bandar-bukit-raja/": "2026-11-24",
+"https://www.simedarbyproperty.com/bandar-bukit-raja/11-ave-quadria/": "2026-11-25",
 "https://www.simedarbyproperty.com/bandar-bukit-raja/aura/": "2026-11-24",
 "https://www.simedarbyproperty.com/bandar-bukit-raja/bbr-business-park/masterpiece-plus-collection-1/": "2026-11-24",
+"https://www.simedarbyproperty.com/bandar-bukit-raja/industrial-park/industrial-factories/": "2026-11-25",
+"https://www.simedarbyproperty.com/bandar-bukit-raja/industrial-park/industrial-lot/": "2026-11-25",
+"https://www.simedarbyproperty.com/bandar-bukit-raja/karya/": "2026-11-25",
+"https://www.simedarbyproperty.com/bandar-bukit-raja/lanai-lakeside/": "2026-11-25",
 "https://www.simedarbyproperty.com/bandar-bukit-raja/prestige-collection-1/": "2026-11-24",
 "https://www.simedarbyproperty.com/bandar-bukit-raja/quadria-2/": "2026-11-24",
 "https://www.simedarbyproperty.com/bandar-bukit-raja/the-masterpiece-collection-phase3-twinfactories/": "2026-11-24",
 "https://www.simedarbyproperty.com/bandar-universiti-pagoh/": "2026-11-24",
 "https://www.simedarbyproperty.com/bukit-jelutong/tiara-residences/": "2026-11-24",
+"https://www.simedarbyproperty.com/capital/": "2026-11-25",
 "https://www.simedarbyproperty.com/city-of-elmina/": "2026-11-24",
+"https://www.simedarbyproperty.com/city-of-elmina/elmina-ridge-2/": "2026-11-25",
+"https://www.simedarbyproperty.com/cny2026/": "2026-11-25",
 "https://www.simedarbyproperty.com/commercial/serenia-city/s-park/": "2026-11-24",
 "https://www.simedarbyproperty.com/elmina-business-park-2/": "2026-11-24",
 "https://www.simedarbyproperty.com/elmina-business-park/masterpiece-detachedfactories/": "2026-11-24",
+"https://www.simedarbyproperty.com/elmina-business-park/the-prestige-collection-2/": "2026-11-25",
+"https://www.simedarbyproperty.com/industrial/": "2026-11-25",
 "https://www.simedarbyproperty.com/industrial/nilai-impian/xme-business-park2/": "2026-11-24",
 "https://www.simedarbyproperty.com/kl-east/": "2026-11-24",
+"https://www.simedarbyproperty.com/kl-east/east-61/": "2026-11-25",
+"https://www.simedarbyproperty.com/kl-east/the-reya/": "2026-11-25",
 "https://www.simedarbyproperty.com/klgcc-resort/": "2026-11-24",
+"https://www.simedarbyproperty.com/malls/elmina-lake-side-mall/": "2026-11-25",
 "https://www.simedarbyproperty.com/melawati/": "2026-11-24",
 "https://www.simedarbyproperty.com/nilai-impian/": "2026-11-24",
 "https://www.simedarbyproperty.com/nilai-impian/emilia-lakeside/": "2026-11-24",
 "https://www.simedarbyproperty.com/nilai-impian/rania/": "2026-11-24",
-"https://www.simedarbyproperty.com/nilai-impian/seroja-gardens/": "2026-11-24",
+"https://www.simedarbyproperty.com/nilai-impian/seroja-gardens/": "2026-11-25",
 "https://www.simedarbyproperty.com/planters-haven/": "2026-11-24",
 "https://www.simedarbyproperty.com/putra-heights/": "2026-11-24",
+"https://www.simedarbyproperty.com/putra-heights/damayan/": "2026-11-25",
 "https://www.simedarbyproperty.com/serenia-city/": "2026-11-24",
+"https://www.simedarbyproperty.com/serenia-city/serenia-baleria/": "2026-11-25",
+"https://www.simedarbyproperty.com/serenia-city/the-signature-collection/": "2026-11-25",
+"https://www.simedarbyproperty.com/sj50/": "2026-11-25",
 "https://www.simedarbyproperty.com/sj7/trybe-residences/": "2026-11-24",
 "https://www.simedarbyproperty.com/sjcc/east1/": "2026-11-24",
 "https://www.simedarbyproperty.com/subang-jaya-sjcc/": "2026-11-24",
-"https://www.theshangresidence.com/": "2026-11-24"
+"https://www.simedarbyproperty.com/yourgreatestmove/": "2026-11-25",
+"https://www.theshangresidence.com/": "2026-11-25"
 },
 "pdfs": {
 "https://www.radiumdevelopment.com/wp-content/uploads/2026/04/Radium_10th_Issue.pdf": {
@@ -94,10 +127,22 @@
 "result": "text",
 "seen": "2026-11-24"
 },
+"https://www.simedarbyproperty.com/bandar-ainsdale/arina/Arina2_ebrochure.pdf": {
+"codes": [
+"12408-22"
+],
+"result": "text",
+"seen": "2026-11-25"
+},
 "https://www.simedarbyproperty.com/bandar-ainsdale/avira-hills-2/eBrochure.pdf": {
 "codes": [],
 "result": "too big (32 MB)",
 "seen": "2026-11-24"
+},
+"https://www.simedarbyproperty.com/bandar-ainsdale/avira-hills/brochure.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-25"
 },
 "https://www.simedarbyproperty.com/bandar-bukit-raja/aura/brochure.pdf": {
 "codes": [],
@@ -109,6 +154,21 @@
 "result": "text",
 "seen": "2026-11-24"
 },
+"https://www.simedarbyproperty.com/bandar-bukit-raja/industrial-park/industrial-factories/brochure.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-25"
+},
+"https://www.simedarbyproperty.com/bandar-bukit-raja/karya/brochure.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-25"
+},
+"https://www.simedarbyproperty.com/bandar-bukit-raja/lanai-lakeside/lanai-lakeside-ebrochure.pdf": {
+"codes": [],
+"result": "too big (20 MB)",
+"seen": "2026-11-25"
+},
 "https://www.simedarbyproperty.com/bandar-bukit-raja/prestige-collection-1/BBRi33_brochure.pdf": {
 "codes": [],
 "result": "text",
@@ -118,6 +178,16 @@
 "codes": [],
 "result": "text",
 "seen": "2026-11-24"
+},
+"https://www.simedarbyproperty.com/city-of-elmina/elmina-ridge-2/eBrochure-phase2a.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-25"
+},
+"https://www.simedarbyproperty.com/city-of-elmina/elmina-ridge-2/eBrochure-phase2b.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-25"
 },
 "https://www.simedarbyproperty.com/commercial/serenia-city/s-park/brochure/S-Park-Brochure.pdf": {
 "codes": [],
@@ -133,6 +203,20 @@
 "codes": [],
 "result": "could not be fetched",
 "seen": "2026-11-24"
+},
+"https://www.simedarbyproperty.com/kl-east/east-61/files/East_61_eBrochure.pdf": {
+"codes": [
+"597-15"
+],
+"result": "text",
+"seen": "2026-11-25"
+},
+"https://www.simedarbyproperty.com/kl-east/the-reya/pdf/The-Reya-Brochure.pdf": {
+"codes": [
+"597-14"
+],
+"result": "text",
+"seen": "2026-11-25"
 },
 "https://www.simedarbyproperty.com/nilai-impian/emilia-lakeside/Emilia_E_Brochure.pdf": {
 "codes": [
@@ -151,6 +235,16 @@
 "codes": [],
 "result": "text",
 "seen": "2026-11-24"
+},
+"https://www.simedarbyproperty.com/putra-heights/damayan/Damayan-Brochure.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-25"
+},
+"https://www.simedarbyproperty.com/serenia-city/serenia-baleria/brochure.pdf": {
+"codes": [],
+"result": "could not be fetched",
+"seen": "2026-11-25"
 },
 "https://www.simedarbyproperty.com/sjcc/east1/e-brochure.pdf": {
 "codes": [],
