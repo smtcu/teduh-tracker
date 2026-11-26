@@ -1207,6 +1207,18 @@ tr.focused td.stick{border-left:3px solid var(--orange)}
 /* Both set display:flex, which beats the hidden attribute, so an empty chip
    showed as a small blob and the section bar stayed up on Pre-launch. */
 .fchip[hidden],.secnav[hidden]{display:none}
+.cmpbar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:61;display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1.5px solid var(--blue);border-radius:14px;padding:8px 8px 8px 14px;
+  font-size:13px;font-weight:700;color:var(--ink);box-shadow:0 6px 22px rgba(0,0,0,.16);width:max-content;max-width:min(92vw,720px)}
+.cmpbar[hidden]{display:none}
+.cmpbar .cn{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmpbar button{flex:0 0 auto;font:inherit;font-size:13px;border-radius:9px;padding:7px 11px;min-height:36px;cursor:pointer;
+  border:1.5px solid var(--border);background:var(--surface);color:var(--ink-2)}
+.cmpbar .go{background:var(--blue);border-color:var(--blue);color:#fff}
+.cmpbar button:disabled{opacity:.45;cursor:default}
+.pname.pick{display:inline-flex;align-items:flex-start;gap:7px;text-decoration:none}
+.tickbox{flex:0 0 auto;width:16px;height:16px;margin-top:1px;border:1.5px solid var(--blue);border-radius:4px;background:var(--surface);box-sizing:border-box}
+.pname.pick[aria-pressed="true"] .tickbox{background:var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3C/svg%3E") center/12px no-repeat}
 .fchip .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fchip .dot{width:8px;height:8px;border-radius:50%;background:var(--orange);flex:0 0 auto}
 .fchip button{border:0;background:var(--sunk);border-radius:50%;width:22px;height:22px;font:inherit;
@@ -1530,6 +1542,7 @@ table.pct tr.live td.l{color:var(--orange)}
 
 <div class="tip" id="tip" role="status" aria-live="polite"></div>
 <div class="fchip" id="fchip" hidden></div>
+<div class="cmpbar" id="cmpbar" hidden></div>
 
 <script id="data" type="application/json">__DATA__</script>
 <script>
@@ -1607,14 +1620,60 @@ function goBack() {
 function openAnalysis(q) {
   route('analysis'); pickedKey = null; FOCUS = null; AN.go(q); render(); scrollTo(0, 0);
 }
-/* A project's name opens it in Analysis (Compare projects), where others can be added. */
+/* A project's name opens it in Analysis (Compare projects), where others can be added.
+   In Select to compare mode (26 Nov 2026, her call) a tap ticks it instead:
+   up to CMP_MAX, kept while she moves between trackers, and Compare opens
+   them all, fresh. Turning the mode off or Clear drops the ticks. */
+const CMP_MAX = 6;
+let SELECT = false;
+const TICKS = new Map();            // Analysis project key -> name, in the order ticked
 function nameBtn(p) {
   const q = AN.forProject(p);
   if (!q) return document.createTextNode(p.name);
-  const b = el('button', 'anlink pname', p.name);
-  b.title = 'Analyse ' + p.name + ': its sales over time, and add others to compare';
-  b.onclick = e => { e.stopPropagation(); openAnalysis(q); };
+  const k = q.picks[0], b = el('button', 'anlink pname');
+  b.dataset.k = k;
+  if (SELECT) {
+    b.classList.add('pick'); b.setAttribute('aria-pressed', String(TICKS.has(k)));
+    b.appendChild(el('span', 'tickbox')); b.appendChild(document.createTextNode(p.name));
+    b.title = 'Tick ' + p.name + ' to compare it';
+    b.onclick = e => { e.stopPropagation(); tick(k, p.name); };
+  } else {
+    b.textContent = p.name;
+    b.title = 'Analyse ' + p.name + ': its sales over time, and add others to compare';
+    b.onclick = e => { e.stopPropagation(); openAnalysis(q); };
+  }
   return b;
+}
+function tick(k, name) {
+  if (TICKS.has(k)) TICKS.delete(k);
+  else if (TICKS.size >= CMP_MAX) { cmpbar('Compare takes ' + CMP_MAX + ' at most. Untick one first.'); return; }
+  else TICKS.set(k, name);
+  document.querySelectorAll('.pname.pick').forEach(x => { if (x.dataset.k === k) x.setAttribute('aria-pressed', String(TICKS.has(k))); });
+  cmpbar();
+}
+function setSelect(on) { SELECT = on; TICKS.clear(); render(); }
+/* The bar at the bottom while ticking: how many, Compare, Clear, Cancel. */
+function cmpbar(msg) {
+  const host = $('#cmpbar'); if (!host) return;
+  host.textContent = '';
+  const onTracker = tracker && tracker !== 'prelaunch' && tracker !== 'analysis';
+  host.hidden = !(SELECT && onTracker);
+  if (host.hidden) return;
+  const n = TICKS.size;
+  const small = innerWidth < 640;        // a phone has room for the count only
+  const cn = el('span', 'cn', msg ? (small ? CMP_MAX + ' at most' : msg)
+    : n ? n + ' of ' + CMP_MAX + (small ? '' : ' ticked: ' + [...TICKS.values()].join(', ')) : small ? 'Tap names' : 'Tap project names to tick them, up to ' + CMP_MAX);
+  cn.title = [...TICKS.values()].join(', '); host.appendChild(cn);
+  const go = el('button', 'go', n > 1 ? 'Compare ' + n + ' \u25b8' : 'Compare \u25b8');
+  go.disabled = !n;
+  go.onclick = () => {
+    const q = AN.blank(); q.a = 'projects'; q.picks = [...TICKS.keys()];
+    q.per = AN.S.per; q.ly = AN.S.ly;              // the Period and Chart she last used
+    SELECT = false; TICKS.clear(); host.hidden = true; openAnalysis(q);
+  };
+  const clr = el('button', 'x', 'Clear'); clr.disabled = !n; clr.onclick = () => { TICKS.clear(); render(); };
+  const off = el('button', 'x', 'Cancel'); off.onclick = () => setSelect(false);
+  host.appendChild(go); host.appendChild(clr); host.appendChild(off);
 }
 
 /* ---------- sort + filter ----------
@@ -3312,6 +3371,11 @@ function secnav() {
   an.title = 'Open Analysis for the ' + viewLabel(tracker) + ' tracker: top projects, pace, launches';
   an.onclick = () => openAnalysis(AN.forTracker(tracker));
   host.appendChild(an);
+  const sel2 = el('button', 'ghost home', SELECT ? '\u2713 Selecting' : 'Select to compare');
+  sel2.setAttribute('aria-pressed', String(SELECT));
+  sel2.title = SELECT ? 'Stop selecting and drop the ticks' : 'Tick several projects, on any tracker, and compare them in Analysis';
+  sel2.onclick = () => setSelect(!SELECT);
+  host.appendChild(sel2);
   host.appendChild(el('span', 'sep'));
   [['#sec-table', 'Table'], ['#sec-weekly', 'Weekly sales'], ['#btcard', 'Sold/unsold'],
    ['#sec-movers', 'Movement'], ['#sec-sellthru', 'Sell-through'], ['#sec-trends', 'Trends'],
@@ -3349,8 +3413,8 @@ function secnav() {
 /* Floating chip naming the focused project, with a clear button. */
 function fchip() {
   const host = $('#fchip'); if (!host) return;
-  host.textContent = '';
-  const p = FOCUS ? ALL.find(x => pkey(x) === FOCUS) : null;
+  host.textContent = ''; cmpbar();
+  const p = FOCUS && !SELECT ? ALL.find(x => pkey(x) === FOCUS) : null;
   host.hidden = !p;
   if (!p) return;
   host.appendChild(el('span', 'dot'));
