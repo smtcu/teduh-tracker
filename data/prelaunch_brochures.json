@@ -4,6 +4,18 @@
 "12408-22": "2026-11-25",
 "13017-43": "2026-11-25",
 "13017-45": "2026-11-25",
+"14050-10": "2026-11-26",
+"14505-6": "2026-11-26",
+"14505-7": "2026-11-26",
+"19150-17": "2026-11-26",
+"19150-18": "2026-11-26",
+"19150-6": "2026-11-26",
+"19152-1": "2026-11-26",
+"19152-2": "2026-11-26",
+"19152-4": "2026-11-26",
+"19152-6": "2026-11-26",
+"19152-7": "2026-11-26",
+"19152-8": "2026-11-26",
 "597-14": "2026-11-25",
 "597-15": "2026-11-25",
 "6755-12": "2026-11-24",
@@ -12,48 +24,59 @@
 "6785-31": "2026-11-25"
 },
 "pages": {
+"http://ecoworld.my/ecoforest": "2026-11-26",
+"http://ecoworld.my/ecograndeur": "2026-11-26",
 "http://ecoworld.my/ecomajestic": "2026-11-25",
-"https://aetas-tamandesa.my/": "2026-11-25",
-"https://amiraresidences.com.my/": "2026-11-25",
-"https://binastra.com.my/collection/binastra-cochrane-2/": "2026-11-25",
-"https://binastra.com.my/collection/binastra-the-hill/": "2026-11-25",
-"https://brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-25",
-"https://chinhinproperty.com/property/nature-splendour-life-connect": "2026-11-25",
-"https://eclipsejb.com/": "2026-11-25",
+"http://ecoworld.my/ecosanctuary": "2026-11-26",
+"https://aetas-tamandesa.my/": "2026-11-26",
+"https://amiraresidences.com.my/": "2026-11-26",
+"https://binastra.com.my/collection/binastra-cochrane-2/": "2026-11-26",
+"https://binastra.com.my/collection/binastra-the-hill/": "2026-11-26",
+"https://brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-26",
+"https://chinhinproperty.com/property/nature-splendour-life-connect": "2026-11-26",
+"https://dms-team.com/zh/the-shang-kuchai-lama-zh/": "2026-11-26",
+"https://eclipsejb.com/": "2026-11-26",
 "https://ecoworld.my/bursa-announcements": "2026-11-25",
 "https://ecoworld.my/crafted-by-ecoworld": "2026-11-25",
+"https://ecoworld.my/ecobusinesspark5/": "2026-11-26",
+"https://ecoworld.my/ecobusinesspark7/": "2026-11-26",
 "https://ecoworld.my/happenings": "2026-11-25",
-"https://findestate.net/project.php?slug=the-shang-residence": "2026-11-25",
-"https://goldenproperty.my/projects/the-capehauz.html": "2026-11-25",
-"https://k-estate.my/projects/the-capehauz/": "2026-11-25",
-"https://majesticpd.com.my/": "2026-11-25",
-"https://maxxanproject.com/sapphire-springs": "2026-11-25",
-"https://mydreamprop.com/property/ophira-resort-residences/": "2026-11-25",
-"https://mydreamprop.com/property/the-shang-residence/": "2026-11-25",
-"https://ophiraresortresidences.com.my/": "2026-11-25",
-"https://paramountproperty.my/developments/sejati-by-the-lake-main/": "2026-11-25",
-"https://paramountproperty.my/developments/sejati-by-the-lake/": "2026-11-25",
-"https://paramountproperty.my/developments/the-ashbourne-main/the-ashbourne/": "2026-11-25",
-"https://paramountproperty.my/developments/the-ashbourne/": "2026-11-25",
-"https://paramountproperty.my/paramount-mitsui-fudosan-join-forces-for-rm1-3-billion-residential-development-in-kuala-lumpur/": "2026-11-25",
-"https://sapphiresprings.com.my/": "2026-11-25",
+"https://findestate.net/project.php?slug=the-shang-residence": "2026-11-26",
+"https://goldenproperty.my/projects/the-capehauz.html": "2026-11-26",
+"https://k-estate.my/projects/the-capehauz/": "2026-11-26",
+"https://kalvinyoung.com/articles/the-ashbourne-jalan-ampang-kuala-lumpur": "2026-11-26",
+"https://majesticpd.com.my/": "2026-11-26",
+"https://maxxanproject.com/sapphire-springs": "2026-11-26",
+"https://mydreamprop.com/property/ophira-resort-residences/": "2026-11-26",
+"https://mydreamprop.com/property/the-shang-residence/": "2026-11-26",
+"https://mymalaysiaprop.com/the-eclipse-stulang-laut": "2026-11-26",
+"https://ophiraresidences.com.my/": "2026-11-26",
+"https://ophiraresortresidences.com.my/": "2026-11-26",
+"https://paramountproperty.my/developments/sejati-by-the-lake-main/": "2026-11-26",
+"https://paramountproperty.my/developments/sejati-by-the-lake/": "2026-11-26",
+"https://paramountproperty.my/developments/the-ashbourne-main/the-ashbourne/": "2026-11-26",
+"https://paramountproperty.my/developments/the-ashbourne/": "2026-11-26",
+"https://paramountproperty.my/paramount-mitsui-fudosan-join-forces-for-rm1-3-billion-residential-development-in-kuala-lumpur/": "2026-11-26",
+"https://sapphiresprings.com.my/": "2026-11-26",
 "https://simedarbyproperty.com/malls/kleast-mall/": "2026-11-25",
 "https://simedarbyproperty.com/malls/klgcc-mall/": "2026-11-25",
-"https://skyline-bukitbintang.com.my/": "2026-11-25",
-"https://skyline-bukitbintang.my/": "2026-11-25",
-"https://skylinebukitbintang.com.my/": "2026-11-25",
-"https://terrytohproperty.com/ksl-projects/ksl-puteri-residences/": "2026-11-25",
-"https://theashbourne-kl.my/": "2026-11-25",
-"https://theeclipse.my/": "2026-11-25",
-"https://thereserva.my/": "2026-11-25",
-"https://theshangpublic.youcanbook.me/": "2026-11-25",
-"https://theshangresidences.com/": "2026-11-25",
-"https://ukayspring.com.my/ampang-property-market-guide/": "2026-11-25",
-"https://www.askhenry.site/project/ukay-spring": "2026-11-25",
-"https://www.brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-25",
-"https://www.ksl-riveria.com/avenia/": "2026-11-25",
-"https://www.malton.com.my/portfolio-items/ukay-spring/": "2026-11-25",
-"https://www.shangheight.com/the-shang-residence": "2026-11-25",
+"https://skyline-bukit-bintang.my/": "2026-11-26",
+"https://skyline-bukitbintang.com.my/": "2026-11-26",
+"https://skyline-bukitbintang.my/": "2026-11-26",
+"https://skylinebukitbintang.com.my/": "2026-11-26",
+"https://terrytohproperty.com/ksl-projects/ksl-puteri-residences/": "2026-11-26",
+"https://theashbourne-kl.my/": "2026-11-26",
+"https://theeclipse.my/": "2026-11-26",
+"https://thereserva.my/": "2026-11-26",
+"https://theshangpublic.youcanbook.me/": "2026-11-26",
+"https://theshangresidences.com/": "2026-11-26",
+"https://ukayspring.com.my/ampang-property-market-guide/": "2026-11-26",
+"https://www.askhenry.site/project/ukay-spring": "2026-11-26",
+"https://www.brdb.com.my/portfolio/damansara-heights-coming-soon": "2026-11-26",
+"https://www.klpropertytalk.com/2026/11/sherwood-residence-the-reserva/": "2026-11-26",
+"https://www.ksl-riveria.com/avenia/": "2026-11-26",
+"https://www.malton.com.my/portfolio-items/ukay-spring/": "2026-11-26",
+"https://www.shangheight.com/the-shang-residence": "2026-11-26",
 "https://www.simedarbyproperty.com/ara-damansara/": "2026-11-24",
 "https://www.simedarbyproperty.com/ara-damansara/arabloc/": "2026-11-24",
 "https://www.simedarbyproperty.com/bandar-ainsdale/": "2026-11-24",
@@ -92,7 +115,7 @@
 "https://www.simedarbyproperty.com/nilai-impian/": "2026-11-24",
 "https://www.simedarbyproperty.com/nilai-impian/emilia-lakeside/": "2026-11-24",
 "https://www.simedarbyproperty.com/nilai-impian/rania/": "2026-11-24",
-"https://www.simedarbyproperty.com/nilai-impian/seroja-gardens/": "2026-11-25",
+"https://www.simedarbyproperty.com/nilai-impian/seroja-gardens/": "2026-11-26",
 "https://www.simedarbyproperty.com/planters-haven/": "2026-11-24",
 "https://www.simedarbyproperty.com/putra-heights/": "2026-11-24",
 "https://www.simedarbyproperty.com/putra-heights/damayan/": "2026-11-25",
@@ -104,9 +127,119 @@
 "https://www.simedarbyproperty.com/sjcc/east1/": "2026-11-24",
 "https://www.simedarbyproperty.com/subang-jaya-sjcc/": "2026-11-24",
 "https://www.simedarbyproperty.com/yourgreatestmove/": "2026-11-25",
-"https://www.theshangresidence.com/": "2026-11-25"
+"https://www.theshangresidence.com/": "2026-11-26"
 },
 "pdfs": {
+"https://a.storyblok.com/f/334412/x/6adbf87c9e/redefining-work-and-life-in-the-city.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-26"
+},
+"https://a.storyblok.com/f/334412/x/b28f94bc2d/8ec32687-ec1b-445c-b928-bbbc59e5f8db.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://ekonomi.gov.my/sites/default/files/2025-01/GPPH%2013%20Julai%202022.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://scientex.com.my/wp-content/uploads/2025/03/Scientex-Company-Information-Website-20250313.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://scientex.com.my/wp-content/uploads/2025/04/Scientex-Corporate-Profile_20250331_FINAL.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://scientex.com.my/wp-content/uploads/2026/06/Scientex-Corporate-Information.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://scientex.com.my/wp-content/uploads/2026/11/Scientex-Corporate-Profile_20261118.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://titijaya.com.my/wp-content/uploads/2021/03/Board-Charter-15102020.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://titijaya.com.my/wp-content/uploads/2023/10/TLB-AC-TOR-12.10.2023-final.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://titijaya.com.my/wp-content/uploads/2024/01/Corporate-Governance-Overview-Statement.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://titijaya.com.my/wp-content/uploads/2024/01/Statement-on-Risk-Management.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://titijaya.com.my/wp-content/uploads/2026/09/NRC.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://www.dbkl.gov.my/wp-content/uploads/2023/09/PROSEDUR-OPERASI-STANDARD-SOP-BAGI-SIASATAN-SEMULA-AKAUN-OLEH-PESURUHJAYA-BANGUNAN-KUALA-LUMPUR-DI-BAWAH-PERUNTUKAN-SEKSYEN-142-262-542-622-AKTA-PENGURUSAN-STRATA-2013-AKTA-757-V1-1.pdf": {
+"codes": [],
+"result": "could not be fetched",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2023/12/Newsletter_1st_Issue.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2024/04/2nd-issue-newsletter.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2024/07/FA_3ndIssue_Radium.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2024/10/Final-4th-issue-newsletter-300924.pdf": {
+"codes": [],
+"result": "text",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2025/01/Final-5thIssue-060125.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2025/04/6th-Issue.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2025/07/Radium_7th_Issue.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2025/10/Final-8th-Issue-071025.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-26"
+},
+"https://www.radiumdevelopment.com/wp-content/uploads/2026/01/9th-issue.pdf": {
+"codes": [],
+"result": "a scan (no text to read)",
+"seen": "2026-11-26"
+},
 "https://www.radiumdevelopment.com/wp-content/uploads/2026/04/Radium_10th_Issue.pdf": {
 "codes": [],
 "result": "a scan (no text to read)",
