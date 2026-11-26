@@ -312,7 +312,7 @@ const AN = (() => {
           + listOf(L.filter(g => g !== best).map(g => g.name + ' is at ' + pf(g.pct))) + '.' : '',
         note: L.length ? 'As at ' + fdate(DATA.todayDate) + '. Sold in period is ' + per.label + ', net of cancellations.' + (L.some(g => g.phases > 1) ? ' Phases with the same name are added together.' : '') : 'Add two to six projects above.',
         cols: cols('name sold units unsold pct inP pw months perMonth apdl kind state dev'), rows: L,
-        chart: h => L.length && lines(h, L, Q.ly) };
+        chart: h => L.length && lines(h, L, Q.ly, per) };
     },
     supply(Q) {
       if (Q.sv === 'unsold') {
@@ -447,31 +447,43 @@ const AN = (() => {
   /* A project keeps its colour when another is removed. */
   const slot = new Map();
   const slotOf = k => { if (!slot.has(k)) { const used = new Set(S.picks.filter(x => x !== k).map(x => slot.get(x))); let i = 1; while (used.has(i) && i < 6) i++; slot.set(k, i); } return slot.get(k); };
-  function lines(host, L, mode) {
-    const dates = [...new Set(DATA.weeks.concat(DATA.todayDate))].sort();
-    const ser = L.map(g => ({ g, col: 'var(--s' + slotOf(g.key) + ')', pts: dates.map(d => {
+  /* Only the picked period (26 Nov 2026, her call): every reading inside it,
+     daily where there is one. Sold % is the running figure; units are sold
+     since the period's first reading, so the line ends on Sold in period. */
+  function lines(host, L, mode, per) {
+    const dates = [...new Set(DATA.weeks.concat(DATA.todayDate, per.from, per.to, L.flatMap(g => g.rows.flatMap(p => readsOf(p).map(x => x[0])))))]
+      .filter(d => d >= per.from && d <= per.to).sort();
+    const sumAt = (g, d) => { const v = g.rows.map(p => at(p, d)); return v.some(nil) ? null : v.reduce((a, b) => a + b, 0); };
+    const ser = L.map(g => { const base = sumAt(g, per.from); return { g, col: 'var(--s' + slotOf(g.key) + ')', pts: dates.map(d => {
       if (g.rows.every(p => p.apdl > d)) return null;       // the line starts at launch
-      const v = g.rows.map(p => at(p, d)); if (v.some(nil)) return null;
-      const s = v.reduce((a, b) => a + b, 0); return mode === 'pct' ? s / g.units : s;
-    }) }));
+      const s = sumAt(g, d); if (s === null) return null;
+      return mode === 'pct' ? s / g.units : base === null ? null : s - base;
+    }) }; });
     const first = dates.findIndex((_, i) => ser.some(s => s.pts[i] !== null));
     if (first < 0) return;
     const D = dates.slice(first); ser.forEach(s => { s.pts = s.pts.slice(first); });
     const lg = el('div', 'lg');
     ser.forEach(s => { const x = el('span'), i = el('i', 'swl'); i.style.background = s.col; x.appendChild(i); x.appendChild(document.createTextNode(s.g.name)); lg.appendChild(x); });
     host.appendChild(lg);
-    const W = CW(host), H = 260, PL = 48, PR = 58, PT = 10, PB = 26, fm = v => mode === 'pct' ? Math.round(v * 100) + '%' : nf(Math.round(v));
-    const all = ser.flatMap(s => s.pts).filter(v => v !== null), hi0 = mode === 'pct' ? 1 : Math.max(1, ...all);
-    const step = mode === 'pct' ? .25 : (() => { const r = hi0 / 4, m = Math.pow(10, Math.floor(Math.log10(r))); return Math.max(1, [1, 2, 2.5, 5, 10].map(k => k * m).find(k => k >= r)); })();
-    const hi = Math.ceil(hi0 / step - 1e-9) * step, t0 = +new Date(D[0]), t1 = +new Date(D[D.length - 1]) || t0 + 1;
-    const X = d => PL + (t1 === t0 ? 0 : (+new Date(d) - t0) / (t1 - t0)) * (W - PL - PR), Y = v => PT + (1 - v / hi) * (H - PT - PB);
+    const W = CW(host), H = 260, PL = 48, PR = 58, PT = 10, PB = 26;
+    /* Over a few weeks sold % moves a point or two, so its axis spans the
+       figures rather than 0-100%; units start at 0, the period's start. */
+    const all = ser.flatMap(s => s.pts).filter(v => v !== null), pct = mode === 'pct';
+    const lo0 = pct ? Math.min(...all) : Math.min(0, ...all), hi0 = pct ? Math.max(...all) : Math.max(1, ...all);
+    const nice = r => { const m = Math.pow(10, Math.floor(Math.log10(r))); return [1, 2, 2.5, 5, 10].map(k => k * m).find(k => k >= r); };
+    const step = pct ? Math.max(.01, nice(Math.max(.01, hi0 - lo0) / 4)) : Math.max(1, nice((hi0 - lo0) / 4));
+    const lo = Math.max(0, Math.floor(lo0 / step + 1e-9) * step), hi = Math.max(lo + step, Math.ceil(hi0 / step - 1e-9) * step);
+    const fm = v => pct ? (step < .05 ? (v * 100).toFixed(step < .02 ? 1 : 0) : Math.round(v * 100)) + '%' : plus(Math.round(v));
+    const t0 = +new Date(D[0]), t1 = +new Date(D[D.length - 1]) || t0 + 1;
+    const X = d => PL + (t1 === t0 ? 0 : (+new Date(d) - t0) / (t1 - t0)) * (W - PL - PR), Y = v => PT + (1 - (v - lo) / (hi - lo)) * (H - PT - PB);
     const svg = sv('svg', { width: '100%', viewBox: `0 0 ${W} ${H}`, role: 'img' });
-    for (let v = 0; v <= hi + 1e-9; v += step) {
+    for (let v = lo; v <= hi + 1e-9; v += step) {
       svg.appendChild(sv('line', { x1: PL, x2: W - PR, y1: Y(v), y2: Y(v), class: 'gl' }));
       const t = sv('text', { x: PL - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'tk' }); t.textContent = fm(v); svg.appendChild(t);
     }
-    const nT = W < 560 ? 3 : 6;
-    for (let k = 0; k < nT; k++) {
+    const nT = Math.min(D.length, W < 560 ? 3 : 6);
+    if (nT < 2) { const t = sv('text', { x: X(D[0]), y: H - 6, 'text-anchor': 'start', class: 'tk' }); t.textContent = fdate(D[0], true); svg.appendChild(t); }
+    for (let k = 0; nT > 1 && k < nT; k++) {
       const d = D[Math.round(k * (D.length - 1) / (nT - 1))], t = sv('text', { x: X(d), y: H - 6, 'text-anchor': k === 0 ? 'start' : k === nT - 1 ? 'end' : 'middle', class: 'tk' });
       t.textContent = fdate(d, true); svg.appendChild(t);
     }
@@ -490,7 +502,7 @@ const AN = (() => {
       const a = i ? (X(D[i - 1]) + X(d)) / 2 : PL, b = i < D.length - 1 ? (X(d) + X(D[i + 1])) / 2 : W - PR;
       const r = hot(svg, a, PT, Math.max(1, b - a), H - PT - PB, e => {
         hair.setAttribute('x1', X(d)); hair.setAttribute('x2', X(d)); hair.setAttribute('opacity', 1);
-        showTip(e, ser.map(s => ({ value: s.pts[i] === null ? 'no reading' : mode === 'pct' ? pf(s.pts[i]) : nf(s.pts[i]), label: s.g.name, color: s.col })), fdate(d));
+        showTip(e, ser.map(s => ({ value: s.pts[i] === null ? 'no reading' : mode === 'pct' ? pf(s.pts[i]) : plus(s.pts[i]) + ' since ' + fdate(per.from, true), label: s.g.name, color: s.col })), fdate(d));
       });
       ['pointerleave', 'blur'].forEach(ev => r.addEventListener(ev, () => hair.setAttribute('opacity', 0)));
     });
@@ -764,7 +776,7 @@ const AN = (() => {
       BYKEY.forEach((g, k) => { if (S.picks.includes(k)) return; const t = g.name + ' · ' + labelOf(g.tracker); opts.set(t, k); const o = document.createElement('option'); o.value = t; dl.appendChild(o); });
       const pickIt = () => { const k = opts.get(q.value); if (k) { S.picks.push(k); show(); const n = document.querySelector('#anctl input[list]'); if (n) n.focus({ preventScroll: true }); } };
       q.oninput = pickIt; l.appendChild(q); row.appendChild(l); row.appendChild(dl); PER();
-      select(row, 'Chart', [['pct', 'Sold %'], ['units', 'Units sold']], S.ly, v => set('ly', v));
+      select(row, 'Chart', [['pct', 'Sold %'], ['units', 'Units sold in period']], S.ly, v => set('ly', v));
       S.picks.forEach(k => chip(chips, BYKEY.get(k).name, () => { S.picks = S.picks.filter(x => x !== k); slot.delete(k); show(); }));
     }
     if (S.a !== 'projects') {
@@ -900,7 +912,7 @@ const AN = (() => {
     /* Not understood: the last answer goes too, so it cannot pass for this one's. */
     if (r.q) show(true); else { controls(); $id('anout').textContent = ''; secnav(); }
   }
-  const EXAMPLES = ['Top 10 UEM last five years', 'Top 10 KL 2026', 'Fastest selling in Johor last 4 weeks', 'Ecoworld no sales', 'Compare UEM vs Ecoworld vs SP Setia 2022-2026', 'Launches in KL by year'];
+  const EXAMPLES = ['Top 10 UEM last five years', 'Top 10 KL 2026', 'Fastest selling in Johor last 4 weeks', 'Fastest to sell out', 'Ecoworld no sales', 'Compare UEM vs Ecoworld vs SP Setia 2022-2026', 'Launches in KL by year'];
   function examples() {
     const c = $id('anex'); if (c.children.length) return;
     EXAMPLES.forEach(t => { const b = el('button', 'chip', t); b.onclick = () => { $id('anq').value = t; ask(t); }; c.appendChild(b); });

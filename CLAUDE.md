@@ -320,6 +320,17 @@ Launches and unsold. The address carries every setting, so an answer can be
 shared. Excel files are written by hand (`xlsx()`), no library. A row showing
 more sold than its total (Emilia: 80 of 24 on 23 Nov 2026) is left out and named.
 
+Added 26 Nov 2026, her calls:
+- **Top → Rank by → Time to sell out**: APDL date to the first reading at 100%,
+  drawn on a timeline. Solid = seen selling out; pale "≤" = already sold out at
+  its first reading, an upper bound (TEDUH gives no sale dates). Sold % ties at
+  100% go to the faster sell-out.
+- **Compare projects chart** shows only the picked Period; "Units sold in
+  period" ends on the table's Sold in period figure.
+- **Select to compare** (tracker bar): tapping names ticks them, up to 6, kept
+  across trackers; Compare opens them fresh in Compare projects. Off, Clear or
+  Compare drops the ticks. `SELECT` / `TICKS` / `cmpbar()` in build_dashboard.py.
+
 ## The new-launch watch
 
 `scripts/watch_developers.py` runs in its own workflow (`watch-launches.yml`,
