@@ -1136,6 +1136,9 @@ html[data-theme="dark"]{--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5
 #home .navbtns .tc{font-size:11px;font-weight:650;color:var(--muted)}
 #home .navbtns button[aria-pressed="true"] .tc{color:inherit;opacity:.85}
 .secnav .home{flex:0 0 auto;padding:6px 11px;font-size:12.5px}
+.secnav .back{border-color:var(--blue);color:var(--blue)}
+.pname{font-weight:inherit;text-decoration:underline dotted var(--muted);text-underline-offset:3px}
+.pname:hover{text-decoration:underline solid}
 .secnav .tsel{flex:0 0 auto;font:inherit;font-size:14px;font-weight:800;color:var(--ink);
   background:var(--surface);border:1.5px solid var(--blue);border-radius:9px;padding:6px 28px 6px 10px;
   max-width:190px;appearance:none;-webkit-appearance:none;cursor:pointer;
@@ -1582,12 +1585,36 @@ const fromHash = () => {
   return KEYS.has(h) ? h : '';
 };
 let tracker = fromHash();
+/* The tracker, Pre-launch or Analysis page last left, with its address (so its
+   filters, sort or analysis come back too). Home is skipped: it is a menu. */
+let lastView = null, shownHash = location.hash;
+const viewLabel = k => k === 'prelaunch' ? 'Pre-launch' : k === 'analysis' ? 'Analysis' : (TRACKERS.find(t => t.key === k) || {}).label || k;
 function route(key) {
   if (key === tracker) return;
+  if (tracker) lastView = { key: tracker, hash: location.hash };
   history.pushState(null, '', key ? '#' + key : location.pathname + location.search);
   tracker = key;
   clearView(); closeFilter();
   if (key === 'analysis') AN.reset();
+}
+function goBack() {
+  const v = lastView; if (!v) return;
+  lastView = tracker ? { key: tracker, hash: location.hash } : null;
+  history.pushState(null, '', v.hash);
+  tracker = v.key; readView(); closeFilter(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
+}
+/* Opens Analysis already set up (a project, or one tracker). */
+function openAnalysis(q) {
+  route('analysis'); pickedKey = null; FOCUS = null; AN.go(q); render(); scrollTo(0, 0);
+}
+/* A project's name opens it in Analysis (Compare projects), where others can be added. */
+function nameBtn(p) {
+  const q = AN.forProject(p);
+  if (!q) return document.createTextNode(p.name);
+  const b = el('button', 'anlink pname', p.name);
+  b.title = 'Analyse ' + p.name + ': its sales over time, and add others to compare';
+  b.onclick = e => { e.stopPropagation(); openAnalysis(q); };
+  return b;
 }
 
 /* ---------- sort + filter ----------
@@ -1630,6 +1657,7 @@ function writeView() {
   if (sort.key) u.set('sort', sort.key + (sort.dir > 0 ? '-up' : '-down'));
   const q = u.toString();
   history.replaceState(null, '', '#' + tracker + (q ? '?' + q : ''));
+  shownHash = location.hash;
 }
 const fold = t => (t || '').toLowerCase();
 const matchQ = p => {
@@ -2080,7 +2108,7 @@ function table() {
     if (soldOut(p)) tr.classList.add('soldout');
     if (FOCUS && pkey(p) === FOCUS) tr.classList.add('focused');
     tr.appendChild(el('td', 'l stick', String(p.no ?? '')));
-    const nm = el('td', 'l stick2 nm', p.name);
+    const nm = el('td', 'l stick2 nm'); nm.appendChild(nameBtn(p));
     if (p.top) { tr.classList.add('top'); nm.appendChild(el('span', 'toptag', '#' + p.rank)); }
     if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
     if (staleTag(p)) nm.appendChild(staleTag(p));
@@ -2191,7 +2219,7 @@ function cards(weeks, live) {
                         + (FOCUS && pkey(p) === FOCUS ? ' focused' : ''));
     if (folded) { c.classList.add('more'); if (!tableMore) c.classList.add('hide'); nMore++; }
     c.dataset.proj = p.code || ('NOCODE-' + p.name);
-    const hd = el('div', 'pch'), nm = el('div', 'pcn', p.name);
+    const hd = el('div', 'pch'), nm = el('div', 'pcn'); nm.appendChild(nameBtn(p));
     if (p.top) nm.appendChild(el('span', 'toptag', '#' + p.rank));
     if (soldOut(p)) nm.appendChild(el('span', 'sotag', 'Sold out'));
     if (staleTag(p)) nm.appendChild(staleTag(p));
@@ -3250,11 +3278,17 @@ function plOpen(r) {
 
 function secnav() {
   const host = $('#secnav'); if (!host) return;
-  host.textContent = '';
+  host.textContent = ''; shownHash = location.hash;
   const home = el('button', 'ghost home', '\u2302 Home');
   home.title = 'Back to the list of trackers';
   home.onclick = () => { route(''); pickedKey = null; FOCUS = null; render(); scrollTo(0, 0); };
   host.appendChild(home);
+  if (lastView && lastView.key !== tracker) {
+    const b = el('button', 'ghost home back', '\u2190 Back to ' + viewLabel(lastView.key));
+    b.title = 'Back to ' + viewLabel(lastView.key) + ', as you left it';
+    b.onclick = goBack;
+    host.appendChild(b);
+  }
   const sel = el('select', 'tsel'); sel.setAttribute('aria-label', 'Switch tracker');
   [['area', 'Areas'], ['developer', 'Developers']].forEach(([kind, label]) => {
     const g = document.createElement('optgroup'); g.label = label;
@@ -3267,7 +3301,17 @@ function secnav() {
   sel.onchange = () => { route(sel.value); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0); };
   host.appendChild(sel);
   host.hidden = false;
+  if (tracker === 'analysis' && AN.dirty()) {
+    const r = el('button', 'ghost home back', '\u21ba Back to default');
+    r.title = 'Clear the question and the boxes, and go back to the first view';
+    r.onclick = () => { AN.reset(); history.replaceState(null, '', '#analysis'); render(); scrollTo(0, 0); };
+    host.insertBefore(r, sel);            /* before the menu, so a phone sees it without scrolling the bar */
+  }
   if (tracker === 'prelaunch' || tracker === 'analysis') return;
+  const an = el('button', 'ghost home', 'Analyse this tracker');
+  an.title = 'Open Analysis for the ' + viewLabel(tracker) + ' tracker: top projects, pace, launches';
+  an.onclick = () => openAnalysis(AN.forTracker(tracker));
+  host.appendChild(an);
   host.appendChild(el('span', 'sep'));
   [['#sec-table', 'Table'], ['#sec-weekly', 'Weekly sales'], ['#btcard', 'Sold/unsold'],
    ['#sec-movers', 'Movement'], ['#sec-sellthru', 'Sell-through'], ['#sec-trends', 'Trends'],
@@ -3431,7 +3475,10 @@ function render() {
 __ANALYSIS_JS__
 
 addEventListener('popstate', () => {
-  tracker = fromHash(); readView(); closeFilter(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
+  /* The phone's back button: the page it leaves becomes the one to go back to. */
+  const was = tracker, wasHash = shownHash;
+  tracker = fromHash();
+  if (was && was !== tracker) lastView = { key: was, hash: wasHash }; readView(); closeFilter(); pickedKey = null; FOCUS = null; tableMore = false; render(); scrollTo(0, 0);
 });
 readView();
 render();

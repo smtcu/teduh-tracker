@@ -898,7 +898,7 @@ const AN = (() => {
     readBack(r);
     $id('anex').hidden = true;
     /* Not understood: the last answer goes too, so it cannot pass for this one's. */
-    if (r.q) show(true); else { controls(); $id('anout').textContent = ''; }
+    if (r.q) show(true); else { controls(); $id('anout').textContent = ''; secnav(); }
   }
   const EXAMPLES = ['Top 10 UEM last five years', 'Top 10 KL 2026', 'Fastest selling in Johor last 4 weeks', 'Ecoworld no sales', 'Compare UEM vs Ecoworld vs SP Setia 2022-2026', 'Launches in KL by year'];
   function examples() {
@@ -906,7 +906,7 @@ const AN = (() => {
     EXAMPLES.forEach(t => { const b = el('button', 'chip', t); b.onclick = () => { $id('anq').value = t; ask(t); }; c.appendChild(b); });
   }
   /* Once a box is changed, "Read as" no longer describes what is on screen. */
-  function show(asked) { if (asked !== true) readBack(null); write(); controls(); answer(); }
+  function show(asked) { if (asked !== true) readBack(null); write(); controls(); answer(); secnav(); }
   function open() { examples(); controls(); answer(); }
   const submit = input => e => { e.preventDefault(); ask(input.value); };
   $id('anform').onsubmit = submit($id('anq'));
@@ -914,5 +914,12 @@ const AN = (() => {
     e.preventDefault(); const t = $id('homeq').value; if (!t.trim()) return;
     route('analysis'); S = blank(); $id('anq').value = t; $id('homeq').value = ''; render(); scrollTo(0, 0); ask(t);
   };
-  return { open, readHash, resize: () => { if (last) answer(); }, reset: () => { S = blank(); readBack(null); $id('anq').value = ''; $id('anex').hidden = false; boxes = innerWidth >= 640; }, parse, ANSWERS, blank, xlsx, get S() { return S; }, set S(v) { S = v; }, show };
+  /* For the trackers: a project's name, or the "Analyse this tracker" button. */
+  const keyOf = p => (p.codes || []).map(c => KEYFOR.get(c)).find(Boolean);
+  const forProject = p => { const k = keyOf(p); return k ? Object.assign(blank(), { a: 'projects', picks: [k] }) : null; };
+  const forTracker = k => { const q = blank(); if (DEVS.some(t => t.key === k)) q.dev.add(k); else if (codesOf.has('a:' + k)) q.place.add('a:' + k); return q; };
+  const go = q => { S = q; fixBy(); readBack(null); $id('anex').hidden = true; write(); };
+  /* Anything changed from the first view: a box, a typed question, a read-back. */
+  const dirty = () => { const i = location.hash.indexOf('?'); return (i >= 0 && location.hash.slice(i + 1) !== '') || !$id('anread').hidden || !!$id('anq').value.trim(); };
+  return { open, readHash, forProject, forTracker, go, dirty, resize: () => { if (last) answer(); }, reset: () => { S = blank(); readBack(null); $id('anq').value = ''; $id('anex').hidden = false; boxes = innerWidth >= 640; }, parse, ANSWERS, blank, xlsx, get S() { return S; }, set S(v) { S = v; }, show };
 })();
