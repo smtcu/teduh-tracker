@@ -62,7 +62,10 @@ MAX_NEW_PER_DEV = 3        # cap the walk upward, in case a developer lands seve
 # distinctive word of a code-less project's name instead.
 GENERIC = {"taman", "residensi", "residence", "residences", "the", "at", "apartment",
            "pangsapuri", "kondominium", "condominium", "bandar", "kota", "baru",
-           "hill", "hills", "park", "city", "one", "new", "phase", "fasa"}
+           "hill", "hills", "park", "city", "one", "new", "phase", "fasa",
+           # road and description words in placeholder names (Chin Hin's
+           # "Mixed use development in Jln Sultan Ismail", 27 Nov 2026)
+           "mixed", "development", "sultan", "ismail"}
 
 
 def words_of(name):
